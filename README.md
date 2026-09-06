@@ -1,1 +1,2 @@
 # IELTS-Evaluator-Pro
+IELTS Evaluator Pro is a specialized online learning platform designed to optimize IELTS preparation. It provides end-to-end course management, automated grading for receptive skills, and an AI-driven evaluation engine that delivers instant, criteria-based feedback primarily for Writing Skill. The system continuously analyzes user performance metrics to generate personalized learning paths, targeting individual weaknesses to effectively improve overall band scores.
