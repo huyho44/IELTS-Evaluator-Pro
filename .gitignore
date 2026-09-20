@@ -1,0 +1,12 @@
+# ignore modules
+node_modules/
+
+# ignore env variables
+.env
+.env.local
+
+# ignore build files
+dist/
+build/
+*.log
+.DS_Store
