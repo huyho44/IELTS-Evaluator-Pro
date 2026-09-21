@@ -1,8 +1,8 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  # Cơ sở dữ liệu PostgreSQL tích hợp sẵn pgvector cho AI RAG
-  db:
+  # 1. Cơ sở dữ liệu PostgreSQL (Tích hợp sẵn pgvector cho AI)
+  postgres:
     image: pgvector/pgvector:pg16
     container_name: ielts_postgres
     environment:
@@ -10,18 +10,34 @@ services:
       POSTGRES_PASSWORD: rootpassword
       POSTGRES_DB: ielts_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
-  # Hàng đợi Redis dùng cho BullMQ (Xử lý chấm điểm AI ngầm)
+  # 2. Bảng điều khiển giao diện pgAdmin 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ielts_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@ielts.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # 3. Hàng đợi Redis (Dùng cho BullMQ xử lý AI)
   redis:
     image: redis:7-alpine
     container_name: ielts_redis
     ports:
       - "6379:6379"
+    volumes:
+      - redisdata:/data
     restart: unless-stopped
 
 volumes:
   pgdata:
+  redisdata:
