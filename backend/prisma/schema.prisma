@@ -1,14 +1,142 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-  moduleFormat    = "cjs"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
+
+  model User {
+    id              Int      @id @default(autoincrement())
+    email           String   @unique
+    passwordHash    String 
+    targetBand      Float 
+    status          String
+    role            String
+
+    createdCoursed  Course[]
+    enrollment      Enrollment[]
+    textSessions    TestSession[]
+
+    evaluation      Evaluation[] @relation("UserEvaluations")
+  }
+
+  model Course{
+    id              Int     @id @default(autoincrement())
+    title           String
+    description     String  
+    createdAt       DateTime @default(now())  @map("created_at")
+
+    createdId       Int
+    creator         User      @relation(fields: [createdId], references: [id])
+
+    lesson          Lesson[]
+    enrollment      Enrollment[]
+  }
+
+  model Enrollment{
+    id              Int   @id @default(autoincrement())
+    progressPercentage Float @default(0) @map("progress_percentage")
+    lastAccessed    DateTime @map("last_accessed")
+
+    userId          Int
+    user            User      @relation(fields: [userId],references: [id])
+
+    courseId        Int
+    course          Course    @relation(fields: [courseId],references:[id])
+
+    @@unique([userId,courseId])
+  }
+
+  model Lesson{
+    id              Int     @id @default(autoincrement())
+    title           String
+    type            String
+    contentUrl      String?  @map("content_url") 
+    targetSkillTag  String?  @map("target_skill_tag")
+
+
+    courseId        Int
+    course          Course   @relation(fields: [courseId], references: [id])
+
+
+    questions       QuizQuestion[]
+    testSession     TestSession[]
+    rubricDescriptors  RubricDescriptor[]
+  }
+
+  model QuizQuestion {
+    id              Int     @id @default(autoincrement())
+    questionText    String  @map("question_text")
+    correctAnswer   String  @map("correct_answer")
+    type            String
+
+    lessonId        Int
+    lesson          Lesson  @relation(fields: [lessonId], references: [id])
+
+  }
+
+  model TestSession {
+    id              Int     @id @default(autoincrement())
+    startTime       DateTime @map("start_time")
+    endTime         DateTime? @map("end_time")
+    status          String
+
+    userId          Int
+    user            User @relation(fields: [userId], references: [id])
+
+    lessonId        Int?
+    lesson          Lesson? @relation(fields: [lessonId], references: [id])
+
+    submission      Submissions[]
+  }
+
+  model Submissions {
+    id              Int   @id @default(autoincrement())
+    type            String
+    mediaUrl        String? @map("media_url")
+    contentText     String? @map("content_text")
+
+    testSessionId   Int
+    testSession     TestSession @relation(fields: [testSessionId], references: [id])
+
+    evaluation      Evaluation[]
+  }
+
+  model Evaluation {
+    id             Int   @id @default(autoincrement())
+    feedbackJson   Json?  @map("feedback_json") 
+    evaluatorType  String @map("evaluator_type")
+
+    scoreTa Float? @map("score_ta")
+    scoreCc Float? @map("score_cc")
+    scoreLr Float? @map("score_lr")
+    scoreGra Float? @map("score_gra")
+
+    overallBand Float? @map("overall_band")
+
+    submissionId   Int
+    submission     Submissions @relation(fields: [submissionId], references: [id])
+
+    evaluatorId    Int?
+    evaluator      User?  @relation("UserEvaluations", fields: [evaluatorId],references: [id])
+
+    rubricDescriptors RubricDescriptor[]
+  }
+
+
+  model RubricDescriptor {
+    id            Int   @id @default(autoincrement())
+    criterion     String
+    bandLevel     Float @map("band_level")
+    description   String
+    embedding     Json?
+
+    lessonId      Int?
+    lesson        Lesson? @relation(fields: [lessonId], references: [id])
+
+    evaluations   Evaluation[]
+  }
