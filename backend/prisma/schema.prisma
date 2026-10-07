@@ -17,9 +17,9 @@ datasource db {
     status          String
     role            String
 
-    createdCoursed  Course[]
+    createdCourse  Course[]
     enrollment      Enrollment[]
-    textSessions    TestSession[]
+    testSessions    TestSession[]
 
     evaluation      Evaluation[] @relation("UserEvaluations")
   }
