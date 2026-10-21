@@ -1,143 +1,1656 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
-
 
 datasource db {
   provider = "postgresql"
 }
 
-  model User {
-    id              Int      @id @default(autoincrement())
-    email           String   @unique
-    passwordHash    String 
-    targetBand      Float 
-    status          String
-    role            String
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
 
-    createdCourse  Course[]
-    enrollment      Enrollment[]
-    testSessions    TestSession[]
+  @@map("account_status")
+}
 
-    evaluation      Evaluation[] @relation("UserEvaluations")
-  }
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 
-  model Course{
-    id              Int     @id @default(autoincrement())
-    title           String
-    description     String  
-    createdAt       DateTime @default(now())  @map("created_at")
+  @@map("approval_status")
+}
 
-    createdId       Int
-    creator         User      @relation(fields: [createdId], references: [id])
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  ARCHIVED
 
-    lesson          Lesson[]
-    enrollment      Enrollment[]
-  }
+  @@map("publication_status")
+}
 
-  model Enrollment{
-    id              Int   @id @default(autoincrement())
-    progressPercentage Float @default(0) @map("progress_percentage")
-    lastAccessed    DateTime @map("last_accessed")
+enum LearningItemKind {
+  LESSON
+  PRACTICE
 
-    userId          Int
-    user            User      @relation(fields: [userId],references: [id])
+  @@map("learning_item_kind")
+}
 
-    courseId        Int
-    course          Course    @relation(fields: [courseId],references:[id])
+enum SkillArea {
+  READING
+  LISTENING
+  WRITING
+  SPEAKING
 
-    @@unique([userId,courseId])
-  }
+  @@map("skill_area")
+}
 
-  model Lesson{
-    id              Int     @id @default(autoincrement())
-    title           String
-    type            String
-    contentUrl      String?  @map("content_url") 
-    targetSkillTag  String?  @map("target_skill_tag")
+enum ResponseMode {
+  OBJECTIVE
+  WRITING
+  SPEAKING
 
+  @@map("response_mode")
+}
 
-    courseId        Int
-    course          Course   @relation(fields: [courseId], references: [id])
+enum AssignmentMode {
+  PRACTICE
+  GRADED
 
+  @@map("assignment_mode")
+}
 
-    questions       QuizQuestion[]
-    testSession     TestSession[]
-    rubricDescriptors  RubricDescriptor[]
-  }
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  FINISHED
+  CANCELLED
 
-  model QuizQuestion {
-    id              Int     @id @default(autoincrement())
-    questionText    String  @map("question_text")
-    correctAnswer   String  @map("correct_answer")
-    type            String
+  @@map("attempt_status")
+}
 
-    lessonId        Int
-    lesson          Lesson  @relation(fields: [lessonId], references: [id])
+enum RunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
 
-  }
+  @@map("run_status")
+}
 
-  model TestSession {
-    id              Int     @id @default(autoincrement())
-    startTime       DateTime @map("start_time")
-    endTime         DateTime? @map("end_time")
-    status          String
+enum ProviderAttemptStatus {
+  SUCCESS
+  REFUSED
+  INCOMPLETE
+  INVALID
+  ERROR
 
-    userId          Int
-    user            User @relation(fields: [userId], references: [id])
+  @@map("provider_attempt_status")
+}
 
-    lessonId        Int?
-    lesson          Lesson? @relation(fields: [lessonId], references: [id])
+enum ResultKind {
+  AI
+  TEACHER
+  ANSWER_KEY
 
-    submission      Submissions[]
-  }
+  @@map("result_kind")
+}
 
-  model Submissions {
-    id              Int   @id @default(autoincrement())
-    type            String
-    mediaUrl        String? @map("media_url")
-    contentText     String? @map("content_text")
+enum ScoreScale {
+  BAND
+  RAW
 
-    testSessionId   Int
-    testSession     TestSession @relation(fields: [testSessionId], references: [id])
+  @@map("score_scale")
+}
 
-    evaluation      Evaluation[]
-  }
+enum QualityStatus {
+  PASSED
+  FLAGGED
 
-  model Evaluation {
-    id             Int   @id @default(autoincrement())
-    feedbackJson   Json?  @map("feedback_json") 
-    evaluatorType  String @map("evaluator_type")
+  @@map("quality_status")
+}
 
-    scoreTa Float? @map("score_ta")
-    scoreCc Float? @map("score_cc")
-    scoreLr Float? @map("score_lr")
-    scoreGra Float? @map("score_gra")
+enum ReviewStatus {
+  PENDING
+  CLAIMED
+  CONFIRMED
+  CANCELLED
 
-    overallBand Float? @map("overall_band")
+  @@map("review_status")
+}
 
-    submissionId   Int
-    submission     Submissions @relation(fields: [submissionId], references: [id])
+enum AppealStatus {
+  PENDING
+  IN_REVIEW
+  RESOLVED
+  REJECTED
 
-    evaluatorId    Int?
-    evaluator      User?  @relation("UserEvaluations", fields: [evaluatorId],references: [id])
+  @@map("appeal_status")
+}
 
-    rubricDescriptors RubricDescriptor[]
-  }
+enum ObservationOutcome {
+  MET
+  PARTIAL
+  NOT_MET
+  NOT_OBSERVED
 
+  @@map("observation_outcome")
+}
 
-  model RubricDescriptor {
-    id            Int   @id @default(autoincrement())
-    criterion     String
-    bandLevel     Float @map("band_level")
-    description   String
-    embedding     Json?
+enum ObservationStatus {
+  UNKNOWN
+  INSUFFICIENT
+  OBSERVED
 
-    lessonId      Int?
-    lesson        Lesson? @relation(fields: [lessonId], references: [id])
+  @@map("observation_status")
+}
 
-    evaluations   Evaluation[]
-  }
+enum MaterialKind {
+  TEXT
+  URL
+  FILE
+
+  @@map("material_kind")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+
+  @@map("question_type")
+}
+
+enum ModerationStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+
+  @@map("moderation_status")
+}
+
+enum OutboxStatus {
+  PENDING
+  DISPATCHED
+  FAILED
+
+  @@map("outbox_status")
+}
+
+// ==========================================================================
+// Identity and access
+// ==========================================================================
+
+/// Tài khoản chung. Vai trò là quan hệ N:M; không ép một tài khoản chỉ học hoặc chỉ dạy.
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique(map: "uq_app_user_email") @db.VarChar(320)
+  passwordHash   String        @map("password_hash") @db.Text
+  displayName    String        @map("display_name") @db.VarChar(120)
+  status         AccountStatus @default(ACTIVE)
+  targetBand     Decimal?      @map("target_band") @db.Decimal(3, 1)
+  targetExamDate DateTime?     @map("target_exam_date") @db.Date
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  userRoles                      UserRole[]              @relation("UserRole_userId")
+  authSessions                   AuthSession[]           @relation("AuthSession_userId")
+  instructorApplications         InstructorApplication[] @relation("InstructorApplication_applicantId")
+  reviewedInstructorApplications InstructorApplication[] @relation("InstructorApplication_reviewerId")
+  fileAssets                     FileAsset[]             @relation("FileAsset_ownerId")
+  createdCourses                 Course[]                @relation("Course_creatorId")
+  courseAssignments              CourseInstructor[]      @relation("CourseInstructor_instructorId")
+  createdActivities              PracticeActivity[]      @relation("PracticeActivity_creatorId")
+  enrollments                    Enrollment[]            @relation("Enrollment_learnerId")
+  createdAssignments             Assignment[]            @relation("Assignment_creatorId")
+  attempts                       Attempt[]               @relation("Attempt_learnerId")
+  authoredQuestions              Question[]              @relation("Question_authorId")
+  assignedReviewCases            ReviewCase[]            @relation("ReviewCase_assigneeId")
+  reviewDecisions                ReviewDecision[]        @relation("ReviewDecision_teacherId")
+  appeals                        Appeal[]                @relation("Appeal_requesterId")
+  learnerProfiles                LearnerProfileVersion[] @relation("LearnerProfileVersion_learnerId")
+  discussionThreads              DiscussionThread[]      @relation("DiscussionThread_creatorId")
+  discussionPosts                DiscussionPost[]        @relation("DiscussionPost_authorId")
+  notifications                  Notification[]          @relation("Notification_recipientId")
+  moderationReports              ModerationReport[]      @relation("ModerationReport_reporterId")
+  moderationReportsByResolver    ModerationReport[]      @relation("ModerationReport_resolverId")
+  auditEvents                    AuditEvent[]            @relation("AuditEvent_actorId")
+  knowledgeDocuments             KnowledgeDocument[]     @relation("KnowledgeDocument_ownerId")
+  feedbackExplanations           FeedbackExplanation[]   @relation("FeedbackExplanation_learnerId")
+
+  @@map("APP_USER")
+}
+
+/// Ba vai trò ban đầu LEARNER, INSTRUCTOR, ADMIN.
+model Role {
+  id   String @id @default(uuid()) @db.Uuid
+  code String @unique(map: "uq_role_code") @db.VarChar(30)
+  name String @db.VarChar(80)
+
+  userRoles UserRole[] @relation("UserRole_roleId")
+
+  @@map("ROLE")
+}
+
+/// Bảng nối người dùng–vai trò.
+model UserRole {
+  userId    String   @map("user_id") @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
+  grantedAt DateTime @default(now()) @map("granted_at") @db.Timestamptz(3)
+
+  user User @relation("UserRole_userId", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_role_user_id")
+  role Role @relation("UserRole_roleId", fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_role_role_id")
+
+  @@id([userId, roleId])
+  @@index([roleId], map: "ix_user_role_role_id")
+  @@map("USER_ROLE")
+}
+
+/// Phiên đăng nhập; không lưu refresh token dạng rõ.
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @unique(map: "uq_auth_session_refresh_token_hash") @map("refresh_token_hash") @db.Text
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation("AuthSession_userId", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_auth_session_user_id")
+
+  @@index([userId], map: "ix_auth_session_user_id")
+  @@map("AUTH_SESSION")
+}
+
+/// Hồ sơ xin quyền giáo viên. Một người có lịch sử nhiều hồ sơ, tối đa một hồ sơ chờ xử lý.
+model InstructorApplication {
+  id             String         @id @default(uuid()) @db.Uuid
+  applicantId    String         @map("applicant_id") @db.Uuid
+  reviewerId     String?        @map("reviewer_id") @db.Uuid
+  status         ApprovalStatus @default(PENDING)
+  profileText    String         @map("profile_text") @db.Text
+  decisionReason String?        @map("decision_reason") @db.Text
+  submittedAt    DateTime       @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  reviewedAt     DateTime?      @map("reviewed_at") @db.Timestamptz(3)
+
+  applicant User  @relation("InstructorApplication_applicantId", fields: [applicantId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_instructor_application_applicant_id")
+  reviewer  User? @relation("InstructorApplication_reviewerId", fields: [reviewerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_instructor_application_reviewer_id")
+
+  @@index([applicantId], map: "ix_instructor_application_applicant_id")
+  @@index([reviewerId], map: "ix_instructor_application_reviewer_id")
+  @@map("INSTRUCTOR_APPLICATION")
+}
+
+/// Metadata tệp; nội dung ở object storage. Không lưu URL tạm thời làm định danh.
+model FileAsset {
+  id           String   @id @default(uuid()) @db.Uuid
+  ownerId      String   @map("owner_id") @db.Uuid
+  storageKey   String   @unique(map: "uq_file_asset_storage_key") @map("storage_key") @db.Text
+  originalName String   @map("original_name") @db.Text
+  mimeType     String   @map("mime_type") @db.VarChar(120)
+  byteSize     BigInt   @map("byte_size") @db.BigInt
+  contentHash  String   @map("content_hash") @db.VarChar(128)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  owner                     User                       @relation("FileAsset_ownerId", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_file_asset_owner_id")
+  lessonMaterials           LessonMaterial[]           @relation("LessonMaterial_fileAssetId")
+  submissionRevisions       SubmissionRevision[]       @relation("SubmissionRevision_audioAssetId")
+  questionVersions          QuestionVersion[]          @relation("QuestionVersion_stimulusAssetId")
+  knowledgeDocumentVersions KnowledgeDocumentVersion[] @relation("KnowledgeDocumentVersion_fileAssetId")
+
+  @@index([ownerId], map: "ix_file_asset_owner_id")
+  @@map("FILE_ASSET")
+}
+
+// ==========================================================================
+// Courses and learning content
+// ==========================================================================
+
+/// Khóa học; điều kiện hoàn thành được công bố trước.
+model Course {
+  id                   String            @id @default(uuid()) @db.Uuid
+  creatorId            String            @map("creator_id") @db.Uuid
+  title                String            @db.VarChar(240)
+  description          String            @db.Text
+  status               PublicationStatus @default(DRAFT)
+  enrollmentOpen       Boolean           @default(false) @map("enrollment_open")
+  completionPolicyJson Json              @map("completion_policy_json") @db.JsonB
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  creator            User                @relation("Course_creatorId", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_course_creator_id")
+  courseInstructors  CourseInstructor[]  @relation("CourseInstructor_courseId")
+  chapters           Chapter[]           @relation("Chapter_courseId")
+  learningItems      LearningItem[]      @relation("LearningItem_courseId")
+  enrollments        Enrollment[]        @relation("Enrollment_courseId")
+  assignments        Assignment[]        @relation("Assignment_courseId")
+  discussionThreads  DiscussionThread[]  @relation("DiscussionThread_courseId")
+  moderationReports  ModerationReport[]  @relation("ModerationReport_courseId")
+  knowledgeDocuments KnowledgeDocument[] @relation("KnowledgeDocument_courseId")
+
+  @@index([creatorId], map: "ix_course_creator_id")
+  @@map("COURSE")
+}
+
+/// Phân công theo khóa; không đồng nhất với vai trò INSTRUCTOR toàn hệ thống.
+model CourseInstructor {
+  courseId       String   @map("course_id") @db.Uuid
+  instructorId   String   @map("instructor_id") @db.Uuid
+  responsibility String   @db.VarChar(30)
+  assignedAt     DateTime @default(now()) @map("assigned_at") @db.Timestamptz(3)
+
+  course     Course @relation("CourseInstructor_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_course_instructor_course_id")
+  instructor User   @relation("CourseInstructor_instructorId", fields: [instructorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_course_instructor_instructor_id")
+
+  @@id([courseId, instructorId])
+  @@index([instructorId], map: "ix_course_instructor_instructor_id")
+  @@map("COURSE_INSTRUCTOR")
+}
+
+/// Chương thuộc một khóa.
+model Chapter {
+  id       String @id @default(uuid()) @db.Uuid
+  courseId String @map("course_id") @db.Uuid
+  title    String @db.VarChar(240)
+  position Int
+
+  course        Course         @relation("Chapter_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_chapter_course_id")
+  learningItems LearningItem[] @relation("LearningItem_chapterId_courseId")
+
+  @@unique([courseId, position], map: "uq_chapter_course_id_position")
+  @@unique([id, courseId], map: "uq_chapter_id_course_id")
+  @@map("CHAPTER")
+}
+
+/// Supertype của LESSON và PRACTICE_ACTIVITY: total, disjoint. Recommendation và tag kỹ năng trỏ vào một đích có FK thật.
+model LearningItem {
+  id        String            @id @default(uuid()) @db.Uuid
+  courseId  String            @map("course_id") @db.Uuid
+  chapterId String?           @map("chapter_id") @db.Uuid
+  kind      LearningItemKind
+  title     String            @db.VarChar(240)
+  status    PublicationStatus @default(DRAFT)
+  position  Int
+
+  course              Course               @relation("LearningItem_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_course_id")
+  chapter             Chapter?             @relation("LearningItem_chapterId_courseId", fields: [chapterId, courseId], references: [id, courseId], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_chapter_id_course_id")
+  lesson              Lesson?              @relation("Lesson_id_kind")
+  practiceActivity    PracticeActivity?    @relation("PracticeActivity_id_kind")
+  learningItemSkills  LearningItemSkill[]  @relation("LearningItemSkill_learningItemId")
+  recommendationItems RecommendationItem[] @relation("RecommendationItem_learningItemId")
+  discussionThreads   DiscussionThread[]   @relation("DiscussionThread_contextItemId")
+  moderationReports   ModerationReport[]   @relation("ModerationReport_learningItemId")
+  knowledgeDocuments  KnowledgeDocument[]  @relation("KnowledgeDocument_sourceItemId")
+
+  @@unique([id, kind], map: "uq_learning_item_id_kind")
+  @@index([courseId], map: "ix_learning_item_course_id")
+  @@index([chapterId, courseId], map: "ix_learning_item_chapter_id_course_id")
+  @@map("LEARNING_ITEM")
+}
+
+/// Subtype học liệu; kind cố định LESSON.
+/// SQL CHECK: kind = 'LESSON'
+model Lesson {
+  id      String           @id @db.Uuid
+  kind    LearningItemKind @default(LESSON)
+  summary String?          @db.Text
+
+  learningItem     LearningItem     @relation("Lesson_id_kind", fields: [id, kind], references: [id, kind], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_id_kind")
+  lessonMaterials  LessonMaterial[] @relation("LessonMaterial_lessonId")
+  lessonProgresses LessonProgress[] @relation("LessonProgress_lessonId")
+  assignments      Assignment[]     @relation("Assignment_contextLessonId")
+
+  @@unique([id, kind], map: "uq_lesson_id_kind")
+  @@map("LESSON")
+}
+
+/// Subtype bài luyện/đánh giá; kind cố định PRACTICE. Nội dung đề có phiên bản riêng.
+/// SQL CHECK: kind = 'PRACTICE'
+model PracticeActivity {
+  id           String           @id @db.Uuid
+  kind         LearningItemKind @default(PRACTICE)
+  creatorId    String           @map("creator_id") @db.Uuid
+  skillArea    SkillArea        @map("skill_area")
+  responseMode ResponseMode     @map("response_mode")
+
+  learningItem     LearningItem      @relation("PracticeActivity_id_kind", fields: [id, kind], references: [id, kind], onDelete: Restrict, onUpdate: Restrict, map: "fk_practice_activity_id_kind")
+  creator          User              @relation("PracticeActivity_creatorId", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_practice_activity_creator_id")
+  activityVersions ActivityVersion[] @relation("ActivityVersion_activityId")
+  assignments      Assignment[]      @relation("Assignment_activityId")
+
+  @@unique([id, kind], map: "uq_practice_activity_id_kind")
+  @@index([creatorId], map: "ix_practice_activity_creator_id")
+  @@map("PRACTICE_ACTIVITY")
+}
+
+/// Một bài học có nhiều học liệu. Đúng một payload theo kind; có thể gồm văn bản và video/tệp.
+/// SQL CHECK: (kind = 'TEXT' AND content_text IS NOT NULL AND external_url IS NULL AND file_asset_id IS NULL) OR (kind = 'URL' AND external_url IS NOT NULL AND content_text IS NULL AND file_asset_id IS NULL) OR (kind = 'FILE' AND file_asset_id IS NOT NULL AND content_text IS NULL AND external_url IS NULL)
+model LessonMaterial {
+  id          String       @id @default(uuid()) @db.Uuid
+  lessonId    String       @map("lesson_id") @db.Uuid
+  kind        MaterialKind
+  position    Int
+  contentText String?      @map("content_text") @db.Text
+  externalUrl String?      @map("external_url") @db.Text
+  fileAssetId String?      @map("file_asset_id") @db.Uuid
+
+  lesson    Lesson     @relation("LessonMaterial_lessonId", fields: [lessonId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_material_lesson_id")
+  fileAsset FileAsset? @relation("LessonMaterial_fileAssetId", fields: [fileAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_material_file_asset_id")
+
+  @@unique([lessonId, position], map: "uq_lesson_material_lesson_id_position")
+  @@index([fileAssetId], map: "ix_lesson_material_file_asset_id")
+  @@map("LESSON_MATERIAL")
+}
+
+/// Một enrollment cho mỗi học viên–khóa; rời rồi học lại cập nhật cùng hồ sơ theo chính sách.
+model Enrollment {
+  id          String    @id @default(uuid()) @db.Uuid
+  learnerId   String    @map("learner_id") @db.Uuid
+  courseId    String    @map("course_id") @db.Uuid
+  status      String    @default("ACTIVE") @db.VarChar(24)
+  enrolledAt  DateTime  @default(now()) @map("enrolled_at") @db.Timestamptz(3)
+  leftAt      DateTime? @map("left_at") @db.Timestamptz(3)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  learner          User             @relation("Enrollment_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_enrollment_learner_id")
+  course           Course           @relation("Enrollment_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_enrollment_course_id")
+  lessonProgresses LessonProgress[] @relation("LessonProgress_enrollmentId")
+
+  @@unique([learnerId, courseId], map: "uq_enrollment_learner_id_course_id")
+  @@index([courseId], map: "ix_enrollment_course_id")
+  @@map("ENROLLMENT")
+}
+
+/// Tiến độ nội dung, tách khỏi năng lực. Lesson phải thuộc khóa của enrollment.
+model LessonProgress {
+  enrollmentId     String    @map("enrollment_id") @db.Uuid
+  lessonId         String    @map("lesson_id") @db.Uuid
+  status           String    @default("NOT_STARTED") @db.VarChar(24)
+  lastPositionJson Json?     @map("last_position_json") @db.JsonB
+  lastAccessedAt   DateTime  @default(now()) @map("last_accessed_at") @db.Timestamptz(3)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  enrollment Enrollment @relation("LessonProgress_enrollmentId", fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_progress_enrollment_id")
+  lesson     Lesson     @relation("LessonProgress_lessonId", fields: [lessonId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_progress_lesson_id")
+
+  @@id([enrollmentId, lessonId])
+  @@index([lessonId], map: "ix_lesson_progress_lesson_id")
+  @@map("LESSON_PROGRESS")
+}
+
+// ==========================================================================
+// Questions, assignments and immutable submissions
+// ==========================================================================
+
+/// Đề/hoạt động bất biến sau công bố. Response mode và skill area lấy từ activity; không đổi mode khi đã có phiên bản sử dụng.
+model ActivityVersion {
+  id              String    @id @default(uuid()) @db.Uuid
+  activityId      String    @map("activity_id") @db.Uuid
+  versionNo       Int       @default(1) @map("version_no")
+  promptText      String    @map("prompt_text") @db.Text
+  instructions    String    @db.Text
+  difficulty      Int
+  expectedMinutes Int       @map("expected_minutes")
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz(3)
+  contentHash     String    @map("content_hash") @db.VarChar(128)
+
+  activity            PracticeActivity     @relation("ActivityVersion_activityId", fields: [activityId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_activity_version_activity_id")
+  assignmentVersions  AssignmentVersion[]  @relation("AssignmentVersion_activityVersionId_activityId")
+  assessmentItems     AssessmentItem[]     @relation("AssessmentItem_activityVersionId")
+  answerKeyVersions   AnswerKeyVersion[]   @relation("AnswerKeyVersion_activityVersionId")
+  recommendationItems RecommendationItem[] @relation("RecommendationItem_targetActivityVersionId_learningItemId")
+
+  @@unique([activityId, versionNo], map: "uq_activity_version_activity_id_version_no")
+  @@unique([id, activityId], map: "uq_activity_version_id_activity_id")
+  @@map("ACTIVITY_VERSION")
+}
+
+/// Lần giao một hoạt động trong khóa. Phân biệt đề tái sử dụng với hạn và quy tắc của lần giao.
+model Assignment {
+  id              String  @id @default(uuid()) @db.Uuid
+  courseId        String  @map("course_id") @db.Uuid
+  activityId      String  @map("activity_id") @db.Uuid
+  contextLessonId String? @map("context_lesson_id") @db.Uuid
+  creatorId       String  @map("creator_id") @db.Uuid
+  title           String  @db.VarChar(240)
+
+  course             Course              @relation("Assignment_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_course_id")
+  activity           PracticeActivity    @relation("Assignment_activityId", fields: [activityId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_activity_id")
+  contextLesson      Lesson?             @relation("Assignment_contextLessonId", fields: [contextLessonId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_context_lesson_id")
+  creator            User                @relation("Assignment_creatorId", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_creator_id")
+  assignmentVersions AssignmentVersion[] @relation("AssignmentVersion_assignmentId_activityId")
+
+  @@unique([id, activityId], map: "uq_assignment_id_activity_id")
+  @@index([courseId], map: "ix_assignment_course_id")
+  @@index([activityId], map: "ix_assignment_activity_id")
+  @@index([contextLessonId], map: "ix_assignment_context_lesson_id")
+  @@index([creatorId], map: "ix_assignment_creator_id")
+  @@map("ASSIGNMENT")
+}
+
+/// Ghim đề và chính sách: sửa hạn/quy tắc tạo version mới; attempt giữ version cũ trừ khi có gia hạn ghi nhận.
+model AssignmentVersion {
+  id                String         @id @default(uuid()) @db.Uuid
+  assignmentId      String         @map("assignment_id") @db.Uuid
+  activityId        String         @map("activity_id") @db.Uuid
+  activityVersionId String         @map("activity_version_id") @db.Uuid
+  rubricVersionId   String?        @map("rubric_version_id") @db.Uuid
+  versionNo         Int            @default(1) @map("version_no")
+  mode              AssignmentMode
+  opensAt           DateTime?      @map("opens_at") @db.Timestamptz(3)
+  dueAt             DateTime?      @map("due_at") @db.Timestamptz(3)
+  timeLimitSeconds  Int?           @map("time_limit_seconds")
+  maxAttempts       Int            @default(1) @map("max_attempts")
+  maxRevisions      Int            @default(1) @map("max_revisions")
+  allowLate         Boolean        @default(false) @map("allow_late")
+  releasePolicyJson Json           @map("release_policy_json") @db.JsonB
+  publishedAt       DateTime?      @map("published_at") @db.Timestamptz(3)
+
+  assignment          Assignment           @relation("AssignmentVersion_assignmentId_activityId", fields: [assignmentId, activityId], references: [id, activityId], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_version_assignment_id_activity_id")
+  activityVersion     ActivityVersion      @relation("AssignmentVersion_activityVersionId_activityId", fields: [activityVersionId, activityId], references: [id, activityId], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_version_activity_version_id_activity_id")
+  rubricVersion       RubricVersion?       @relation("AssignmentVersion_rubricVersionId", fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assignment_version_rubric_version_id")
+  attempts            Attempt[]            @relation("Attempt_assignmentVersionId_assignmentId_activityVersionId")
+  recommendationItems RecommendationItem[] @relation("RecommendationItem_targetAssignmentVersionId_targetActivityVersionId_learningItemId")
+
+  @@unique([assignmentId, versionNo], map: "uq_assignment_version_assignment_id_version_no")
+  @@unique([id, assignmentId, activityVersionId], map: "uq_assignment_version_id_assignment_id_activity_version_id")
+  @@unique([id, activityVersionId, activityId], map: "uq_assignment_version_id_activity_version_id_activity_id")
+  @@index([assignmentId, activityId], map: "ix_assignment_version_assignment_id_activity_id")
+  @@index([activityVersionId, activityId], map: "ix_assignment_version_activity_version_id_activity_id")
+  @@index([rubricVersionId], map: "ix_assignment_version_rubric_version_id")
+  @@map("ASSIGNMENT_VERSION")
+}
+
+/// Một cơ hội làm/luyện. Số thứ tự và quota tính theo assignment ổn định qua các phiên bản chính sách. Đây cũng là gốc nhóm evidence của chuỗi revisions.
+model Attempt {
+  id                   String        @id @default(uuid()) @db.Uuid
+  learnerId            String        @map("learner_id") @db.Uuid
+  assignmentId         String        @map("assignment_id") @db.Uuid
+  assignmentVersionId  String        @map("assignment_version_id") @db.Uuid
+  activityVersionId    String        @map("activity_version_id") @db.Uuid
+  attemptNo            Int           @default(1) @map("attempt_no")
+  status               AttemptStatus @default(IN_PROGRESS)
+  startedAt            DateTime      @default(now()) @map("started_at") @db.Timestamptz(3)
+  expiresAt            DateTime?     @map("expires_at") @db.Timestamptz(3)
+  finishedAt           DateTime?     @map("finished_at") @db.Timestamptz(3)
+  recommendationItemId String?       @map("recommendation_item_id") @db.Uuid
+
+  learner             User                 @relation("Attempt_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_attempt_learner_id")
+  assignmentVersion   AssignmentVersion    @relation("Attempt_assignmentVersionId_assignmentId_activityVersionId", fields: [assignmentVersionId, assignmentId, activityVersionId], references: [id, assignmentId, activityVersionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_attempt_assignment_version_id_assignment_id_a_a328be50f6")
+  recommendationItem  RecommendationItem?  @relation("Attempt_recommendationItemId_assignmentVersionId_activityVersionId", fields: [recommendationItemId, assignmentVersionId, activityVersionId], references: [id, targetAssignmentVersionId, targetActivityVersionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_attempt_recommendation_item_id_assignment_ver_7ecffb77ab")
+  attemptDraft        AttemptDraft?        @relation("AttemptDraft_attemptId")
+  submissionRevisions SubmissionRevision[] @relation("SubmissionRevision_attemptId")
+
+  @@unique([learnerId, assignmentId, attemptNo], map: "uq_attempt_learner_id_assignment_id_attempt_no")
+  @@index([assignmentVersionId, assignmentId, activityVersionId], map: "ix_attempt_assignment_version_id_assignment_id_a_c9178d26c0")
+  @@index([recommendationItemId, assignmentVersionId, activityVersionId], map: "ix_attempt_recommendation_item_id_assignment_ver_292a408155")
+  @@map("ATTEMPT")
+}
+
+/// Bản nháp mutable; autosave không tạo bản nộp hay lượt chấm.
+model AttemptDraft {
+  attemptId   String   @id @map("attempt_id") @db.Uuid
+  payloadJson Json     @map("payload_json") @db.JsonB
+  lockVersion Int      @default(0) @map("lock_version")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  attempt Attempt @relation("AttemptDraft_attemptId", fields: [attemptId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_attempt_draft_attempt_id")
+
+  @@map("ATTEMPT_DRAFT")
+}
+
+/// Bản đã nộp bất biến. OBJECTIVE dùng ITEM_RESPONSE; WRITING dùng text; SPEAKING dùng audio. Sửa lại cùng cơ hội tạo revision mới.
+/// SQL CHECK: (response_mode = 'OBJECTIVE' AND writing_text IS NULL AND audio_asset_id IS NULL) OR (response_mode = 'WRITING' AND writing_text IS NOT NULL AND audio_asset_id IS NULL) OR (response_mode = 'SPEAKING' AND audio_asset_id IS NOT NULL AND writing_text IS NULL)
+model SubmissionRevision {
+  id           String       @id @default(uuid()) @db.Uuid
+  attemptId    String       @map("attempt_id") @db.Uuid
+  revisionNo   Int          @map("revision_no")
+  responseMode ResponseMode @map("response_mode")
+  writingText  String?      @map("writing_text") @db.Text
+  audioAssetId String?      @map("audio_asset_id") @db.Uuid
+  submittedAt  DateTime     @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  contentHash  String       @map("content_hash") @db.VarChar(128)
+
+  attempt              Attempt               @relation("SubmissionRevision_attemptId", fields: [attemptId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_submission_revision_attempt_id")
+  audioAsset           FileAsset?            @relation("SubmissionRevision_audioAssetId", fields: [audioAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_submission_revision_audio_asset_id")
+  revisionParagraphs   RevisionParagraph[]   @relation("RevisionParagraph_revisionId")
+  itemResponses        ItemResponse[]        @relation("ItemResponse_revisionId")
+  gradingRuns          GradingRun[]          @relation("GradingRun_revisionId")
+  assessmentResults    AssessmentResult[]    @relation("AssessmentResult_revisionId")
+  reviewCases          ReviewCase[]          @relation("ReviewCase_revisionId")
+  feedbackExplanations FeedbackExplanation[] @relation("FeedbackExplanation_revisionId")
+
+  @@unique([attemptId, revisionNo], map: "uq_submission_revision_attempt_id_revision_no")
+  @@index([audioAssetId], map: "ix_submission_revision_audio_asset_id")
+  @@map("SUBMISSION_REVISION")
+}
+
+/// Đoạn văn đã chuẩn hóa và cố định của Writing revision; dùng để kiểm tra trích dẫn.
+/// SQL CHECK: start_offset >= 0 AND end_offset >= start_offset
+model RevisionParagraph {
+  id          String @id @default(uuid()) @db.Uuid
+  revisionId  String @map("revision_id") @db.Uuid
+  paragraphNo Int    @map("paragraph_no")
+  text        String @db.Text
+  startOffset Int    @map("start_offset")
+  endOffset   Int    @map("end_offset")
+
+  revision       SubmissionRevision @relation("RevisionParagraph_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_revision_paragraph_revision_id")
+  findingAnchors FindingAnchor[]    @relation("FindingAnchor_paragraphId")
+
+  @@unique([revisionId, paragraphNo], map: "uq_revision_paragraph_revision_id_paragraph_no")
+  @@map("REVISION_PARAGRAPH")
+}
+
+/// Định danh câu hỏi trong ngân hàng.
+model Question {
+  id        String    @id @default(uuid()) @db.Uuid
+  authorId  String    @map("author_id") @db.Uuid
+  skillArea SkillArea @map("skill_area")
+  title     String    @db.VarChar(240)
+
+  author           User              @relation("Question_authorId", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_author_id")
+  questionVersions QuestionVersion[] @relation("QuestionVersion_questionId")
+
+  @@index([authorId], map: "ix_question_author_id")
+  @@map("QUESTION")
+}
+
+/// Nội dung câu hỏi và lựa chọn bất biến; đáp án được lưu riêng theo key version.
+model QuestionVersion {
+  id              String       @id @default(uuid()) @db.Uuid
+  questionId      String       @map("question_id") @db.Uuid
+  versionNo       Int          @default(1) @map("version_no")
+  questionType    QuestionType @map("question_type")
+  promptText      String       @map("prompt_text") @db.Text
+  stimulusText    String?      @map("stimulus_text") @db.Text
+  stimulusAssetId String?      @map("stimulus_asset_id") @db.Uuid
+  publishedAt     DateTime?    @map("published_at") @db.Timestamptz(3)
+
+  question        Question         @relation("QuestionVersion_questionId", fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_version_question_id")
+  stimulusAsset   FileAsset?       @relation("QuestionVersion_stimulusAssetId", fields: [stimulusAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_version_stimulus_asset_id")
+  questionOptions QuestionOption[] @relation("QuestionOption_questionVersionId")
+  assessmentItems AssessmentItem[] @relation("AssessmentItem_questionVersionId")
+
+  @@unique([questionId, versionNo], map: "uq_question_version_question_id_version_no")
+  @@index([stimulusAssetId], map: "ix_question_version_stimulus_asset_id")
+  @@map("QUESTION_VERSION")
+}
+
+/// Lựa chọn của câu hỏi trắc nghiệm; không mặc định chỉ chọn một.
+model QuestionOption {
+  id                String @id @default(uuid()) @db.Uuid
+  questionVersionId String @map("question_version_id") @db.Uuid
+  optionCode        String @map("option_code") @db.VarChar(12)
+  contentText       String @map("content_text") @db.Text
+  position          Int
+
+  questionVersion    QuestionVersion     @relation("QuestionOption_questionVersionId", fields: [questionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_option_question_version_id")
+  answerKeyOptions   AnswerKeyOption[]   @relation("AnswerKeyOption_optionId")
+  responseSelections ResponseSelection[] @relation("ResponseSelection_optionId")
+
+  @@unique([questionVersionId, optionCode], map: "uq_question_option_question_version_id_option_code")
+  @@unique([questionVersionId, position], map: "uq_question_option_question_version_id_position")
+  @@map("QUESTION_OPTION")
+}
+
+/// Bảng nối đề–phiên bản câu hỏi. Reading/Listening và micro-quiz dùng cùng cấu trúc.
+model AssessmentItem {
+  id                String  @id @default(uuid()) @db.Uuid
+  activityVersionId String  @map("activity_version_id") @db.Uuid
+  questionVersionId String  @map("question_version_id") @db.Uuid
+  position          Int
+  sectionLabel      String? @map("section_label") @db.VarChar(120)
+  maxMarks          Decimal @map("max_marks") @db.Decimal(6, 2)
+
+  activityVersion  ActivityVersion  @relation("AssessmentItem_activityVersionId", fields: [activityVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assessment_item_activity_version_id")
+  questionVersion  QuestionVersion  @relation("AssessmentItem_questionVersionId", fields: [questionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assessment_item_question_version_id")
+  answerKeyEntries AnswerKeyEntry[] @relation("AnswerKeyEntry_assessmentItemId")
+  itemResponses    ItemResponse[]   @relation("ItemResponse_assessmentItemId")
+  itemSkills       ItemSkill[]      @relation("ItemSkill_assessmentItemId")
+
+  @@unique([activityVersionId, position], map: "uq_assessment_item_activity_version_id_position")
+  @@index([questionVersionId], map: "ix_assessment_item_question_version_id")
+  @@map("ASSESSMENT_ITEM")
+}
+
+/// Đáp án theo phiên bản đề; sửa đáp án không làm mất kết quả cũ. Bảng quy đổi điểm nếu có được lưu cùng version.
+model AnswerKeyVersion {
+  id                String    @id @default(uuid()) @db.Uuid
+  activityVersionId String    @map("activity_version_id") @db.Uuid
+  versionNo         Int       @default(1) @map("version_no")
+  scoreMappingJson  Json?     @map("score_mapping_json") @db.JsonB
+  publishedAt       DateTime? @map("published_at") @db.Timestamptz(3)
+
+  activityVersion  ActivityVersion   @relation("AnswerKeyVersion_activityVersionId", fields: [activityVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_version_activity_version_id")
+  answerKeyEntries AnswerKeyEntry[]  @relation("AnswerKeyEntry_answerKeyVersionId")
+  answerKeyResults AnswerKeyResult[] @relation("AnswerKeyResult_answerKeyVersionId")
+
+  @@unique([activityVersionId, versionNo], map: "uq_answer_key_version_activity_version_id_version_no")
+  @@map("ANSWER_KEY_VERSION")
+}
+
+/// Đáp án/cách chấp nhận cho một item; cùng activity version với key.
+model AnswerKeyEntry {
+  id                 String @id @default(uuid()) @db.Uuid
+  answerKeyVersionId String @map("answer_key_version_id") @db.Uuid
+  assessmentItemId   String @map("assessment_item_id") @db.Uuid
+  acceptedTextsJson  Json?  @map("accepted_texts_json") @db.JsonB
+  gradingRuleJson    Json   @map("grading_rule_json") @db.JsonB
+
+  answerKeyVersion AnswerKeyVersion  @relation("AnswerKeyEntry_answerKeyVersionId", fields: [answerKeyVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_entry_answer_key_version_id")
+  assessmentItem   AssessmentItem    @relation("AnswerKeyEntry_assessmentItemId", fields: [assessmentItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_entry_assessment_item_id")
+  answerKeyOptions AnswerKeyOption[] @relation("AnswerKeyOption_entryId")
+  questionMarks    QuestionMark[]    @relation("QuestionMark_keyEntryId")
+
+  @@unique([answerKeyVersionId, assessmentItemId], map: "uq_answer_key_entry_answer_key_version_id_assessment_item_id")
+  @@index([assessmentItemId], map: "ix_answer_key_entry_assessment_item_id")
+  @@map("ANSWER_KEY_ENTRY")
+}
+
+/// Tập đáp án lựa chọn đúng; option phải thuộc QuestionVersion của item trong key entry.
+model AnswerKeyOption {
+  entryId  String @map("entry_id") @db.Uuid
+  optionId String @map("option_id") @db.Uuid
+
+  entry  AnswerKeyEntry @relation("AnswerKeyOption_entryId", fields: [entryId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_option_entry_id")
+  option QuestionOption @relation("AnswerKeyOption_optionId", fields: [optionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_option_option_id")
+
+  @@id([entryId, optionId])
+  @@index([optionId], map: "ix_answer_key_option_option_id")
+  @@map("ANSWER_KEY_OPTION")
+}
+
+/// Câu trả lời được nộp. Nhiều lựa chọn được biểu diễn qua RESPONSE_SELECTION.
+model ItemResponse {
+  id               String  @id @default(uuid()) @db.Uuid
+  revisionId       String  @map("revision_id") @db.Uuid
+  assessmentItemId String  @map("assessment_item_id") @db.Uuid
+  textAnswer       String? @map("text_answer") @db.Text
+
+  revision           SubmissionRevision  @relation("ItemResponse_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_response_revision_id")
+  assessmentItem     AssessmentItem      @relation("ItemResponse_assessmentItemId", fields: [assessmentItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_response_assessment_item_id")
+  responseSelections ResponseSelection[] @relation("ResponseSelection_responseId")
+  questionMarks      QuestionMark[]      @relation("QuestionMark_responseId")
+
+  @@unique([revisionId, assessmentItemId], map: "uq_item_response_revision_id_assessment_item_id")
+  @@index([assessmentItemId], map: "ix_item_response_assessment_item_id")
+  @@map("ITEM_RESPONSE")
+}
+
+/// Bảng nối cho câu trả lời một hoặc nhiều lựa chọn. Option phải thuộc câu hỏi của response.
+model ResponseSelection {
+  responseId String @map("response_id") @db.Uuid
+  optionId   String @map("option_id") @db.Uuid
+
+  response ItemResponse   @relation("ResponseSelection_responseId", fields: [responseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_response_selection_response_id")
+  option   QuestionOption @relation("ResponseSelection_optionId", fields: [optionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_response_selection_option_id")
+
+  @@id([responseId, optionId])
+  @@index([optionId], map: "ix_response_selection_option_id")
+  @@map("RESPONSE_SELECTION")
+}
+
+// ==========================================================================
+// Rubrics and assessment results
+// ==========================================================================
+
+/// Rubric định danh bằng code+version. Task 2, Task 1 và Speaking có bộ tiêu chí tương ứng, không hard-code bốn cột cho mọi bài.
+model RubricVersion {
+  id          String    @id @default(uuid()) @db.Uuid
+  rubricCode  String    @map("rubric_code") @db.VarChar(60)
+  versionNo   Int       @default(1) @map("version_no")
+  taskType    String    @map("task_type") @db.VarChar(60)
+  title       String    @db.VarChar(240)
+  sourceUrl   String?   @map("source_url") @db.Text
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
+
+  assignmentVersions AssignmentVersion[] @relation("AssignmentVersion_rubricVersionId")
+  rubricCriterions   RubricCriterion[]   @relation("RubricCriterion_rubricVersionId")
+  gradingConfigs     GradingConfig[]     @relation("GradingConfig_rubricVersionId")
+  assessmentResults  AssessmentResult[]  @relation("AssessmentResult_rubricVersionId")
+
+  @@unique([rubricCode, versionNo], map: "uq_rubric_version_rubric_code_version_no")
+  @@map("RUBRIC_VERSION")
+}
+
+/// Tiêu chí thuộc đúng một rubric version: TR/CC/LR/GRA hoặc bộ Speaking.
+model RubricCriterion {
+  id              String  @id @default(uuid()) @db.Uuid
+  rubricVersionId String  @map("rubric_version_id") @db.Uuid
+  code            String  @db.VarChar(30)
+  name            String  @db.VarChar(140)
+  definition      String  @db.Text
+  weight          Decimal @db.Decimal(6, 3)
+  maxScore        Decimal @map("max_score") @db.Decimal(6, 2)
+
+  rubricVersion   RubricVersion    @relation("RubricCriterion_rubricVersionId", fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_rubric_criterion_rubric_version_id")
+  bandDescriptors BandDescriptor[] @relation("BandDescriptor_criterionId")
+  criterionScores CriterionScore[] @relation("CriterionScore_criterionId_rubricVersionId")
+
+  @@unique([rubricVersionId, code], map: "uq_rubric_criterion_rubric_version_id_code")
+  @@unique([id, rubricVersionId], map: "uq_rubric_criterion_id_rubric_version_id")
+  @@map("RUBRIC_CRITERION")
+}
+
+/// Mô tả mức chất lượng cho tiêu chí; không phải một embedding của cả rubric.
+model BandDescriptor {
+  id          String  @id @default(uuid()) @db.Uuid
+  criterionId String  @map("criterion_id") @db.Uuid
+  bandValue   Decimal @map("band_value") @db.Decimal(3, 1)
+  description String  @db.Text
+
+  criterion RubricCriterion @relation("BandDescriptor_criterionId", fields: [criterionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_band_descriptor_criterion_id")
+
+  @@unique([criterionId, bandValue], map: "uq_band_descriptor_criterion_id_band_value")
+  @@map("BAND_DESCRIPTOR")
+}
+
+/// Prompt được quản lý độc lập với rubric.
+model PromptVersion {
+  id               String   @id @default(uuid()) @db.Uuid
+  promptCode       String   @map("prompt_code") @db.VarChar(60)
+  versionNo        Int      @default(1) @map("version_no")
+  instructions     String   @db.Text
+  outputSchemaJson Json     @map("output_schema_json") @db.JsonB
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  gradingConfigs       GradingConfig[]       @relation("GradingConfig_promptVersionId")
+  feedbackExplanations FeedbackExplanation[] @relation("FeedbackExplanation_promptVersionId")
+
+  @@unique([promptCode, versionNo], map: "uq_prompt_version_prompt_code_version_no")
+  @@map("PROMPT_VERSION")
+}
+
+/// Cấu hình chấm bất biến sau sử dụng; có thể bắt đầu với một config.
+model GradingConfig {
+  id              String   @id @default(uuid()) @db.Uuid
+  rubricVersionId String   @map("rubric_version_id") @db.Uuid
+  promptVersionId String   @map("prompt_version_id") @db.Uuid
+  provider        String   @db.VarChar(60)
+  modelId         String   @map("model_id") @db.VarChar(120)
+  settingsJson    Json     @map("settings_json") @db.JsonB
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rubricVersion RubricVersion @relation("GradingConfig_rubricVersionId", fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_grading_config_rubric_version_id")
+  promptVersion PromptVersion @relation("GradingConfig_promptVersionId", fields: [promptVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_grading_config_prompt_version_id")
+  gradingRuns   GradingRun[]  @relation("GradingRun_configId")
+
+  @@index([rubricVersionId], map: "ix_grading_config_rubric_version_id")
+  @@index([promptVersionId], map: "ix_grading_config_prompt_version_id")
+  @@map("GRADING_CONFIG")
+}
+
+/// Một yêu cầu chấm AI. Có thể không sinh AI_RESULT khi lỗi/refusal/invalid; chấm lại chủ ý tạo run mới.
+model GradingRun {
+  id              String    @id @default(uuid()) @db.Uuid
+  revisionId      String    @map("revision_id") @db.Uuid
+  configId        String    @map("config_id") @db.Uuid
+  requestKey      String    @unique(map: "uq_grading_run_request_key") @map("request_key") @db.VarChar(160)
+  status          RunStatus @default(QUEUED)
+  attempts        Int       @default(0)
+  processingToken String?   @map("processing_token") @db.Uuid
+  leaseUntil      DateTime? @map("lease_until") @db.Timestamptz(3)
+  startedAt       DateTime? @map("started_at") @db.Timestamptz(3)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(3)
+  errorCode       String?   @map("error_code") @db.VarChar(80)
+
+  revision         SubmissionRevision @relation("GradingRun_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_grading_run_revision_id")
+  config           GradingConfig      @relation("GradingRun_configId", fields: [configId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_grading_run_config_id")
+  providerAttempts ProviderAttempt[]  @relation("ProviderAttempt_gradingRunId")
+  aiResult         AiResult?          @relation("AiResult_gradingRunId_revisionId")
+  reviewCases      ReviewCase[]       @relation("ReviewCase_targetRunId_revisionId")
+
+  @@unique([id, revisionId], map: "uq_grading_run_id_revision_id")
+  @@index([revisionId], map: "ix_grading_run_revision_id")
+  @@index([configId], map: "ix_grading_run_config_id")
+  @@index([status, leaseUntil], map: "ix_grading_run_status_lease_until")
+  @@map("GRADING_RUN")
+}
+
+/// Lưu lần gọi thật, kể cả thất bại; không ép dữ liệu lỗi thành điểm hợp lệ.
+model ProviderAttempt {
+  id                String                @id @default(uuid()) @db.Uuid
+  gradingRunId      String                @map("grading_run_id") @db.Uuid
+  attemptNo         Int                   @default(1) @map("attempt_no")
+  status            ProviderAttemptStatus
+  providerRequestId String?               @map("provider_request_id") @db.Text
+  rawResponseJson   Json?                 @map("raw_response_json") @db.JsonB
+  errorJson         Json?                 @map("error_json") @db.JsonB
+  inputTokens       Int?                  @map("input_tokens")
+  outputTokens      Int?                  @map("output_tokens")
+  latencyMs         Int?                  @map("latency_ms")
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  gradingRun GradingRun @relation("ProviderAttempt_gradingRunId", fields: [gradingRunId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_provider_attempt_grading_run_id")
+
+  @@unique([gradingRunId, attemptNo], map: "uq_provider_attempt_grading_run_id_attempt_no")
+  @@map("PROVIDER_ATTEMPT")
+}
+
+/// Supertype kết quả bất biến: total, disjoint AI/TEACHER/ANSWER_KEY. Điểm dự kiến không tự là accepted evidence.
+/// SQL CHECK: (kind = 'ANSWER_KEY' AND rubric_version_id IS NULL) OR (kind IN ('AI','TEACHER') AND rubric_version_id IS NOT NULL)
+model AssessmentResult {
+  id              String     @id @default(uuid()) @db.Uuid
+  revisionId      String     @map("revision_id") @db.Uuid
+  kind            ResultKind
+  rubricVersionId String?    @map("rubric_version_id") @db.Uuid
+  overallScore    Decimal?   @map("overall_score") @db.Decimal(6, 2)
+  scoreScale      ScoreScale @map("score_scale")
+  summary         String?    @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  revision           SubmissionRevision  @relation("AssessmentResult_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assessment_result_revision_id")
+  rubricVersion      RubricVersion?      @relation("AssessmentResult_rubricVersionId", fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assessment_result_rubric_version_id")
+  aiResult           AiResult?           @relation("AiResult_id_kind_revisionId")
+  teacherResult      TeacherResult?      @relation("TeacherResult_id_kind_revisionId")
+  answerKeyResult    AnswerKeyResult?    @relation("AnswerKeyResult_id_kind_revisionId")
+  criterionScores    CriterionScore[]    @relation("CriterionScore_resultId_rubricVersionId")
+  findings           Finding[]           @relation("Finding_resultId")
+  acceptedAssessment AcceptedAssessment? @relation("AcceptedAssessment_resultId_resultKind_revisionId")
+  skillObservations  SkillObservation[]  @relation("SkillObservation_resultId")
+
+  @@unique([id, kind, revisionId], map: "uq_assessment_result_id_kind_revision_id")
+  @@unique([id, rubricVersionId], map: "uq_assessment_result_id_rubric_version_id")
+  @@index([revisionId], map: "ix_assessment_result_revision_id")
+  @@index([rubricVersionId], map: "ix_assessment_result_rubric_version_id")
+  @@map("ASSESSMENT_RESULT")
+}
+
+/// Subtype AI; kết quả chuẩn hóa hợp lệ. Refusal/invalid ở PROVIDER_ATTEMPT. Nhận xét vẫn là dự kiến.
+/// SQL CHECK: kind = 'AI'
+model AiResult {
+  id             String        @id @db.Uuid
+  kind           ResultKind    @default(AI)
+  revisionId     String        @map("revision_id") @db.Uuid
+  gradingRunId   String        @unique(map: "uq_ai_result_grading_run_id") @map("grading_run_id") @db.Uuid
+  qualityStatus  QualityStatus @map("quality_status")
+  validationJson Json          @map("validation_json") @db.JsonB
+
+  assessmentResult AssessmentResult @relation("AiResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_ai_result_id_kind_revision_id")
+  gradingRun       GradingRun       @relation("AiResult_gradingRunId_revisionId", fields: [gradingRunId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_ai_result_grading_run_id_revision_id")
+
+  @@unique([id, kind, revisionId], map: "uq_ai_result_id_kind_revision_id")
+  @@unique([gradingRunId, revisionId], map: "uq_ai_result_grading_run_id_revision_id")
+  @@map("AI_RESULT")
+}
+
+/// Subtype giáo viên; được tạo cùng quyết định xác nhận trong transaction.
+/// SQL CHECK: kind = 'TEACHER'
+model TeacherResult {
+  id         String     @id @db.Uuid
+  kind       ResultKind @default(TEACHER)
+  revisionId String     @map("revision_id") @db.Uuid
+  decisionId String     @unique(map: "uq_teacher_result_decision_id") @map("decision_id") @db.Uuid
+
+  assessmentResult AssessmentResult @relation("TeacherResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_teacher_result_id_kind_revision_id")
+  decision         ReviewDecision   @relation("TeacherResult_decisionId_revisionId", fields: [decisionId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_teacher_result_decision_id_revision_id")
+
+  @@unique([id, kind, revisionId], map: "uq_teacher_result_id_kind_revision_id")
+  @@unique([decisionId, revisionId], map: "uq_teacher_result_decision_id_revision_id")
+  @@map("TEACHER_RESULT")
+}
+
+/// Subtype chấm đáp án; không cần GRADING_RUN hoặc giáo viên để chấp nhận tự động theo quy tắc.
+/// SQL CHECK: kind = 'ANSWER_KEY'
+/// SQL CHECK: raw_score >= 0 AND raw_score <= max_score
+model AnswerKeyResult {
+  id                 String     @id @db.Uuid
+  kind               ResultKind @default(ANSWER_KEY)
+  revisionId         String     @map("revision_id") @db.Uuid
+  answerKeyVersionId String     @map("answer_key_version_id") @db.Uuid
+  rawScore           Decimal    @map("raw_score") @db.Decimal(6, 2)
+  maxScore           Decimal    @map("max_score") @db.Decimal(6, 2)
+
+  assessmentResult AssessmentResult @relation("AnswerKeyResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_result_id_kind_revision_id")
+  answerKeyVersion AnswerKeyVersion @relation("AnswerKeyResult_answerKeyVersionId", fields: [answerKeyVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_result_answer_key_version_id")
+  questionMarks    QuestionMark[]   @relation("QuestionMark_answerKeyResultId")
+
+  @@unique([id, kind, revisionId], map: "uq_answer_key_result_id_kind_revision_id")
+  @@index([answerKeyVersionId], map: "ix_answer_key_result_answer_key_version_id")
+  @@map("ANSWER_KEY_RESULT")
+}
+
+/// Điểm tiêu chí chung cho AI và giáo viên; cùng rubric của result.
+model CriterionScore {
+  id              String  @id @default(uuid()) @db.Uuid
+  resultId        String  @map("result_id") @db.Uuid
+  rubricVersionId String  @map("rubric_version_id") @db.Uuid
+  criterionId     String  @map("criterion_id") @db.Uuid
+  score           Decimal @db.Decimal(6, 2)
+  explanation     String? @db.Text
+
+  result    AssessmentResult @relation("CriterionScore_resultId_rubricVersionId", fields: [resultId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_criterion_score_result_id_rubric_version_id")
+  criterion RubricCriterion  @relation("CriterionScore_criterionId_rubricVersionId", fields: [criterionId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_criterion_score_criterion_id_rubric_version_id")
+  findings  Finding[]        @relation("Finding_criterionScoreId_resultId")
+
+  @@unique([resultId, criterionId], map: "uq_criterion_score_result_id_criterion_id")
+  @@unique([id, resultId], map: "uq_criterion_score_id_result_id")
+  @@index([resultId, rubricVersionId], map: "ix_criterion_score_result_id_rubric_version_id")
+  @@index([criterionId, rubricVersionId], map: "ix_criterion_score_criterion_id_rubric_version_id")
+  @@map("CRITERION_SCORE")
+}
+
+/// Chấm từng câu; response/key phải cùng revision, item và version phù hợp.
+model QuestionMark {
+  id                String  @id @default(uuid()) @db.Uuid
+  answerKeyResultId String  @map("answer_key_result_id") @db.Uuid
+  responseId        String  @map("response_id") @db.Uuid
+  keyEntryId        String  @map("key_entry_id") @db.Uuid
+  awardedMarks      Decimal @map("awarded_marks") @db.Decimal(6, 2)
+  explanation       String? @db.Text
+
+  answerKeyResult AnswerKeyResult @relation("QuestionMark_answerKeyResultId", fields: [answerKeyResultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_mark_answer_key_result_id")
+  response        ItemResponse    @relation("QuestionMark_responseId", fields: [responseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_mark_response_id")
+  keyEntry        AnswerKeyEntry  @relation("QuestionMark_keyEntryId", fields: [keyEntryId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_mark_key_entry_id")
+
+  @@unique([answerKeyResultId, responseId], map: "uq_question_mark_answer_key_result_id_response_id")
+  @@index([responseId], map: "ix_question_mark_response_id")
+  @@index([keyEntryId], map: "ix_question_mark_key_entry_id")
+  @@map("QUESTION_MARK")
+}
+
+/// Nhận xét cục bộ hoặc toàn bài. Finding thuộc kết quả AI không được tự dùng làm SkillEvidence.
+model Finding {
+  id               String  @id @default(uuid()) @db.Uuid
+  resultId         String  @map("result_id") @db.Uuid
+  criterionScoreId String? @map("criterion_score_id") @db.Uuid
+  skillId          String? @map("skill_id") @db.Uuid
+  findingKind      String  @map("finding_kind") @db.VarChar(30)
+  explanation      String  @db.Text
+  validationJson   Json?   @map("validation_json") @db.JsonB
+
+  result               AssessmentResult      @relation("Finding_resultId", fields: [resultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_result_id")
+  criterionScore       CriterionScore?       @relation("Finding_criterionScoreId_resultId", fields: [criterionScoreId, resultId], references: [id, resultId], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_criterion_score_id_result_id")
+  skill                Skill?                @relation("Finding_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_skill_id")
+  findingAnchors       FindingAnchor[]       @relation("FindingAnchor_findingId")
+  feedbackExplanations FeedbackExplanation[] @relation("FeedbackExplanation_findingId")
+
+  @@index([resultId], map: "ix_finding_result_id")
+  @@index([criterionScoreId, resultId], map: "ix_finding_criterion_score_id_result_id")
+  @@index([skillId], map: "ix_finding_skill_id")
+  @@map("FINDING")
+}
+
+/// Một finding có thể viện dẫn nhiều đoạn. Đoạn phải cùng revision của result; trích dẫn được kiểm tra.
+/// SQL CHECK: start_offset >= 0 AND end_offset > start_offset
+model FindingAnchor {
+  id          String @id @default(uuid()) @db.Uuid
+  findingId   String @map("finding_id") @db.Uuid
+  paragraphId String @map("paragraph_id") @db.Uuid
+  startOffset Int    @map("start_offset")
+  endOffset   Int    @map("end_offset")
+  exactQuote  String @map("exact_quote") @db.Text
+
+  finding   Finding           @relation("FindingAnchor_findingId", fields: [findingId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_anchor_finding_id")
+  paragraph RevisionParagraph @relation("FindingAnchor_paragraphId", fields: [paragraphId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_anchor_paragraph_id")
+
+  @@index([findingId], map: "ix_finding_anchor_finding_id")
+  @@index([paragraphId], map: "ix_finding_anchor_paragraph_id")
+  @@map("FINDING_ANCHOR")
+}
+
+// ==========================================================================
+// Instructor review and accepted publication
+// ==========================================================================
+
+/// Review luôn trỏ revision. Run tùy chọn: Speaking/manual hoặc AI lỗi vẫn được review. Tối đa một case hoạt động cho một revision.
+model ReviewCase {
+  id          String       @id @default(uuid()) @db.Uuid
+  revisionId  String       @map("revision_id") @db.Uuid
+  targetRunId String?      @map("target_run_id") @db.Uuid
+  assigneeId  String?      @map("assignee_id") @db.Uuid
+  status      ReviewStatus @default(PENDING)
+  reasonCode  String       @map("reason_code") @db.VarChar(60)
+  priority    Int
+  lockVersion Int          @default(0) @map("lock_version")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  claimedAt   DateTime?    @map("claimed_at") @db.Timestamptz(3)
+
+  revision        SubmissionRevision @relation("ReviewCase_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_case_revision_id")
+  targetRun       GradingRun?        @relation("ReviewCase_targetRunId_revisionId", fields: [targetRunId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_case_target_run_id_revision_id")
+  assignee        User?              @relation("ReviewCase_assigneeId", fields: [assigneeId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_case_assignee_id")
+  reviewDecisions ReviewDecision[]   @relation("ReviewDecision_reviewCaseId_revisionId")
+  appeals         Appeal[]           @relation("Appeal_reviewCaseId_revisionId")
+
+  @@unique([id, revisionId], map: "uq_review_case_id_revision_id")
+  @@index([revisionId], map: "ix_review_case_revision_id")
+  @@index([targetRunId, revisionId], map: "ix_review_case_target_run_id_revision_id")
+  @@index([assigneeId], map: "ix_review_case_assignee_id")
+  @@index([status, priority, createdAt], map: "ix_review_case_status_priority_created_at")
+  @@map("REVIEW_CASE")
+}
+
+/// Quyết định bất biến; sửa sau duyệt tạo quyết định mới. Không trỏ ngược TeacherResult bằng FK bắt buộc.
+model ReviewDecision {
+  id           String   @id @default(uuid()) @db.Uuid
+  reviewCaseId String   @map("review_case_id") @db.Uuid
+  revisionId   String   @map("revision_id") @db.Uuid
+  teacherId    String   @map("teacher_id") @db.Uuid
+  decisionNo   Int      @map("decision_no")
+  supersedesId String?  @map("supersedes_id") @db.Uuid
+  reason       String   @db.Text
+  decidedAt    DateTime @default(now()) @map("decided_at") @db.Timestamptz(3)
+
+  teacherResult   TeacherResult?   @relation("TeacherResult_decisionId_revisionId")
+  reviewCase      ReviewCase       @relation("ReviewDecision_reviewCaseId_revisionId", fields: [reviewCaseId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_decision_review_case_id_revision_id")
+  teacher         User             @relation("ReviewDecision_teacherId", fields: [teacherId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_decision_teacher_id")
+  supersedes      ReviewDecision?  @relation("ReviewDecision_supersedesId", fields: [supersedesId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_decision_supersedes_id")
+  reviewDecisions ReviewDecision[] @relation("ReviewDecision_supersedesId")
+
+  @@unique([reviewCaseId, decisionNo], map: "uq_review_decision_review_case_id_decision_no")
+  @@unique([id, revisionId], map: "uq_review_decision_id_revision_id")
+  @@index([reviewCaseId, revisionId], map: "ix_review_decision_review_case_id_revision_id")
+  @@index([teacherId], map: "ix_review_decision_teacher_id")
+  @@index([supersedesId], map: "ix_review_decision_supersedes_id")
+  @@map("REVIEW_DECISION")
+}
+
+/// Nguồn được chấp nhận: chỉ TEACHER hoặc ANSWER_KEY, có FK thật đến result. Một nguồn hiện hành đã công bố mỗi revision.
+/// SQL CHECK: result_kind IN ('TEACHER','ANSWER_KEY')
+/// SQL CHECK: (NOT is_current) OR published_at IS NOT NULL
+model AcceptedAssessment {
+  id           String     @id @default(uuid()) @db.Uuid
+  resultId     String     @unique(map: "uq_accepted_assessment_result_id") @map("result_id") @db.Uuid
+  resultKind   ResultKind @map("result_kind")
+  revisionId   String     @map("revision_id") @db.Uuid
+  acceptedAt   DateTime   @default(now()) @map("accepted_at") @db.Timestamptz(3)
+  releaseAfter DateTime?  @map("release_after") @db.Timestamptz(3)
+  publishedAt  DateTime?  @map("published_at") @db.Timestamptz(3)
+  isCurrent    Boolean    @default(false) @map("is_current")
+  supersedesId String?    @map("supersedes_id") @db.Uuid
+
+  result              AssessmentResult     @relation("AcceptedAssessment_resultId_resultKind_revisionId", fields: [resultId, resultKind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_accepted_assessment_result_id_result_kind_revision_id")
+  supersedes          AcceptedAssessment?  @relation("AcceptedAssessment_supersedesId", fields: [supersedesId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_accepted_assessment_supersedes_id")
+  acceptedAssessments AcceptedAssessment[] @relation("AcceptedAssessment_supersedesId")
+  appeals             Appeal[]             @relation("Appeal_acceptedId_revisionId")
+  skillEvidences      SkillEvidence[]      @relation("SkillEvidence_acceptedId_resultId")
+
+  @@unique([id, revisionId], map: "uq_accepted_assessment_id_revision_id")
+  @@unique([id, resultId], map: "uq_accepted_assessment_id_result_id")
+  @@unique([resultId, resultKind, revisionId], map: "uq_accepted_assessment_result_id_result_kind_revision_id")
+  @@index([supersedesId], map: "ix_accepted_assessment_supersedes_id")
+  @@index([revisionId, isCurrent], map: "ix_accepted_assessment_revision_id_is_current")
+  @@map("ACCEPTED_ASSESSMENT")
+}
+
+/// Yêu cầu xem lại kết quả đã chấp nhận. Composite FK buộc accepted và review case cùng revision; kiểm tra quyền của requester. ReviewCase có thể được tạo sau khi tiếp nhận.
+model Appeal {
+  id           String       @id @default(uuid()) @db.Uuid
+  acceptedId   String       @map("accepted_id") @db.Uuid
+  revisionId   String       @map("revision_id") @db.Uuid
+  requesterId  String       @map("requester_id") @db.Uuid
+  reviewCaseId String?      @map("review_case_id") @db.Uuid
+  status       AppealStatus @default(PENDING)
+  reason       String       @db.Text
+  resolution   String?      @db.Text
+  requestedAt  DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
+  resolvedAt   DateTime?    @map("resolved_at") @db.Timestamptz(3)
+
+  accepted   AcceptedAssessment @relation("Appeal_acceptedId_revisionId", fields: [acceptedId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_appeal_accepted_id_revision_id")
+  requester  User               @relation("Appeal_requesterId", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_appeal_requester_id")
+  reviewCase ReviewCase?        @relation("Appeal_reviewCaseId_revisionId", fields: [reviewCaseId, revisionId], references: [id, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_appeal_review_case_id_revision_id")
+
+  @@index([acceptedId, revisionId], map: "ix_appeal_accepted_id_revision_id")
+  @@index([requesterId], map: "ix_appeal_requester_id")
+  @@index([reviewCaseId, revisionId], map: "ix_appeal_review_case_id_revision_id")
+  @@map("APPEAL")
+}
+
+// ==========================================================================
+// Skills, evidence, profile snapshots and recommendations
+// ==========================================================================
+
+/// Kỹ năng nội bộ do giáo viên xác nhận, không đồng nhất với band criterion.
+model Skill {
+  id                   String            @id @default(uuid()) @db.Uuid
+  code                 String            @unique(map: "uq_skill_code") @db.VarChar(80)
+  name                 String            @db.VarChar(160)
+  skillArea            SkillArea         @map("skill_area")
+  observableDefinition String            @map("observable_definition") @db.Text
+  status               PublicationStatus @default(DRAFT)
+
+  findings                              Finding[]           @relation("Finding_skillId")
+  skillPrerequisites                    SkillPrerequisite[] @relation("SkillPrerequisite_skillId")
+  skillPrerequisitesByPrerequisiteSkill SkillPrerequisite[] @relation("SkillPrerequisite_prerequisiteSkillId")
+  learningItemSkills                    LearningItemSkill[] @relation("LearningItemSkill_skillId")
+  itemSkills                            ItemSkill[]         @relation("ItemSkill_skillId")
+  skillObservations                     SkillObservation[]  @relation("SkillObservation_skillId")
+  learnerSkillStates                    LearnerSkillState[] @relation("LearnerSkillState_skillId")
+
+  @@map("SKILL")
+}
+
+/// Đồ thị tiên quyết: không tự trỏ và không chu trình. Ngưỡng là policy, chưa phải xác suất mastery.
+/// SQL CHECK: skill_id <> prerequisite_skill_id
+model SkillPrerequisite {
+  skillId             String   @map("skill_id") @db.Uuid
+  prerequisiteSkillId String   @map("prerequisite_skill_id") @db.Uuid
+  minStrength         Decimal? @map("min_strength") @db.Decimal(5, 4)
+  minSupport          Decimal? @map("min_support") @db.Decimal(5, 4)
+
+  skill             Skill @relation("SkillPrerequisite_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_prerequisite_skill_id")
+  prerequisiteSkill Skill @relation("SkillPrerequisite_prerequisiteSkillId", fields: [prerequisiteSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_prerequisite_prerequisite_skill_id")
+
+  @@id([skillId, prerequisiteSkillId])
+  @@index([prerequisiteSkillId], map: "ix_skill_prerequisite_prerequisite_skill_id")
+  @@map("SKILL_PREREQUISITE")
+}
+
+/// Tag dùng để chọn lesson hoặc practice; purpose phân biệt TEACH/PRACTISE/ASSESS. Một mapping tổng hợp cho mỗi item–skill.
+model LearningItemSkill {
+  learningItemId String  @map("learning_item_id") @db.Uuid
+  skillId        String  @map("skill_id") @db.Uuid
+  purpose        String  @db.VarChar(24)
+  coverageWeight Decimal @default(1) @map("coverage_weight") @db.Decimal(5, 4)
+
+  learningItem LearningItem @relation("LearningItemSkill_learningItemId", fields: [learningItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_skill_learning_item_id")
+  skill        Skill        @relation("LearningItemSkill_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_skill_skill_id")
+
+  @@id([learningItemId, skillId])
+  @@index([skillId], map: "ix_learning_item_skill_skill_id")
+  @@map("LEARNING_ITEM_SKILL")
+}
+
+/// Một câu hỏi cung cấp cơ hội quan sát kỹ năng nào. Khác với tag hoạt động phục vụ gợi ý.
+model ItemSkill {
+  assessmentItemId  String  @map("assessment_item_id") @db.Uuid
+  skillId           String  @map("skill_id") @db.Uuid
+  observationWeight Decimal @default(1) @map("observation_weight") @db.Decimal(5, 4)
+
+  assessmentItem AssessmentItem @relation("ItemSkill_assessmentItemId", fields: [assessmentItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_skill_assessment_item_id")
+  skill          Skill          @relation("ItemSkill_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_skill_skill_id")
+
+  @@id([assessmentItemId, skillId])
+  @@index([skillId], map: "ix_item_skill_skill_id")
+  @@map("ITEM_SKILL")
+}
+
+/// Quan sát rõ MET/PARTIAL/NOT_MET/NOT_OBSERVED. AI có thể đề xuất; giáo viên hoặc đáp án tạo quan sát được chấp nhận. Không có lỗi không đồng nghĩa đạt.
+model SkillObservation {
+  id        String             @id @default(uuid()) @db.Uuid
+  resultId  String             @map("result_id") @db.Uuid
+  skillId   String             @map("skill_id") @db.Uuid
+  outcome   ObservationOutcome
+  rationale String             @db.Text
+
+  result         AssessmentResult @relation("SkillObservation_resultId", fields: [resultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_observation_result_id")
+  skill          Skill            @relation("SkillObservation_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_observation_skill_id")
+  skillEvidences SkillEvidence[]  @relation("SkillEvidence_observationId_resultId")
+
+  @@unique([resultId, skillId], map: "uq_skill_observation_result_id_skill_id")
+  @@unique([id, resultId], map: "uq_skill_observation_id_result_id")
+  @@index([skillId], map: "ix_skill_observation_skill_id")
+  @@map("SKILL_OBSERVATION")
+}
+
+/// Hai composite FK bắt buộc observation và accepted cùng result. Chỉ dùng nguồn đã công bố; NOT_OBSERVED không ánh xạ thành 0.
+model SkillEvidence {
+  id                    String   @id @default(uuid()) @db.Uuid
+  acceptedId            String   @map("accepted_id") @db.Uuid
+  observationId         String   @map("observation_id") @db.Uuid
+  resultId              String   @map("result_id") @db.Uuid
+  evidencePolicyVersion String   @map("evidence_policy_version") @db.VarChar(60)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  accepted             AcceptedAssessment    @relation("SkillEvidence_acceptedId_resultId", fields: [acceptedId, resultId], references: [id, resultId], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_evidence_accepted_id_result_id")
+  observation          SkillObservation      @relation("SkillEvidence_observationId_resultId", fields: [observationId, resultId], references: [id, resultId], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_evidence_observation_id_result_id")
+  profileContributions ProfileContribution[] @relation("ProfileContribution_evidenceId")
+
+  @@unique([acceptedId, observationId], map: "uq_skill_evidence_accepted_id_observation_id")
+  @@index([acceptedId, resultId], map: "ix_skill_evidence_accepted_id_result_id")
+  @@index([observationId, resultId], map: "ix_skill_evidence_observation_id_result_id")
+  @@map("SKILL_EVIDENCE")
+}
+
+/// Chính sách projection và recommendation bất biến theo phiên bản.
+model PolicyVersion {
+  id          String @id @default(uuid()) @db.Uuid
+  policyCode  String @map("policy_code") @db.VarChar(80)
+  versionNo   Int    @default(1) @map("version_no")
+  policyKind  String @map("policy_kind") @db.VarChar(30)
+  configJson  Json   @map("config_json") @db.JsonB
+  codeVersion String @map("code_version") @db.VarChar(120)
+
+  learnerProfileVersions LearnerProfileVersion[] @relation("LearnerProfileVersion_projectionPolicyId")
+  recommendationRuns     RecommendationRun[]     @relation("RecommendationRun_policyId")
+
+  @@unique([policyCode, versionNo], map: "uq_policy_version_policy_code_version_no")
+  @@map("POLICY_VERSION")
+}
+
+/// Snapshot hồ sơ để lưu lịch sử và gắn với recommendation.
+model LearnerProfileVersion {
+  id                 String   @id @default(uuid()) @db.Uuid
+  learnerId          String   @map("learner_id") @db.Uuid
+  versionNo          Int      @default(1) @map("version_no")
+  projectionPolicyId String   @map("projection_policy_id") @db.Uuid
+  goalSnapshotJson   Json     @map("goal_snapshot_json") @db.JsonB
+  evidenceWatermark  String   @map("evidence_watermark") @db.Text
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  learner              User                  @relation("LearnerProfileVersion_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learner_profile_version_learner_id")
+  projectionPolicy     PolicyVersion         @relation("LearnerProfileVersion_projectionPolicyId", fields: [projectionPolicyId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learner_profile_version_projection_policy_id")
+  learnerSkillStates   LearnerSkillState[]   @relation("LearnerSkillState_profileId")
+  profileContributions ProfileContribution[] @relation("ProfileContribution_profileId")
+  recommendationRuns   RecommendationRun[]   @relation("RecommendationRun_profileId_learnerId")
+
+  @@unique([learnerId, versionNo], map: "uq_learner_profile_version_learner_id_version_no")
+  @@unique([id, learnerId], map: "uq_learner_profile_version_id_learner_id")
+  @@index([projectionPolicyId], map: "ix_learner_profile_version_projection_policy_id")
+  @@index([learnerId, createdAt], map: "ix_learner_profile_version_learner_id_created_at")
+  @@map("LEARNER_PROFILE_VERSION")
+}
+
+/// Projection theo kỹ năng; UNKNOWN dùng strength NULL. Support là mức đầy đủ bằng chứng, không là độ tự tin của LLM.
+model LearnerSkillState {
+  profileId         String            @map("profile_id") @db.Uuid
+  skillId           String            @map("skill_id") @db.Uuid
+  strength          Decimal?          @db.Decimal(5, 4)
+  support           Decimal           @default(0) @db.Decimal(5, 4)
+  evidenceCount     Int               @default(0) @map("evidence_count")
+  observationStatus ObservationStatus @map("observation_status")
+
+  profile LearnerProfileVersion @relation("LearnerSkillState_profileId", fields: [profileId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learner_skill_state_profile_id")
+  skill   Skill                 @relation("LearnerSkillState_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learner_skill_state_skill_id")
+
+  @@id([profileId, skillId])
+  @@index([skillId], map: "ix_learner_skill_state_skill_id")
+  @@map("LEARNER_SKILL_STATE")
+}
+
+/// Lineage evidence dùng dựng profile, phải cùng learner. Mỗi Attempt–Skill chỉ một contribution hiện hành; chọn revision_no cao nhất đã đủ điều kiện và quyết định hiện hành, không xếp chỉ theo ngày công bố và không cộng mọi revision.
+model ProfileContribution {
+  profileId       String  @map("profile_id") @db.Uuid
+  evidenceId      String  @map("evidence_id") @db.Uuid
+  effectiveWeight Decimal @default(1) @map("effective_weight") @db.Decimal(7, 4)
+
+  profile  LearnerProfileVersion @relation("ProfileContribution_profileId", fields: [profileId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_profile_contribution_profile_id")
+  evidence SkillEvidence         @relation("ProfileContribution_evidenceId", fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_profile_contribution_evidence_id")
+
+  @@id([profileId, evidenceId])
+  @@index([evidenceId], map: "ix_profile_contribution_evidence_id")
+  @@map("PROFILE_CONTRIBUTION")
+}
+
+/// Giữ snapshot ứng viên, điều kiện lọc, metadata và policy để giải thích quyết định cũ.
+model RecommendationRun {
+  id                    String   @id @default(uuid()) @db.Uuid
+  learnerId             String   @map("learner_id") @db.Uuid
+  profileId             String   @map("profile_id") @db.Uuid
+  policyId              String   @map("policy_id") @db.Uuid
+  contextSnapshotJson   Json     @map("context_snapshot_json") @db.JsonB
+  candidateSnapshotJson Json     @map("candidate_snapshot_json") @db.JsonB
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  profile             LearnerProfileVersion @relation("RecommendationRun_profileId_learnerId", fields: [profileId, learnerId], references: [id, learnerId], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_run_profile_id_learner_id")
+  policy              PolicyVersion         @relation("RecommendationRun_policyId", fields: [policyId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_run_policy_id")
+  recommendationItems RecommendationItem[]  @relation("RecommendationItem_runId")
+
+  @@index([profileId, learnerId], map: "ix_recommendation_run_profile_id_learner_id")
+  @@index([policyId], map: "ix_recommendation_run_policy_id")
+  @@index([learnerId, createdAt], map: "ix_recommendation_run_learner_id_created_at")
+  @@map("RECOMMENDATION_RUN")
+}
+
+/// Đích có FK là lesson hoặc practice. Practice phải ghim cả activity version và assignment version đúng mode/quyền; lesson để hai trường này NULL. Metadata giữ snapshot để giải thích khi nội dung đổi.
+/// SQL CHECK: rank >= 1 AND rank <= 3
+/// SQL CHECK: (target_activity_version_id IS NULL) = (target_assignment_version_id IS NULL)
+model RecommendationItem {
+  id                        String  @id @default(uuid()) @db.Uuid
+  runId                     String  @map("run_id") @db.Uuid
+  learningItemId            String  @map("learning_item_id") @db.Uuid
+  targetActivityVersionId   String? @map("target_activity_version_id") @db.Uuid
+  targetAssignmentVersionId String? @map("target_assignment_version_id") @db.Uuid
+  rank                      Int
+  totalScore                Decimal @map("total_score") @db.Decimal(9, 5)
+  scoreComponentsJson       Json    @map("score_components_json") @db.JsonB
+  reasonCode                String  @map("reason_code") @db.VarChar(60)
+  reasonText                String  @map("reason_text") @db.Text
+  targetSnapshotJson        Json    @map("target_snapshot_json") @db.JsonB
+
+  attempts                Attempt[]          @relation("Attempt_recommendationItemId_assignmentVersionId_activityVersionId")
+  run                     RecommendationRun  @relation("RecommendationItem_runId", fields: [runId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_item_run_id")
+  learningItem            LearningItem       @relation("RecommendationItem_learningItemId", fields: [learningItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_item_learning_item_id")
+  targetActivityVersion   ActivityVersion?   @relation("RecommendationItem_targetActivityVersionId_learningItemId", fields: [targetActivityVersionId, learningItemId], references: [id, activityId], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_item_target_activity_version_i_68eec8d129")
+  targetAssignmentVersion AssignmentVersion? @relation("RecommendationItem_targetAssignmentVersionId_targetActivityVersionId_learningItemId", fields: [targetAssignmentVersionId, targetActivityVersionId, learningItemId], references: [id, activityVersionId, activityId], onDelete: Restrict, onUpdate: Restrict, map: "fk_recommendation_item_target_assignment_version_3391d3702b")
+
+  @@unique([runId, rank], map: "uq_recommendation_item_run_id_rank")
+  @@unique([runId, learningItemId], map: "uq_recommendation_item_run_id_learning_item_id")
+  @@unique([id, targetAssignmentVersionId, targetActivityVersionId], map: "uq_recommendation_item_id_target_assignment_vers_b59b36f30f")
+  @@index([learningItemId], map: "ix_recommendation_item_learning_item_id")
+  @@index([targetActivityVersionId, learningItemId], map: "ix_recommendation_item_target_activity_version_i_46f2ac183a")
+  @@index([targetAssignmentVersionId, targetActivityVersionId, learningItemId], map: "ix_recommendation_item_target_assignment_version_c1eae1573f")
+  @@map("RECOMMENDATION_ITEM")
+}
+
+// ==========================================================================
+// Discussions, notifications and durable operations
+// ==========================================================================
+
+/// Thảo luận theo khóa hoặc learning item cùng khóa.
+model DiscussionThread {
+  id            String   @id @default(uuid()) @db.Uuid
+  courseId      String   @map("course_id") @db.Uuid
+  contextItemId String?  @map("context_item_id") @db.Uuid
+  creatorId     String   @map("creator_id") @db.Uuid
+  title         String   @db.VarChar(240)
+  status        String   @default("OPEN") @db.VarChar(24)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  course          Course           @relation("DiscussionThread_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_thread_course_id")
+  contextItem     LearningItem?    @relation("DiscussionThread_contextItemId", fields: [contextItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_thread_context_item_id")
+  creator         User             @relation("DiscussionThread_creatorId", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_thread_creator_id")
+  discussionPosts DiscussionPost[] @relation("DiscussionPost_threadId")
+
+  @@index([courseId], map: "ix_discussion_thread_course_id")
+  @@index([contextItemId], map: "ix_discussion_thread_context_item_id")
+  @@index([creatorId], map: "ix_discussion_thread_creator_id")
+  @@map("DISCUSSION_THREAD")
+}
+
+/// Reply phải cùng thread, không tự trỏ/chu trình.
+model DiscussionPost {
+  id           String    @id @default(uuid()) @db.Uuid
+  threadId     String    @map("thread_id") @db.Uuid
+  authorId     String    @map("author_id") @db.Uuid
+  parentPostId String?   @map("parent_post_id") @db.Uuid
+  body         String    @db.Text
+  status       String    @default("VISIBLE") @db.VarChar(24)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  editedAt     DateTime? @map("edited_at") @db.Timestamptz(3)
+
+  thread            DiscussionThread   @relation("DiscussionPost_threadId", fields: [threadId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_post_thread_id")
+  author            User               @relation("DiscussionPost_authorId", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_post_author_id")
+  parentPost        DiscussionPost?    @relation("DiscussionPost_parentPostId", fields: [parentPostId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_post_parent_post_id")
+  discussionPosts   DiscussionPost[]   @relation("DiscussionPost_parentPostId")
+  moderationReports ModerationReport[] @relation("ModerationReport_postId")
+
+  @@index([threadId], map: "ix_discussion_post_thread_id")
+  @@index([authorId], map: "ix_discussion_post_author_id")
+  @@index([parentPostId], map: "ix_discussion_post_parent_post_id")
+  @@map("DISCUSSION_POST")
+}
+
+/// Thông báo cho một người; link điều hướng không cấp quyền truy cập.
+model Notification {
+  id                  String    @id @default(uuid()) @db.Uuid
+  recipientId         String    @map("recipient_id") @db.Uuid
+  notificationType    String    @map("notification_type") @db.VarChar(60)
+  title               String    @db.VarChar(240)
+  body                String    @db.Text
+  navigationPath      String?   @map("navigation_path") @db.Text
+  contextSnapshotJson Json?     @map("context_snapshot_json") @db.JsonB
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  readAt              DateTime? @map("read_at") @db.Timestamptz(3)
+
+  recipient User @relation("Notification_recipientId", fields: [recipientId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_notification_recipient_id")
+
+  @@index([recipientId], map: "ix_notification_recipient_id")
+  @@index([recipientId, readAt, createdAt], map: "ix_notification_recipient_id_read_at_created_at")
+  @@map("NOTIFICATION")
+}
+
+/// Đúng một target có FK: course, learning item hoặc post.
+/// SQL CHECK: (CASE WHEN course_id IS NULL THEN 0 ELSE 1 END + CASE WHEN learning_item_id IS NULL THEN 0 ELSE 1 END + CASE WHEN post_id IS NULL THEN 0 ELSE 1 END) = 1
+model ModerationReport {
+  id             String           @id @default(uuid()) @db.Uuid
+  reporterId     String           @map("reporter_id") @db.Uuid
+  resolverId     String?          @map("resolver_id") @db.Uuid
+  courseId       String?          @map("course_id") @db.Uuid
+  learningItemId String?          @map("learning_item_id") @db.Uuid
+  postId         String?          @map("post_id") @db.Uuid
+  reason         String           @db.Text
+  status         ModerationStatus @default(PENDING)
+  resolution     String?          @db.Text
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  resolvedAt     DateTime?        @map("resolved_at") @db.Timestamptz(3)
+
+  reporter     User            @relation("ModerationReport_reporterId", fields: [reporterId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_moderation_report_reporter_id")
+  resolver     User?           @relation("ModerationReport_resolverId", fields: [resolverId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_moderation_report_resolver_id")
+  course       Course?         @relation("ModerationReport_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_moderation_report_course_id")
+  learningItem LearningItem?   @relation("ModerationReport_learningItemId", fields: [learningItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_moderation_report_learning_item_id")
+  post         DiscussionPost? @relation("ModerationReport_postId", fields: [postId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_moderation_report_post_id")
+
+  @@index([reporterId], map: "ix_moderation_report_reporter_id")
+  @@index([resolverId], map: "ix_moderation_report_resolver_id")
+  @@index([courseId], map: "ix_moderation_report_course_id")
+  @@index([learningItemId], map: "ix_moderation_report_learning_item_id")
+  @@index([postId], map: "ix_moderation_report_post_id")
+  @@map("MODERATION_REPORT")
+}
+
+/// Sự kiện hạ tầng bền vững. Aggregate locator là dữ liệu routing lịch sử, không giả làm FK nghiệp vụ.
+model OutboxEvent {
+  id               String       @id @default(uuid()) @db.Uuid
+  eventType        String       @map("event_type") @db.VarChar(80)
+  aggregateType    String       @map("aggregate_type") @db.VarChar(80)
+  aggregateId      String       @map("aggregate_id") @db.Text
+  aggregateVersion Int?         @map("aggregate_version")
+  payloadJson      Json         @map("payload_json") @db.JsonB
+  status           OutboxStatus @default(PENDING)
+  attempts         Int          @default(0)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  dispatchedAt     DateTime?    @map("dispatched_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt], map: "ix_outbox_event_status_created_at")
+  @@map("OUTBOX_EVENT")
+}
+
+/// Append-only ở ứng dụng. Entity locator là snapshot audit, không bắt cascade theo đối tượng bị xóa.
+model AuditEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityKey  String   @map("entity_key") @db.Text
+  beforeJson Json?    @map("before_json") @db.JsonB
+  afterJson  Json?    @map("after_json") @db.JsonB
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  actor User? @relation("AuditEvent_actorId", fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_audit_event_actor_id")
+
+  @@index([actorId], map: "ix_audit_event_actor_id")
+  @@map("AUDIT_EVENT")
+}
+
+// ==========================================================================
+// Optional RAG extension: vector requires pgvector before table creation
+// ==========================================================================
+
+/// EXTENSION: nguồn học liệu có kiểm soát truy cập.
+model KnowledgeDocument {
+  id           String            @id @default(uuid()) @db.Uuid
+  courseId     String            @map("course_id") @db.Uuid
+  sourceItemId String?           @map("source_item_id") @db.Uuid
+  ownerId      String            @map("owner_id") @db.Uuid
+  title        String            @db.VarChar(240)
+  status       PublicationStatus @default(DRAFT)
+  visibility   String            @db.VarChar(30)
+
+  course                    Course                     @relation("KnowledgeDocument_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_course_id")
+  sourceItem                LearningItem?              @relation("KnowledgeDocument_sourceItemId", fields: [sourceItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_source_item_id")
+  owner                     User                       @relation("KnowledgeDocument_ownerId", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_owner_id")
+  knowledgeDocumentVersions KnowledgeDocumentVersion[] @relation("KnowledgeDocumentVersion_documentId")
+
+  @@index([courseId], map: "ix_knowledge_document_course_id")
+  @@index([sourceItemId], map: "ix_knowledge_document_source_item_id")
+  @@index([ownerId], map: "ix_knowledge_document_owner_id")
+  @@map("KNOWLEDGE_DOCUMENT")
+}
+
+/// EXTENSION: snapshot nội dung nguồn bất biến.
+model KnowledgeDocumentVersion {
+  id           String    @id @default(uuid()) @db.Uuid
+  documentId   String    @map("document_id") @db.Uuid
+  versionNo    Int       @default(1) @map("version_no")
+  fileAssetId  String?   @map("file_asset_id") @db.Uuid
+  textSnapshot String    @map("text_snapshot") @db.Text
+  contentHash  String    @map("content_hash") @db.VarChar(128)
+  publishedAt  DateTime? @map("published_at") @db.Timestamptz(3)
+
+  document        KnowledgeDocument @relation("KnowledgeDocumentVersion_documentId", fields: [documentId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_version_document_id")
+  fileAsset       FileAsset?        @relation("KnowledgeDocumentVersion_fileAssetId", fields: [fileAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_version_file_asset_id")
+  knowledgeChunks KnowledgeChunk[]  @relation("KnowledgeChunk_documentVersionId")
+
+  @@unique([documentId, versionNo], map: "uq_knowledge_document_version_document_id_version_no")
+  @@index([fileAssetId], map: "ix_knowledge_document_version_file_asset_id")
+  @@map("KNOWLEDGE_DOCUMENT_VERSION")
+}
+
+/// EXTENSION: vector có dimension tùy model, cần pgvector migration riêng khi triển khai.
+model KnowledgeChunk {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  documentVersionId   String                 @map("document_version_id") @db.Uuid
+  chunkNo             Int                    @map("chunk_no")
+  text                String                 @db.Text
+  embedding           Unsupported("vector")?
+  embeddingModel      String?                @map("embedding_model") @db.VarChar(120)
+  embeddingConfigJson Json?                  @map("embedding_config_json") @db.JsonB
+
+  documentVersion      KnowledgeDocumentVersion @relation("KnowledgeChunk_documentVersionId", fields: [documentVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_chunk_document_version_id")
+  explanationCitations ExplanationCitation[]    @relation("ExplanationCitation_chunkId")
+
+  @@unique([documentVersionId, chunkNo], map: "uq_knowledge_chunk_document_version_id_chunk_no")
+  @@map("KNOWLEDGE_CHUNK")
+}
+
+/// EXTENSION: giải thích có nguồn; kết quả này không phải assessment result hay accepted evidence.
+model FeedbackExplanation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  learnerId             String   @map("learner_id") @db.Uuid
+  revisionId            String?  @map("revision_id") @db.Uuid
+  findingId             String?  @map("finding_id") @db.Uuid
+  promptVersionId       String   @map("prompt_version_id") @db.Uuid
+  question              String   @db.Text
+  answer                String   @db.Text
+  provider              String   @db.VarChar(60)
+  modelId               String   @map("model_id") @db.VarChar(120)
+  retrievalSnapshotJson Json     @map("retrieval_snapshot_json") @db.JsonB
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  learner              User                  @relation("FeedbackExplanation_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_feedback_explanation_learner_id")
+  revision             SubmissionRevision?   @relation("FeedbackExplanation_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_feedback_explanation_revision_id")
+  finding              Finding?              @relation("FeedbackExplanation_findingId", fields: [findingId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_feedback_explanation_finding_id")
+  promptVersion        PromptVersion         @relation("FeedbackExplanation_promptVersionId", fields: [promptVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_feedback_explanation_prompt_version_id")
+  explanationCitations ExplanationCitation[] @relation("ExplanationCitation_explanationId")
+
+  @@index([learnerId], map: "ix_feedback_explanation_learner_id")
+  @@index([revisionId], map: "ix_feedback_explanation_revision_id")
+  @@index([findingId], map: "ix_feedback_explanation_finding_id")
+  @@index([promptVersionId], map: "ix_feedback_explanation_prompt_version_id")
+  @@map("FEEDBACK_EXPLANATION")
+}
+
+/// EXTENSION: trích dẫn vào chunk thuộc document version bất biến.
+model ExplanationCitation {
+  explanationId String @map("explanation_id") @db.Uuid
+  citationNo    Int    @map("citation_no")
+  chunkId       String @map("chunk_id") @db.Uuid
+  exactQuote    String @map("exact_quote") @db.Text
+
+  explanation FeedbackExplanation @relation("ExplanationCitation_explanationId", fields: [explanationId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_explanation_citation_explanation_id")
+  chunk       KnowledgeChunk      @relation("ExplanationCitation_chunkId", fields: [chunkId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_explanation_citation_chunk_id")
+
+  @@id([explanationId, citationNo])
+  @@index([chunkId], map: "ix_explanation_citation_chunk_id")
+  @@map("EXPLANATION_CITATION")
+}
