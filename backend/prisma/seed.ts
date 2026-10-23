@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { randomBytes, scryptSync } from 'node:crypto';
+import { createHash, randomBytes, scryptSync } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -12,144 +12,238 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString, connectionTimeoutMillis: 5000 }),
 });
 const samplePassword = 'IeltsDemo123!';
-const sampleDate = new Date('2026-09-26T09:00:00.000Z');
+const sampleDate = new Date('2026-10-20T09:00:00.000Z');
+
+// Stable fixture IDs let reruns preserve the same authoring graph without deleting data.
+function fixtureId(sequence: number): string {
+  return `26102026-0000-4000-8000-${sequence.toString().padStart(12, '0')}`;
+}
 
 // Format: scrypt:<hex salt>:<hex derived key>. Authentication is not implemented yet.
-function hashPassword() {
+function hashPassword(): string {
   const salt = randomBytes(16).toString('hex');
   return `scrypt:${salt}:${scryptSync(samplePassword, salt, 64).toString('hex')}`;
 }
 
 async function main() {
-  // Commit the sample graph together, or roll back if any insert fails.
+  // Publish parent/subtype records and their children atomically.
   const summary = await prisma.$transaction(async (tx) => {
+    const roles = new Map<string, string>();
+    for (const sample of [
+      { code: 'ADMIN', name: 'Administrator' },
+      { code: 'INSTRUCTOR', name: 'Instructor' },
+      { code: 'LEARNER', name: 'Learner' },
+    ]) {
+      const role = await tx.role.upsert({
+        where: { code: sample.code }, update: {}, create: sample,
+      });
+      roles.set(role.code, role.id);
+    }
+
     const users = [];
     for (const sample of [
-      { email: 'admin@ielts.example', role: 'ADMIN', targetBand: 8 },
-      { email: 'teacher@ielts.example', role: 'TEACHER', targetBand: 8.5 },
-      { email: 'student.an@ielts.example', role: 'STUDENT', targetBand: 7 },
-      { email: 'student.binh@ielts.example', role: 'STUDENT', targetBand: 6.5 },
+      { email: 'admin@ielts.example', displayName: 'Demo Admin', roleCode: 'ADMIN', targetBand: 8 },
+      { email: 'teacher@ielts.example', displayName: 'Demo Instructor', roleCode: 'INSTRUCTOR', targetBand: 8.5 },
+      { email: 'student.an@ielts.example', displayName: 'An', roleCode: 'LEARNER', targetBand: 7 },
+      { email: 'student.binh@ielts.example', displayName: 'Binh', roleCode: 'LEARNER', targetBand: 6.5 },
     ]) {
-      users.push(await tx.user.upsert({
-        where: { email: sample.email },
+      const { roleCode, ...account } = sample;
+      const user = await tx.user.upsert({
+        where: { email: account.email },
         update: {},
-        create: { ...sample, status: 'ACTIVE', passwordHash: hashPassword() },
-      }));
+        create: { ...account, status: 'ACTIVE', passwordHash: hashPassword() },
+      });
+      const roleId = roles.get(roleCode);
+      if (!roleId) throw new Error('Missing seed role');
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId } },
+        update: {},
+        create: { userId: user.id, roleId },
+      });
+      users.push(user);
     }
     const [, teacher, an, binh] = users;
 
-    const courses = [];
-    for (const sample of [
-      { title: '[Demo] IELTS Writing Foundations', description: 'Practice Task 1 reports and Task 2 essays with sample feedback.' },
-      { title: '[Demo] IELTS Reading and Listening', description: 'Build comprehension skills with short practice questions.' },
-    ]) {
-      courses.push(await tx.course.findFirst({ where: { title: sample.title, createdId: teacher.id } })
-        ?? await tx.course.create({ data: { ...sample, createdId: teacher.id } }));
-    }
-
-    const lessons = [];
-    for (const sample of [
-      { title: 'Task 1: Describe a chart', type: 'WRITING', targetSkillTag: 'TASK_1', courseId: courses[0].id },
-      { title: 'Task 2: Public transport essay', type: 'WRITING', targetSkillTag: 'TASK_2', courseId: courses[0].id },
-      { title: 'Reading: Urban green spaces', type: 'READING', targetSkillTag: 'READING_COMPREHENSION', courseId: courses[1].id },
-      { title: 'Listening: Library registration', type: 'LISTENING', targetSkillTag: 'LISTENING_DETAILS', courseId: courses[1].id },
-    ]) {
-      lessons.push(await tx.lesson.findFirst({ where: { title: sample.title, courseId: sample.courseId } })
-        ?? await tx.lesson.create({ data: sample }));
-    }
-
-    for (const sample of [
-      { userId: an.id, courseId: courses[0].id, progressPercentage: 50 },
-      { userId: an.id, courseId: courses[1].id, progressPercentage: 25 },
-      { userId: binh.id, courseId: courses[0].id, progressPercentage: 0 },
-    ]) {
+    const course = await tx.course.upsert({
+      where: { id: fixtureId(1) },
+      update: {},
+      create: {
+        id: fixtureId(1), creatorId: teacher.id,
+        title: '[Demo] IELTS Reading Foundations',
+        description: 'A two-question reading exercise for exploring the versioned data model.',
+        status: 'PUBLISHED', enrollmentOpen: true,
+        completionPolicyJson: { mode: 'ALL_REQUIRED_ITEMS' },
+      },
+    });
+    await tx.courseInstructor.upsert({
+      where: { courseId_instructorId: { courseId: course.id, instructorId: teacher.id } },
+      update: {},
+      create: { courseId: course.id, instructorId: teacher.id, responsibility: 'OWNER' },
+    });
+    for (const learner of [an, binh]) {
       await tx.enrollment.upsert({
-        where: { userId_courseId: { userId: sample.userId, courseId: sample.courseId } },
+        where: { learnerId_courseId: { learnerId: learner.id, courseId: course.id } },
         update: {},
-        create: { ...sample, lastAccessed: sampleDate },
+        create: { learnerId: learner.id, courseId: course.id, status: 'ACTIVE' },
       });
     }
 
-    for (const sample of [
-      { lessonId: lessons[2].id, type: 'TRUE_FALSE', questionText: 'Passage: Urban parks reduce summer temperatures. Statement: Parks can help cool cities.', correctAnswer: 'TRUE' },
-      { lessonId: lessons[2].id, type: 'SHORT_ANSWER', questionText: 'Passage: Residents use parks for exercise and relaxation. Name one activity mentioned.', correctAnswer: 'exercise' },
-      { lessonId: lessons[3].id, type: 'SHORT_ANSWER', questionText: 'Transcript: The library opens at nine in the morning. What time does it open?', correctAnswer: '9:00' },
-      { lessonId: lessons[3].id, type: 'SHORT_ANSWER', questionText: 'Transcript: Please bring your student card to register. What must you bring?', correctAnswer: 'student card' },
-    ]) {
-      if (!await tx.quizQuestion.findFirst({ where: { lessonId: sample.lessonId, questionText: sample.questionText } })) {
-        await tx.quizQuestion.create({ data: sample });
-      }
-    }
-
-    // Illustrative descriptors for demos, not official IELTS assessment text.
-    const rubrics = [];
-    for (const sample of [
-      { criterion: 'TA', description: 'Addresses the question and supports a clear position with relevant examples.' },
-      { criterion: 'CC', description: 'Organizes ideas into clear paragraphs with logical progression.' },
-      { criterion: 'LR', description: 'Uses varied vocabulary with occasional imprecise word choices.' },
-      { criterion: 'GRA', description: 'Uses a mix of sentence structures with generally accurate grammar.' },
-    ]) {
-      const where = { lessonId: lessons[1].id, criterion: sample.criterion, bandLevel: 7 };
-      rubrics.push(await tx.rubricDescriptor.findFirst({ where })
-        ?? await tx.rubricDescriptor.create({ data: { ...where, description: sample.description } }));
-    }
-
-    const sessions = [];
-    const submissions = [];
-    for (const sample of [
-      {
-        userId: an.id, lessonId: lessons[1].id,
-        contentText: 'Governments should invest in public transport because it reduces congestion and makes travel affordable. For example, reliable buses allow commuters to leave their cars at home. However, routes must serve residential areas as well as city centres. Overall, better public transport can improve daily life when services are frequent and accessible.',
+    const activityId = fixtureId(10);
+    await tx.learningItem.upsert({
+      where: { id: activityId }, update: {},
+      create: {
+        id: activityId, courseId: course.id, kind: 'PRACTICE',
+        title: '[Demo] Library information', status: 'PUBLISHED', position: 1,
       },
-      {
-        userId: binh.id, lessonId: lessons[0].id,
-        contentText: 'The chart shows the percentage of commuters using buses, trains and cars in two years. Car use fell from 60 percent to 45 percent, while bus use rose from 25 percent to 30 percent. Train use increased from 15 percent to 25 percent. Overall, cars remained the most popular option, although public transport became more common.',
+    });
+    await tx.practiceActivity.upsert({
+      where: { id: activityId }, update: {},
+      create: {
+        id: activityId, kind: 'PRACTICE', creatorId: teacher.id,
+        skillArea: 'READING', responseMode: 'OBJECTIVE',
       },
-    ]) {
-      const where = { userId: sample.userId, lessonId: sample.lessonId, startTime: sampleDate };
-      const session = await tx.testSession.findFirst({ where })
-        ?? await tx.testSession.create({ data: {
-          ...where, endTime: new Date('2026-09-26T09:40:00.000Z'), status: 'COMPLETED',
-        } });
-      sessions.push(session);
-      submissions.push(await tx.submissions.findFirst({ where: { testSessionId: session.id, type: 'WRITING' } })
-        ?? await tx.submissions.create({ data: {
-          testSessionId: session.id, type: 'WRITING', contentText: sample.contentText,
-        } }));
+    });
+    const passage = 'The library opens at 9 a.m. on weekdays. Visitors must bring a student card.';
+    const instructions = 'Answer both questions. For question 1, write no more than two words and/or a number.';
+    const activityVersion = await tx.activityVersion.upsert({
+      where: { activityId_versionNo: { activityId, versionNo: 1 } },
+      update: {},
+      create: {
+        id: fixtureId(11), activityId, versionNo: 1,
+        promptText: passage, instructions, difficulty: 1, expectedMinutes: 5,
+        publishedAt: sampleDate,
+        contentHash: createHash('sha256').update(JSON.stringify({ passage, instructions })).digest('hex'),
+      },
+    });
+
+    const questionVersions = [];
+    for (const [index, sample] of [
+      { title: 'Library opening time', promptText: 'What time does the library open?', questionType: 'SHORT_ANSWER' as const },
+      { title: 'Required document', promptText: 'What must visitors bring?', questionType: 'SINGLE_CHOICE' as const },
+    ].entries()) {
+      const question = await tx.question.upsert({
+        where: { id: fixtureId(20 + index) }, update: {},
+        create: { id: fixtureId(20 + index), authorId: teacher.id, skillArea: 'READING', title: sample.title },
+      });
+      questionVersions.push(await tx.questionVersion.upsert({
+        where: { questionId_versionNo: { questionId: question.id, versionNo: 1 } },
+        update: {},
+        create: {
+          id: fixtureId(30 + index), questionId: question.id, versionNo: 1,
+          questionType: sample.questionType, promptText: sample.promptText, publishedAt: sampleDate,
+        },
+      }));
     }
 
-    for (const sample of [
-      { submissionId: submissions[0].id, evaluatorType: 'AI', evaluatorId: null, scoreTa: 6, scoreCc: 6.5, scoreLr: 6.5, scoreGra: 6, overallBand: 6.5 },
-      { submissionId: submissions[0].id, evaluatorType: 'TEACHER', evaluatorId: teacher.id, scoreTa: 6, scoreCc: 6, scoreLr: 6.5, scoreGra: 6, overallBand: 6 },
-      { submissionId: submissions[1].id, evaluatorType: 'AI', evaluatorId: null, scoreTa: 5.5, scoreCc: 6, scoreLr: 6, scoreGra: 6, overallBand: 6 },
-    ]) {
-      const where = { submissionId: sample.submissionId, evaluatorType: sample.evaluatorType, evaluatorId: sample.evaluatorId };
-      if (!await tx.evaluation.findFirst({ where })) {
-        await tx.evaluation.create({ data: {
-          ...sample,
-          feedbackJson: {
-            sample: true,
-            summary: 'Illustrative feedback only. This short practice response needs more development to meet exam requirements.',
-            strengths: ['Clear central idea', 'Relevant topic vocabulary'],
-            improvements: ['Develop supporting examples', 'Practice a full response within the time limit'],
-          },
-          ...(sample.submissionId === submissions[0].id
-            ? { rubricDescriptors: { connect: rubrics.map(({ id }) => ({ id })) } }
-            : {}),
-        } });
-      }
+    const options = [];
+    for (const [index, sample] of [
+      { optionCode: 'A', contentText: 'A passport' },
+      { optionCode: 'B', contentText: 'A student card' },
+      { optionCode: 'C', contentText: 'A train ticket' },
+    ].entries()) {
+      options.push(await tx.questionOption.upsert({
+        where: {
+          questionVersionId_optionCode: { questionVersionId: questionVersions[1].id, optionCode: sample.optionCode },
+        },
+        update: {},
+        create: {
+          id: fixtureId(40 + index), questionVersionId: questionVersions[1].id,
+          ...sample, position: index + 1,
+        },
+      }));
+    }
+    const items = [];
+    for (const [index, questionVersion] of questionVersions.entries()) {
+      items.push(await tx.assessmentItem.upsert({
+        where: { activityVersionId_position: { activityVersionId: activityVersion.id, position: index + 1 } },
+        update: {},
+        create: {
+          id: fixtureId(50 + index), activityVersionId: activityVersion.id,
+          questionVersionId: questionVersion.id, position: index + 1, maxMarks: 1,
+        },
+      }));
     }
 
+    const answerKey = await tx.answerKeyVersion.upsert({
+      where: { activityVersionId_versionNo: { activityVersionId: activityVersion.id, versionNo: 1 } },
+      update: {},
+      create: { id: fixtureId(60), activityVersionId: activityVersion.id, versionNo: 1, publishedAt: sampleDate },
+    });
+    await tx.answerKeyEntry.upsert({
+      where: {
+        answerKeyVersionId_assessmentItemId: { answerKeyVersionId: answerKey.id, assessmentItemId: items[0].id },
+      },
+      update: {},
+      create: {
+        id: fixtureId(61), answerKeyVersionId: answerKey.id, assessmentItemId: items[0].id,
+        acceptedTextsJson: ['9 a.m.', '9 am', '9:00', '9'],
+        gradingRuleJson: { method: 'TEXT_EXACT', trim: true, caseSensitive: false, collapseSpaces: true, maxWords: 2 },
+      },
+    });
+    const choiceKey = await tx.answerKeyEntry.upsert({
+      where: {
+        answerKeyVersionId_assessmentItemId: { answerKeyVersionId: answerKey.id, assessmentItemId: items[1].id },
+      },
+      update: {},
+      create: {
+        id: fixtureId(62), answerKeyVersionId: answerKey.id, assessmentItemId: items[1].id,
+        gradingRuleJson: { method: 'EXACT_OPTION_SET', partialCredit: false },
+      },
+    });
+    await tx.answerKeyOption.upsert({
+      where: { entryId_optionId: { entryId: choiceKey.id, optionId: options[1].id } },
+      update: {},
+      create: { entryId: choiceKey.id, optionId: options[1].id },
+    });
+
+    const assignment = await tx.assignment.upsert({
+      where: { id: fixtureId(70) }, update: {},
+      create: {
+        id: fixtureId(70), courseId: course.id, activityId, creatorId: teacher.id,
+        title: '[Demo] Library reading practice',
+      },
+    });
+    await tx.assignmentVersion.upsert({
+      where: { assignmentId_versionNo: { assignmentId: assignment.id, versionNo: 1 } },
+      update: {},
+      create: {
+        id: fixtureId(71), assignmentId: assignment.id, activityId, activityVersionId: activityVersion.id,
+        versionNo: 1, mode: 'PRACTICE', timeLimitSeconds: 300, maxAttempts: 2, maxRevisions: 1,
+        allowLate: false, releasePolicyJson: { releaseMode: 'IMMEDIATE' }, publishedAt: sampleDate,
+      },
+    });
+
+    // One unpublished demo rubric illustrates versioning; it contains no official band descriptors.
+    const rubric = await tx.rubricVersion.upsert({
+      where: { rubricCode_versionNo: { rubricCode: 'WRITING_TASK_2_DEMO', versionNo: 1 } },
+      update: {},
+      create: {
+        id: fixtureId(80), rubricCode: 'WRITING_TASK_2_DEMO', versionNo: 1,
+        taskType: 'WRITING_TASK_2', title: '[Demo] Writing Task 2 rubric structure',
+      },
+    });
+    for (const [index, sample] of [
+      { code: 'TR', name: 'Task Response', definition: 'Demo summary: addresses the task and develops relevant ideas.' },
+      { code: 'CC', name: 'Coherence and Cohesion', definition: 'Demo summary: organizes ideas with a clear progression.' },
+      { code: 'LR', name: 'Lexical Resource', definition: 'Demo summary: uses vocabulary appropriately and accurately.' },
+      { code: 'GRA', name: 'Grammatical Range and Accuracy', definition: 'Demo summary: uses varied grammatical structures accurately.' },
+    ].entries()) {
+      await tx.rubricCriterion.upsert({
+        where: { rubricVersionId_code: { rubricVersionId: rubric.id, code: sample.code } },
+        update: {},
+        create: { id: fixtureId(81 + index), rubricVersionId: rubric.id, ...sample, weight: 0.25, maxScore: 9 },
+      });
+    }
+
+    // Learner attempts, grades, evidence and recommendations must come from actual workflows.
     return {
-      users: users.map(({ email }) => email),
-      courses: courses.map(({ title }) => title),
-      lessons: lessons.length,
-      sessions: sessions.length,
-      submissions: submissions.length,
+      users: users.map(({ email }) => email), course: course.title,
+      readingQuestions: items.length, answerKeyVersion: answerKey.versionNo,
+      assignmentId: assignment.id, unpublishedDemoRubricVersion: rubric.versionNo,
     };
   }, { maxWait: 10000, timeout: 30000 });
 
-  console.log('Sample database ready. Existing matching records were preserved.');
+  console.log('Sample authoring data ready. Existing matching records were preserved.');
   console.log(summary);
 }
 
