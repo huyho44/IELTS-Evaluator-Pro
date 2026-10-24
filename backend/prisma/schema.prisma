@@ -5,176 +5,196 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
+/// Represents the lifecycle state of a user account.
 enum AccountStatus {
-  ACTIVE
-  SUSPENDED
-  CLOSED
+  ACTIVE    // Account is fully operational
+  SUSPENDED // Account has been temporarily disabled
+  CLOSED    // Account has been permanently closed
 
   @@map("account_status")
 }
 
+/// Represents the approval state of a submitted application or request.
 enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  PENDING  // Awaiting review
+  APPROVED // Accepted by a reviewer
+  REJECTED // Declined by a reviewer
 
   @@map("approval_status")
 }
 
+/// Controls the visibility / release state of content (courses, items, etc.).
 enum PublicationStatus {
-  DRAFT
-  PUBLISHED
-  HIDDEN
-  ARCHIVED
+  DRAFT     // Only visible to authors/instructors
+  PUBLISHED // Publicly visible and available
+  HIDDEN    // Temporarily concealed from learners
+  ARCHIVED  // Retired content, read-only
 
   @@map("publication_status")
 }
 
+/// Discriminator that distinguishes the two concrete subtypes of LearningItem.
 enum LearningItemKind {
-  LESSON
-  PRACTICE
+  LESSON   // A reading/video lesson with materials
+  PRACTICE // A practice activity with questions
 
   @@map("learning_item_kind")
 }
 
+/// The IELTS skill area targeted by an activity or question.
 enum SkillArea {
-  READING
-  LISTENING
-  WRITING
-  SPEAKING
+  READING   // Reading comprehension
+  LISTENING // Audio-based comprehension
+  WRITING   // Written production
+  SPEAKING  // Spoken production
 
   @@map("skill_area")
 }
 
+/// How a learner submits their answer for an activity.
 enum ResponseMode {
-  OBJECTIVE
-  WRITING
-  SPEAKING
+  OBJECTIVE // Multiple-choice / short-answer (auto-gradable)
+  WRITING   // Free-form written text
+  SPEAKING  // Audio recording
 
   @@map("response_mode")
 }
 
+/// Whether an assignment is high-stakes (graded) or low-stakes (practice).
 enum AssignmentMode {
-  PRACTICE
-  GRADED
+  PRACTICE // No formal grade; learner can explore freely
+  GRADED   // Counts toward official assessment
 
   @@map("assignment_mode")
 }
 
+/// Tracks the progress of a single learner attempt through an assignment.
 enum AttemptStatus {
-  IN_PROGRESS
-  SUBMITTED
-  FINISHED
-  CANCELLED
+  IN_PROGRESS // Learner has started but not yet submitted
+  SUBMITTED   // Learner has submitted; awaiting grading
+  FINISHED    // Grading is complete and results are available
+  CANCELLED   // Attempt was voided before completion
 
   @@map("attempt_status")
 }
 
+/// Lifecycle of an asynchronous background job (e.g. AI grading run).
 enum RunStatus {
-  QUEUED
-  RUNNING
-  COMPLETED
-  FAILED
+  QUEUED    // Waiting to be picked up by a worker
+  RUNNING   // Currently being processed
+  COMPLETED // Finished successfully
+  FAILED    // Terminated with an unrecoverable error
 
   @@map("run_status")
 }
 
+/// Outcome of a single call to an external AI provider.
 enum ProviderAttemptStatus {
-  SUCCESS
-  REFUSED
-  INCOMPLETE
-  INVALID
-  ERROR
+  SUCCESS    // Provider returned a valid, parseable response
+  REFUSED    // Provider rejected the request (e.g. content policy)
+  INCOMPLETE // Response was cut off or truncated
+  INVALID    // Response could not be parsed into the expected schema
+  ERROR      // Network or infrastructure-level failure
 
   @@map("provider_attempt_status")
 }
 
+/// Identifies the source that produced an AssessmentResult.
 enum ResultKind {
-  AI
-  TEACHER
-  ANSWER_KEY
+  AI         // Produced by the AI grading pipeline
+  TEACHER    // Produced by a human teacher review
+  ANSWER_KEY // Produced by automatic answer-key matching
 
   @@map("result_kind")
 }
 
+/// The score scale used when reporting an overall result.
 enum ScoreScale {
-  BAND
-  RAW
+  BAND // IELTS band score (0-9, one decimal place)
+  RAW  // Raw marks (integer or decimal count)
 
   @@map("score_scale")
 }
 
+/// Quality gate applied to an AI-generated result before it is surfaced.
 enum QualityStatus {
-  PASSED
-  FLAGGED
+  PASSED  // Result passed automated quality checks
+  FLAGGED // Result requires human review before release
 
   @@map("quality_status")
 }
 
+/// State machine for an instructor review case.
 enum ReviewStatus {
-  PENDING
-  CLAIMED
-  CONFIRMED
-  CANCELLED
+  PENDING   // Case is open and unassigned
+  CLAIMED   // An instructor has taken ownership
+  CONFIRMED // The instructor has published a decision
+  CANCELLED // Case was closed without a decision
 
   @@map("review_status")
 }
 
+/// State machine for a learner appeal against an accepted assessment.
 enum AppealStatus {
-  PENDING
-  IN_REVIEW
-  RESOLVED
-  REJECTED
+  PENDING   // Submitted but not yet reviewed
+  IN_REVIEW // Being actively reviewed
+  RESOLVED  // Outcome has been communicated to the learner
+  REJECTED  // Appeal was dismissed
 
   @@map("appeal_status")
 }
 
+/// How well a skill was demonstrated within a single assessment result.
 enum ObservationOutcome {
-  MET
-  PARTIAL
-  NOT_MET
-  NOT_OBSERVED
+  MET          // Skill was clearly demonstrated
+  PARTIAL      // Skill was partially demonstrated
+  NOT_MET      // Evidence shows the skill is not yet mastered
+  NOT_OBSERVED // Insufficient evidence to make a judgment
 
   @@map("observation_outcome")
 }
 
+/// Aggregate observation status across all evidence for a skill in a profile.
 enum ObservationStatus {
-  UNKNOWN
-  INSUFFICIENT
-  OBSERVED
+  UNKNOWN      // No evidence has been collected yet
+  INSUFFICIENT // Some evidence exists but too little to be conclusive
+  OBSERVED     // Enough evidence for a reliable strength estimate
 
   @@map("observation_status")
 }
 
+/// The type of payload stored in a LessonMaterial record.
 enum MaterialKind {
-  TEXT
-  URL
-  FILE
+  TEXT // Inline rich text content
+  URL  // An external hyperlink
+  FILE // An uploaded file asset
 
   @@map("material_kind")
 }
 
+/// The interaction type used in a Question.
 enum QuestionType {
-  SINGLE_CHOICE
-  MULTIPLE_CHOICE
-  SHORT_ANSWER
+  SINGLE_CHOICE   // Exactly one correct option
+  MULTIPLE_CHOICE // One or more correct options
+  SHORT_ANSWER    // Free-text response matched against an answer key
 
   @@map("question_type")
 }
 
+/// State machine for content moderation reports.
 enum ModerationStatus {
-  PENDING
-  RESOLVED
-  DISMISSED
+  PENDING   // Report filed, awaiting moderator action
+  RESOLVED  // Moderator took action on the reported content
+  DISMISSED // Report was reviewed and found to be invalid
 
   @@map("moderation_status")
 }
 
+/// State machine for the transactional outbox pattern.
 enum OutboxStatus {
-  PENDING
-  DISPATCHED
-  FAILED
+  PENDING    // Event has been written but not yet dispatched
+  DISPATCHED // Event has been successfully delivered to the message bus
+  FAILED     // All delivery attempts have been exhausted
 
   @@map("outbox_status")
 }
@@ -183,14 +203,18 @@ enum OutboxStatus {
 // Identity and access
 // ==========================================================================
 
-/// Tài khoản chung. Vai trò là quan hệ N:M; không ép một tài khoản chỉ học hoặc chỉ dạy.
+/// Core application user. Represents both learners and instructors/admins;
+/// the active roles are held in UserRole. Optional fields (targetBand,
+/// targetExamDate) are learner-specific goal settings.
 model User {
   id             String        @id @default(uuid()) @db.Uuid
   email          String        @unique(map: "uq_app_user_email") @db.VarChar(320)
   passwordHash   String        @map("password_hash") @db.Text
   displayName    String        @map("display_name") @db.VarChar(120)
   status         AccountStatus @default(ACTIVE)
+  /// Learner's IELTS target band score (e.g. 7.0).
   targetBand     Decimal?      @map("target_band") @db.Decimal(3, 1)
+  /// Date the learner plans to sit the IELTS exam.
   targetExamDate DateTime?     @map("target_exam_date") @db.Date
   createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -222,9 +246,10 @@ model User {
   @@map("APP_USER")
 }
 
-/// Ba vai trò ban đầu LEARNER, INSTRUCTOR, ADMIN.
+/// System role definition. Three roles are supported: LEARNER, INSTRUCTOR, ADMIN.
 model Role {
   id   String @id @default(uuid()) @db.Uuid
+  /// Short machine-readable code (e.g. "LEARNER", "INSTRUCTOR", "ADMIN").
   code String @unique(map: "uq_role_code") @db.VarChar(30)
   name String @db.VarChar(80)
 
@@ -233,7 +258,8 @@ model Role {
   @@map("ROLE")
 }
 
-/// Bảng nối người dùng–vai trò.
+/// Join table that assigns one or more roles to a user. Composite primary key
+/// (userId, roleId) ensures no duplicate role grants.
 model UserRole {
   userId    String   @map("user_id") @db.Uuid
   roleId    String   @map("role_id") @db.Uuid
@@ -247,12 +273,15 @@ model UserRole {
   @@map("USER_ROLE")
 }
 
-/// Phiên đăng nhập; không lưu refresh token dạng rõ.
+/// Active refresh-token session. A session is revoked by setting revokedAt;
+/// expired sessions are cleaned up by a background job.
 model AuthSession {
   id               String    @id @default(uuid()) @db.Uuid
   userId           String    @map("user_id") @db.Uuid
+  /// Bcrypt hash of the opaque refresh token issued to the client.
   refreshTokenHash String    @unique(map: "uq_auth_session_refresh_token_hash") @map("refresh_token_hash") @db.Text
   expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  /// Set when the token is explicitly invalidated (logout / token rotation).
   revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
 
   user User @relation("AuthSession_userId", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_auth_session_user_id")
@@ -261,13 +290,17 @@ model AuthSession {
   @@map("AUTH_SESSION")
 }
 
-/// Hồ sơ xin quyền giáo viên. Một người có lịch sử nhiều hồ sơ, tối đa một hồ sơ chờ xử lý.
+/// Application submitted by a learner who wishes to become an instructor.
+/// An admin reviews the application and sets the status to APPROVED or REJECTED.
 model InstructorApplication {
   id             String         @id @default(uuid()) @db.Uuid
   applicantId    String         @map("applicant_id") @db.Uuid
+  /// The admin user who reviewed this application; NULL while PENDING.
   reviewerId     String?        @map("reviewer_id") @db.Uuid
   status         ApprovalStatus @default(PENDING)
+  /// Free-text description of the applicant's qualifications and experience.
   profileText    String         @map("profile_text") @db.Text
+  /// Optional rationale provided by the reviewer when approving or rejecting.
   decisionReason String?        @map("decision_reason") @db.Text
   submittedAt    DateTime       @default(now()) @map("submitted_at") @db.Timestamptz(3)
   reviewedAt     DateTime?      @map("reviewed_at") @db.Timestamptz(3)
@@ -280,14 +313,17 @@ model InstructorApplication {
   @@map("INSTRUCTOR_APPLICATION")
 }
 
-/// Metadata tệp; nội dung ở object storage. Không lưu URL tạm thời làm định danh.
+/// Metadata record for an uploaded file. The actual binary is stored in
+/// object storage; only the lookup key and integrity hash are kept here.
 model FileAsset {
   id           String   @id @default(uuid()) @db.Uuid
   ownerId      String   @map("owner_id") @db.Uuid
+  /// Unique object key used to retrieve the file from object storage.
   storageKey   String   @unique(map: "uq_file_asset_storage_key") @map("storage_key") @db.Text
   originalName String   @map("original_name") @db.Text
   mimeType     String   @map("mime_type") @db.VarChar(120)
   byteSize     BigInt   @map("byte_size") @db.BigInt
+  /// SHA-256 (or similar) hex digest used for deduplication and integrity checks.
   contentHash  String   @map("content_hash") @db.VarChar(128)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -305,14 +341,17 @@ model FileAsset {
 // Courses and learning content
 // ==========================================================================
 
-/// Khóa học; điều kiện hoàn thành được công bố trước.
+/// A top-level learning course. Contains chapters, learning items, and
+/// assignments. Enrollment must be open before learners can join.
 model Course {
   id                   String            @id @default(uuid()) @db.Uuid
   creatorId            String            @map("creator_id") @db.Uuid
   title                String            @db.VarChar(240)
   description          String            @db.Text
   status               PublicationStatus @default(DRAFT)
+  /// When true, learners can self-enroll. When false, enrollment is invite-only.
   enrollmentOpen       Boolean           @default(false) @map("enrollment_open")
+  /// JSON policy that defines what counts as course completion.
   completionPolicyJson Json              @map("completion_policy_json") @db.JsonB
   createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -330,10 +369,12 @@ model Course {
   @@map("COURSE")
 }
 
-/// Phân công theo khóa; không đồng nhất với vai trò INSTRUCTOR toàn hệ thống.
+/// Associates an instructor user with a course and describes their
+/// responsibility (e.g. "LEAD", "ASSISTANT").
 model CourseInstructor {
   courseId       String   @map("course_id") @db.Uuid
   instructorId   String   @map("instructor_id") @db.Uuid
+  /// Role/responsibility of this instructor within the course.
   responsibility String   @db.VarChar(30)
   assignedAt     DateTime @default(now()) @map("assigned_at") @db.Timestamptz(3)
 
@@ -345,11 +386,13 @@ model CourseInstructor {
   @@map("COURSE_INSTRUCTOR")
 }
 
-/// Chương thuộc một khóa.
+/// An ordered section within a course. Chapters group related learning items
+/// and help learners navigate the curriculum.
 model Chapter {
   id       String @id @default(uuid()) @db.Uuid
   courseId String @map("course_id") @db.Uuid
   title    String @db.VarChar(240)
+  /// 1-based display order within the course; unique per course.
   position Int
 
   course        Course         @relation("Chapter_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_chapter_course_id")
@@ -360,14 +403,18 @@ model Chapter {
   @@map("CHAPTER")
 }
 
-/// Supertype của LESSON và PRACTICE_ACTIVITY: total, disjoint. Recommendation và tag kỹ năng trỏ vào một đích có FK thật.
+/// Supertype for LESSON and PRACTICE_ACTIVITY (total, disjoint inheritance).
+/// The `kind` column is the discriminator; recommendation and skill tags
+/// point to this table as the real FK destination.
 model LearningItem {
   id        String            @id @default(uuid()) @db.Uuid
   courseId  String            @map("course_id") @db.Uuid
+  /// Optional grouping chapter; NULL means the item is not assigned to a chapter.
   chapterId String?           @map("chapter_id") @db.Uuid
   kind      LearningItemKind
   title     String            @db.VarChar(240)
   status    PublicationStatus @default(DRAFT)
+  /// 1-based display order within the course.
   position  Int
 
   course              Course               @relation("LearningItem_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_course_id")
@@ -386,11 +433,12 @@ model LearningItem {
   @@map("LEARNING_ITEM")
 }
 
-/// Subtype học liệu; kind cố định LESSON.
-/// SQL CHECK: kind = 'LESSON'
+/// Lesson subtype of LearningItem. The `kind` column is fixed to LESSON and
+/// is part of the composite FK back to LearningItem to enforce type safety.
 model Lesson {
   id      String           @id @db.Uuid
   kind    LearningItemKind @default(LESSON)
+  /// Short introductory text shown to learners before reading the materials.
   summary String?          @db.Text
 
   learningItem     LearningItem     @relation("Lesson_id_kind", fields: [id, kind], references: [id, kind], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_id_kind")
@@ -402,13 +450,16 @@ model Lesson {
   @@map("LESSON")
 }
 
-/// Subtype bài luyện/đánh giá; kind cố định PRACTICE. Nội dung đề có phiên bản riêng.
-/// SQL CHECK: kind = 'PRACTICE'
+/// Practice activity subtype of LearningItem. The `kind` column is fixed to
+/// PRACTICE. Content is versioned via ActivityVersion so past attempts remain
+/// assessable against the version in use at submission time.
 model PracticeActivity {
   id           String           @id @db.Uuid
   kind         LearningItemKind @default(PRACTICE)
   creatorId    String           @map("creator_id") @db.Uuid
+  /// IELTS skill area this activity targets (READING, LISTENING, WRITING, SPEAKING).
   skillArea    SkillArea        @map("skill_area")
+  /// How learners submit their answer (OBJECTIVE, WRITING, SPEAKING).
   responseMode ResponseMode     @map("response_mode")
 
   learningItem     LearningItem      @relation("PracticeActivity_id_kind", fields: [id, kind], references: [id, kind], onDelete: Restrict, onUpdate: Restrict, map: "fk_practice_activity_id_kind")
@@ -421,15 +472,20 @@ model PracticeActivity {
   @@map("PRACTICE_ACTIVITY")
 }
 
-/// Một bài học có nhiều học liệu. Đúng một payload theo kind; có thể gồm văn bản và video/tệp.
-/// SQL CHECK: (kind = 'TEXT' AND content_text IS NOT NULL AND external_url IS NULL AND file_asset_id IS NULL) OR (kind = 'URL' AND external_url IS NOT NULL AND content_text IS NULL AND file_asset_id IS NULL) OR (kind = 'FILE' AND file_asset_id IS NOT NULL AND content_text IS NULL AND external_url IS NULL)
+/// A single piece of content within a lesson (text block, external URL, or
+/// uploaded file). Exactly one payload field should be non-NULL per record,
+/// matching the `kind` column. Records are ordered by `position`.
 model LessonMaterial {
   id          String       @id @default(uuid()) @db.Uuid
   lessonId    String       @map("lesson_id") @db.Uuid
   kind        MaterialKind
+  /// 1-based display order within the lesson.
   position    Int
+  /// Populated when kind = TEXT; holds the rich-text body.
   contentText String?      @map("content_text") @db.Text
+  /// Populated when kind = URL; holds the external hyperlink.
   externalUrl String?      @map("external_url") @db.Text
+  /// Populated when kind = FILE; foreign key to the uploaded FileAsset.
   fileAssetId String?      @map("file_asset_id") @db.Uuid
 
   lesson    Lesson     @relation("LessonMaterial_lessonId", fields: [lessonId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_lesson_material_lesson_id")
@@ -440,14 +496,18 @@ model LessonMaterial {
   @@map("LESSON_MATERIAL")
 }
 
-/// Một enrollment cho mỗi học viên–khóa; rời rồi học lại cập nhật cùng hồ sơ theo chính sách.
+/// One enrollment per learner-course pair. If a learner leaves and re-enrolls,
+/// the same record is updated (leftAt is cleared) rather than creating a new one.
 model Enrollment {
   id          String    @id @default(uuid()) @db.Uuid
   learnerId   String    @map("learner_id") @db.Uuid
   courseId    String    @map("course_id") @db.Uuid
+  /// Current enrollment state (e.g. "ACTIVE", "LEFT", "COMPLETED").
   status      String    @default("ACTIVE") @db.VarChar(24)
   enrolledAt  DateTime  @default(now()) @map("enrolled_at") @db.Timestamptz(3)
+  /// Set when the learner voluntarily leaves the course.
   leftAt      DateTime? @map("left_at") @db.Timestamptz(3)
+  /// Set when the learner satisfies the course completion policy.
   completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
 
   learner          User             @relation("Enrollment_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_enrollment_learner_id")
@@ -459,11 +519,15 @@ model Enrollment {
   @@map("ENROLLMENT")
 }
 
-/// Tiến độ nội dung, tách khỏi năng lực. Lesson phải thuộc khóa của enrollment.
+/// Per-lesson progress tracker scoped to an enrollment. Tracks the last
+/// position the learner reached (e.g. scroll offset or video timestamp) and
+/// completion state. The lesson must belong to the enrollment's course.
 model LessonProgress {
   enrollmentId     String    @map("enrollment_id") @db.Uuid
   lessonId         String    @map("lesson_id") @db.Uuid
+  /// Current progress state (e.g. "NOT_STARTED", "IN_PROGRESS", "COMPLETED").
   status           String    @default("NOT_STARTED") @db.VarChar(24)
+  /// JSON snapshot of the learner's last scroll/playback position.
   lastPositionJson Json?     @map("last_position_json") @db.JsonB
   lastAccessedAt   DateTime  @default(now()) @map("last_accessed_at") @db.Timestamptz(3)
   completedAt      DateTime? @map("completed_at") @db.Timestamptz(3)
@@ -480,16 +544,26 @@ model LessonProgress {
 // Questions, assignments and immutable submissions
 // ==========================================================================
 
-/// Đề/hoạt động bất biến sau công bố. Response mode và skill area lấy từ activity; không đổi mode khi đã có phiên bản sử dụng.
+/// Immutable snapshot of an activity's prompt and configuration. Once a
+/// version has been used in a submission it must not be changed; create a
+/// new version instead. The response mode and skill area are inherited from
+/// the parent PracticeActivity and cannot change between versions.
 model ActivityVersion {
   id              String    @id @default(uuid()) @db.Uuid
   activityId      String    @map("activity_id") @db.Uuid
+  /// Monotonically increasing version number; starts at 1.
   versionNo       Int       @default(1) @map("version_no")
+  /// The main task description shown to the learner.
   promptText      String    @map("prompt_text") @db.Text
+  /// Step-by-step instructions for completing the activity.
   instructions    String    @db.Text
+  /// Relative difficulty rating (e.g. 1 = easy, 5 = very hard).
   difficulty      Int
+  /// Estimated time to complete the activity, in minutes.
   expectedMinutes Int       @map("expected_minutes")
+  /// Set when the version is published and made available for assignments.
   publishedAt     DateTime? @map("published_at") @db.Timestamptz(3)
+  /// SHA-256 hash of the canonical content; used to detect duplicate versions.
   contentHash     String    @map("content_hash") @db.VarChar(128)
 
   activity            PracticeActivity     @relation("ActivityVersion_activityId", fields: [activityId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_activity_version_activity_id")
@@ -503,11 +577,14 @@ model ActivityVersion {
   @@map("ACTIVITY_VERSION")
 }
 
-/// Lần giao một hoạt động trong khóa. Phân biệt đề tái sử dụng với hạn và quy tắc của lần giao.
+/// An assignment ties a PracticeActivity to a Course and optionally to a
+/// context Lesson. It is the instructor-facing entity; learners interact with
+/// the versioned AssignmentVersion.
 model Assignment {
   id              String  @id @default(uuid()) @db.Uuid
   courseId        String  @map("course_id") @db.Uuid
   activityId      String  @map("activity_id") @db.Uuid
+  /// Optional lesson whose content provides context for this assignment.
   contextLessonId String? @map("context_lesson_id") @db.Uuid
   creatorId       String  @map("creator_id") @db.Uuid
   title           String  @db.VarChar(240)
@@ -526,21 +603,32 @@ model Assignment {
   @@map("ASSIGNMENT")
 }
 
-/// Ghim đề và chính sách: sửa hạn/quy tắc tạo version mới; attempt giữ version cũ trừ khi có gia hạn ghi nhận.
+/// A published snapshot of an assignment's settings (time window, attempt
+/// limits, rubric, grading policy, etc.). Publishing a new version does not
+/// invalidate attempts taken against an older version.
 model AssignmentVersion {
   id                String         @id @default(uuid()) @db.Uuid
   assignmentId      String         @map("assignment_id") @db.Uuid
+  /// Denormalised activityId for use in composite FK to ActivityVersion.
   activityId        String         @map("activity_id") @db.Uuid
   activityVersionId String         @map("activity_version_id") @db.Uuid
+  /// Optional rubric attached to this version for holistic/criteria scoring.
   rubricVersionId   String?        @map("rubric_version_id") @db.Uuid
   versionNo         Int            @default(1) @map("version_no")
   mode              AssignmentMode
+  /// When the assignment window opens; NULL means immediately available.
   opensAt           DateTime?      @map("opens_at") @db.Timestamptz(3)
+  /// Hard deadline; NULL means no due date.
   dueAt             DateTime?      @map("due_at") @db.Timestamptz(3)
+  /// Per-attempt time limit in seconds; NULL means no limit.
   timeLimitSeconds  Int?           @map("time_limit_seconds")
+  /// Maximum number of attempts a learner may make.
   maxAttempts       Int            @default(1) @map("max_attempts")
+  /// Maximum number of submission revisions allowed within one attempt.
   maxRevisions      Int            @default(1) @map("max_revisions")
+  /// Whether late submissions are accepted after dueAt.
   allowLate         Boolean        @default(false) @map("allow_late")
+  /// JSON policy controlling when results are released to the learner.
   releasePolicyJson Json           @map("release_policy_json") @db.JsonB
   publishedAt       DateTime?      @map("published_at") @db.Timestamptz(3)
 
@@ -559,18 +647,26 @@ model AssignmentVersion {
   @@map("ASSIGNMENT_VERSION")
 }
 
-/// Một cơ hội làm/luyện. Số thứ tự và quota tính theo assignment ổn định qua các phiên bản chính sách. Đây cũng là gốc nhóm evidence của chuỗi revisions.
+/// One attempt by a learner against a specific AssignmentVersion. The attempt
+/// number is scoped to the learner-assignment pair. An optional link to a
+/// RecommendationItem records when the attempt was triggered by the system's
+/// recommendation engine.
 model Attempt {
   id                   String        @id @default(uuid()) @db.Uuid
   learnerId            String        @map("learner_id") @db.Uuid
   assignmentId         String        @map("assignment_id") @db.Uuid
   assignmentVersionId  String        @map("assignment_version_id") @db.Uuid
+  /// Denormalised activityVersionId for composite FK integrity checks.
   activityVersionId    String        @map("activity_version_id") @db.Uuid
+  /// 1-based attempt sequence number for this learner-assignment pair.
   attemptNo            Int           @default(1) @map("attempt_no")
   status               AttemptStatus @default(IN_PROGRESS)
   startedAt            DateTime      @default(now()) @map("started_at") @db.Timestamptz(3)
+  /// Wall-clock deadline for timed assignments; NULL if no time limit applies.
   expiresAt            DateTime?     @map("expires_at") @db.Timestamptz(3)
+  /// Set when the attempt reaches a terminal state (FINISHED or CANCELLED).
   finishedAt           DateTime?     @map("finished_at") @db.Timestamptz(3)
+  /// Links this attempt to the recommendation that suggested it, if any.
   recommendationItemId String?       @map("recommendation_item_id") @db.Uuid
 
   learner             User                 @relation("Attempt_learnerId", fields: [learnerId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_attempt_learner_id")
@@ -585,10 +681,14 @@ model Attempt {
   @@map("ATTEMPT")
 }
 
-/// Bản nháp mutable; autosave không tạo bản nộp hay lượt chấm.
+/// Temporary in-progress draft saved while the learner is composing their
+/// answer. Overwritten on each auto-save; deleted when the attempt is
+/// submitted. Uses optimistic locking (lockVersion) to prevent lost updates.
 model AttemptDraft {
   attemptId   String   @id @map("attempt_id") @db.Uuid
+  /// JSON payload containing the draft answer (structure depends on responseMode).
   payloadJson Json     @map("payload_json") @db.JsonB
+  /// Optimistic-locking counter; incremented on every write.
   lockVersion Int      @default(0) @map("lock_version")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -597,16 +697,22 @@ model AttemptDraft {
   @@map("ATTEMPT_DRAFT")
 }
 
-/// Bản đã nộp bất biến. OBJECTIVE dùng ITEM_RESPONSE; WRITING dùng text; SPEAKING dùng audio. Sửa lại cùng cơ hội tạo revision mới.
-/// SQL CHECK: (response_mode = 'OBJECTIVE' AND writing_text IS NULL AND audio_asset_id IS NULL) OR (response_mode = 'WRITING' AND writing_text IS NOT NULL AND audio_asset_id IS NULL) OR (response_mode = 'SPEAKING' AND audio_asset_id IS NOT NULL AND writing_text IS NULL)
+/// An immutable, numbered submission within an attempt. Revision 1 is the
+/// first submission; if the assignment allows revisions (maxRevisions > 1),
+/// the learner may submit additional revisions. Only one of writingText or
+/// audioAssetId should be populated, depending on the responseMode.
 model SubmissionRevision {
   id           String       @id @default(uuid()) @db.Uuid
   attemptId    String       @map("attempt_id") @db.Uuid
+  /// 1-based revision number within the attempt.
   revisionNo   Int          @map("revision_no")
   responseMode ResponseMode @map("response_mode")
+  /// Free-text writing submission; populated when responseMode = WRITING.
   writingText  String?      @map("writing_text") @db.Text
+  /// Uploaded audio recording; populated when responseMode = SPEAKING.
   audioAssetId String?      @map("audio_asset_id") @db.Uuid
   submittedAt  DateTime     @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  /// SHA-256 hash of the submission content for immutability verification.
   contentHash  String       @map("content_hash") @db.VarChar(128)
 
   attempt              Attempt               @relation("SubmissionRevision_attemptId", fields: [attemptId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_submission_revision_attempt_id")
@@ -623,14 +729,18 @@ model SubmissionRevision {
   @@map("SUBMISSION_REVISION")
 }
 
-/// Đoạn văn đã chuẩn hóa và cố định của Writing revision; dùng để kiểm tra trích dẫn.
-/// SQL CHECK: start_offset >= 0 AND end_offset >= start_offset
+/// A single paragraph extracted from a writing submission. Paragraphs are
+/// used to anchor inline findings to specific text spans, enabling granular
+/// feedback highlighting in the UI.
 model RevisionParagraph {
   id          String @id @default(uuid()) @db.Uuid
   revisionId  String @map("revision_id") @db.Uuid
+  /// 1-based paragraph number within the revision.
   paragraphNo Int    @map("paragraph_no")
   text        String @db.Text
+  /// Character offset of the paragraph's first character in the full text.
   startOffset Int    @map("start_offset")
+  /// Character offset of the paragraph's last character in the full text.
   endOffset   Int    @map("end_offset")
 
   revision       SubmissionRevision @relation("RevisionParagraph_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_revision_paragraph_revision_id")
@@ -640,11 +750,14 @@ model RevisionParagraph {
   @@map("REVISION_PARAGRAPH")
 }
 
-/// Định danh câu hỏi trong ngân hàng.
+/// A reusable bank question authored by an instructor. The question's
+/// content is versioned through QuestionVersion records; this record holds
+/// only the author and classification metadata.
 model Question {
   id        String    @id @default(uuid()) @db.Uuid
   authorId  String    @map("author_id") @db.Uuid
   skillArea SkillArea @map("skill_area")
+  /// Short label used to identify the question in the question bank.
   title     String    @db.VarChar(240)
 
   author           User              @relation("Question_authorId", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_author_id")
@@ -654,14 +767,18 @@ model Question {
   @@map("QUESTION")
 }
 
-/// Nội dung câu hỏi và lựa chọn bất biến; đáp án được lưu riêng theo key version.
+/// Immutable versioned content of a Question. Once a version has been
+/// used in an AssessmentItem it must not be edited; create a new version.
 model QuestionVersion {
   id              String       @id @default(uuid()) @db.Uuid
   questionId      String       @map("question_id") @db.Uuid
   versionNo       Int          @default(1) @map("version_no")
   questionType    QuestionType @map("question_type")
+  /// The question stem displayed to the learner.
   promptText      String       @map("prompt_text") @db.Text
+  /// Optional passage or image description provided alongside the question.
   stimulusText    String?      @map("stimulus_text") @db.Text
+  /// Optional file asset (image, audio clip) used as the question stimulus.
   stimulusAssetId String?      @map("stimulus_asset_id") @db.Uuid
   publishedAt     DateTime?    @map("published_at") @db.Timestamptz(3)
 
@@ -675,12 +792,15 @@ model QuestionVersion {
   @@map("QUESTION_VERSION")
 }
 
-/// Lựa chọn của câu hỏi trắc nghiệm; không mặc định chỉ chọn một.
+/// One selectable answer choice for a QuestionVersion. Applicable to
+/// SINGLE_CHOICE and MULTIPLE_CHOICE question types.
 model QuestionOption {
   id                String @id @default(uuid()) @db.Uuid
   questionVersionId String @map("question_version_id") @db.Uuid
+  /// Short code identifying the option (e.g. "A", "B", "C", "D").
   optionCode        String @map("option_code") @db.VarChar(12)
   contentText       String @map("content_text") @db.Text
+  /// Display order within the question's option list.
   position          Int
 
   questionVersion    QuestionVersion     @relation("QuestionOption_questionVersionId", fields: [questionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_option_question_version_id")
@@ -692,13 +812,17 @@ model QuestionOption {
   @@map("QUESTION_OPTION")
 }
 
-/// Bảng nối đề–phiên bản câu hỏi. Reading/Listening và micro-quiz dùng cùng cấu trúc.
+/// Positions a specific QuestionVersion within an ActivityVersion, setting its
+/// display order and the maximum marks it can earn.
 model AssessmentItem {
   id                String  @id @default(uuid()) @db.Uuid
   activityVersionId String  @map("activity_version_id") @db.Uuid
   questionVersionId String  @map("question_version_id") @db.Uuid
+  /// 1-based display order within the activity.
   position          Int
+  /// Optional heading used when the activity is divided into sections.
   sectionLabel      String? @map("section_label") @db.VarChar(120)
+  /// Maximum marks a learner can earn for this item.
   maxMarks          Decimal @map("max_marks") @db.Decimal(6, 2)
 
   activityVersion  ActivityVersion  @relation("AssessmentItem_activityVersionId", fields: [activityVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_assessment_item_activity_version_id")
@@ -712,11 +836,14 @@ model AssessmentItem {
   @@map("ASSESSMENT_ITEM")
 }
 
-/// Đáp án theo phiên bản đề; sửa đáp án không làm mất kết quả cũ. Bảng quy đổi điểm nếu có được lưu cùng version.
+/// A versioned answer key for an ActivityVersion. Multiple versions can exist
+/// if the marking scheme is revised; the version used at grading time is
+/// recorded in AnswerKeyResult for auditability.
 model AnswerKeyVersion {
   id                String    @id @default(uuid()) @db.Uuid
   activityVersionId String    @map("activity_version_id") @db.Uuid
   versionNo         Int       @default(1) @map("version_no")
+  /// Optional JSON that maps raw score ranges to band scores.
   scoreMappingJson  Json?     @map("score_mapping_json") @db.JsonB
   publishedAt       DateTime? @map("published_at") @db.Timestamptz(3)
 
@@ -728,12 +855,16 @@ model AnswerKeyVersion {
   @@map("ANSWER_KEY_VERSION")
 }
 
-/// Đáp án/cách chấp nhận cho một item; cùng activity version với key.
+/// Defines the correct answer for one AssessmentItem within an AnswerKeyVersion.
+/// The grading rule specifies how to award marks (e.g. exact match, partial
+/// credit). Accepted texts apply to SHORT_ANSWER; options apply to choice types.
 model AnswerKeyEntry {
   id                 String @id @default(uuid()) @db.Uuid
   answerKeyVersionId String @map("answer_key_version_id") @db.Uuid
   assessmentItemId   String @map("assessment_item_id") @db.Uuid
+  /// JSON array of accepted answer strings for short-answer questions.
   acceptedTextsJson  Json?  @map("accepted_texts_json") @db.JsonB
+  /// JSON object describing the marking algorithm (e.g. exact-match, regex).
   gradingRuleJson    Json   @map("grading_rule_json") @db.JsonB
 
   answerKeyVersion AnswerKeyVersion  @relation("AnswerKeyEntry_answerKeyVersionId", fields: [answerKeyVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_entry_answer_key_version_id")
@@ -746,7 +877,8 @@ model AnswerKeyEntry {
   @@map("ANSWER_KEY_ENTRY")
 }
 
-/// Tập đáp án lựa chọn đúng; option phải thuộc QuestionVersion của item trong key entry.
+/// Join table that designates which QuestionOption values are correct for a
+/// given AnswerKeyEntry (used for SINGLE_CHOICE and MULTIPLE_CHOICE items).
 model AnswerKeyOption {
   entryId  String @map("entry_id") @db.Uuid
   optionId String @map("option_id") @db.Uuid
@@ -759,11 +891,14 @@ model AnswerKeyOption {
   @@map("ANSWER_KEY_OPTION")
 }
 
-/// Câu trả lời được nộp. Nhiều lựa chọn được biểu diễn qua RESPONSE_SELECTION.
+/// Records a learner's answer to one AssessmentItem within a submission
+/// revision. textAnswer is used for SHORT_ANSWER; selected options are
+/// stored in ResponseSelection.
 model ItemResponse {
   id               String  @id @default(uuid()) @db.Uuid
   revisionId       String  @map("revision_id") @db.Uuid
   assessmentItemId String  @map("assessment_item_id") @db.Uuid
+  /// Free-text answer provided for SHORT_ANSWER questions.
   textAnswer       String? @map("text_answer") @db.Text
 
   revision           SubmissionRevision  @relation("ItemResponse_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_response_revision_id")
@@ -776,7 +911,8 @@ model ItemResponse {
   @@map("ITEM_RESPONSE")
 }
 
-/// Bảng nối cho câu trả lời một hoặc nhiều lựa chọn. Option phải thuộc câu hỏi của response.
+/// Records which QuestionOption(s) a learner selected in a choice-type
+/// ItemResponse. One row per selected option.
 model ResponseSelection {
   responseId String @map("response_id") @db.Uuid
   optionId   String @map("option_id") @db.Uuid
@@ -793,13 +929,18 @@ model ResponseSelection {
 // Rubrics and assessment results
 // ==========================================================================
 
-/// Rubric định danh bằng code+version. Task 2, Task 1 và Speaking có bộ tiêu chí tương ứng, không hard-code bốn cột cho mọi bài.
+/// A versioned holistic-scoring rubric (e.g. the official IELTS Writing
+/// rubric). Multiple versions can exist when the rubric is updated. The
+/// rubricCode groups all versions of the same rubric together.
 model RubricVersion {
   id          String    @id @default(uuid()) @db.Uuid
+  /// Machine-readable identifier shared across all versions of this rubric.
   rubricCode  String    @map("rubric_code") @db.VarChar(60)
   versionNo   Int       @default(1) @map("version_no")
+  /// The task type this rubric applies to (e.g. "TASK1", "TASK2").
   taskType    String    @map("task_type") @db.VarChar(60)
   title       String    @db.VarChar(240)
+  /// URL of the official rubric document, if published externally.
   sourceUrl   String?   @map("source_url") @db.Text
   publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
 
@@ -812,13 +953,18 @@ model RubricVersion {
   @@map("RUBRIC_VERSION")
 }
 
-/// Tiêu chí thuộc đúng một rubric version: TR/CC/LR/GRA hoặc bộ Speaking.
+/// One scoring dimension within a RubricVersion (e.g. "Coherence and
+/// Cohesion", "Lexical Resource"). Each criterion has a weight and a maximum
+/// score, and is described by a set of BandDescriptors.
 model RubricCriterion {
   id              String  @id @default(uuid()) @db.Uuid
   rubricVersionId String  @map("rubric_version_id") @db.Uuid
+  /// Short code used to reference the criterion programmatically (e.g. "CC").
   code            String  @db.VarChar(30)
   name            String  @db.VarChar(140)
+  /// Formal definition of what this criterion measures.
   definition      String  @db.Text
+  /// Relative weight of this criterion in the overall band calculation.
   weight          Decimal @db.Decimal(6, 3)
   maxScore        Decimal @map("max_score") @db.Decimal(6, 2)
 
@@ -831,11 +977,14 @@ model RubricCriterion {
   @@map("RUBRIC_CRITERION")
 }
 
-/// Mô tả mức chất lượng cho tiêu chí; không phải một embedding của cả rubric.
+/// Describes what a learner's response must look like at a given IELTS band
+/// value for a specific RubricCriterion. One row per band per criterion.
 model BandDescriptor {
   id          String  @id @default(uuid()) @db.Uuid
   criterionId String  @map("criterion_id") @db.Uuid
+  /// IELTS band value this descriptor applies to (e.g. 5.0, 6.0, 7.0).
   bandValue   Decimal @map("band_value") @db.Decimal(3, 1)
+  /// Qualitative description of learner performance at this band level.
   description String  @db.Text
 
   criterion RubricCriterion @relation("BandDescriptor_criterionId", fields: [criterionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_band_descriptor_criterion_id")
@@ -844,12 +993,17 @@ model BandDescriptor {
   @@map("BAND_DESCRIPTOR")
 }
 
-/// Prompt được quản lý độc lập với rubric.
+/// A versioned AI system prompt used during grading. Versioning ensures that
+/// older grading runs can be understood and reproduced with the exact prompt
+/// that was used at the time.
 model PromptVersion {
   id               String   @id @default(uuid()) @db.Uuid
+  /// Machine-readable identifier shared across all versions of this prompt.
   promptCode       String   @map("prompt_code") @db.VarChar(60)
   versionNo        Int      @default(1) @map("version_no")
+  /// Full system instructions sent to the AI provider.
   instructions     String   @db.Text
+  /// JSON Schema describing the structured output expected from the AI.
   outputSchemaJson Json     @map("output_schema_json") @db.JsonB
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -860,13 +1014,18 @@ model PromptVersion {
   @@map("PROMPT_VERSION")
 }
 
-/// Cấu hình chấm bất biến sau sử dụng; có thể bắt đầu với một config.
+/// Links a RubricVersion to a PromptVersion and records the AI provider and
+/// model to use when running the grading pipeline. Multiple configs allow
+/// A/B testing of different models or prompts.
 model GradingConfig {
   id              String   @id @default(uuid()) @db.Uuid
   rubricVersionId String   @map("rubric_version_id") @db.Uuid
   promptVersionId String   @map("prompt_version_id") @db.Uuid
+  /// AI provider name (e.g. "openai", "google", "anthropic").
   provider        String   @db.VarChar(60)
+  /// Provider-specific model identifier (e.g. "gpt-4o", "gemini-1.5-pro").
   modelId         String   @map("model_id") @db.VarChar(120)
+  /// Provider-specific inference settings (temperature, max_tokens, etc.).
   settingsJson    Json     @map("settings_json") @db.JsonB
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -879,18 +1038,25 @@ model GradingConfig {
   @@map("GRADING_CONFIG")
 }
 
-/// Một yêu cầu chấm AI. Có thể không sinh AI_RESULT khi lỗi/refusal/invalid; chấm lại chủ ý tạo run mới.
+/// Tracks one asynchronous AI grading job for a SubmissionRevision. Workers
+/// poll for QUEUED runs, claim them with a processing token, and update the
+/// status on completion or failure.
 model GradingRun {
   id              String    @id @default(uuid()) @db.Uuid
   revisionId      String    @map("revision_id") @db.Uuid
   configId        String    @map("config_id") @db.Uuid
+  /// Idempotency key; duplicate submissions with the same key are ignored.
   requestKey      String    @unique(map: "uq_grading_run_request_key") @map("request_key") @db.VarChar(160)
   status          RunStatus @default(QUEUED)
+  /// Total number of provider call attempts made so far.
   attempts        Int       @default(0)
+  /// UUID assigned to the worker that currently holds the lease; NULL if free.
   processingToken String?   @map("processing_token") @db.Uuid
+  /// Timestamp until which the current worker lease is valid.
   leaseUntil      DateTime? @map("lease_until") @db.Timestamptz(3)
   startedAt       DateTime? @map("started_at") @db.Timestamptz(3)
   completedAt     DateTime? @map("completed_at") @db.Timestamptz(3)
+  /// Machine-readable error code set when status = FAILED.
   errorCode       String?   @map("error_code") @db.VarChar(80)
 
   revision         SubmissionRevision @relation("GradingRun_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_grading_run_revision_id")
@@ -906,17 +1072,25 @@ model GradingRun {
   @@map("GRADING_RUN")
 }
 
-/// Lưu lần gọi thật, kể cả thất bại; không ép dữ liệu lỗi thành điểm hợp lệ.
+/// Records one HTTP call to an AI provider within a GradingRun. A single run
+/// may retry multiple times; each attempt is logged here for billing,
+/// debugging, and latency analysis.
 model ProviderAttempt {
   id                String                @id @default(uuid()) @db.Uuid
   gradingRunId      String                @map("grading_run_id") @db.Uuid
   attemptNo         Int                   @default(1) @map("attempt_no")
   status            ProviderAttemptStatus
+  /// Request ID returned by the provider for support/billing tracing.
   providerRequestId String?               @map("provider_request_id") @db.Text
+  /// Full raw JSON response from the provider; stored for debugging.
   rawResponseJson   Json?                 @map("raw_response_json") @db.JsonB
+  /// Error details if the call failed; NULL on success.
   errorJson         Json?                 @map("error_json") @db.JsonB
+  /// Number of tokens in the prompt sent to the provider.
   inputTokens       Int?                  @map("input_tokens")
+  /// Number of tokens in the completion returned by the provider.
   outputTokens      Int?                  @map("output_tokens")
+  /// End-to-end call latency in milliseconds.
   latencyMs         Int?                  @map("latency_ms")
   createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -926,15 +1100,20 @@ model ProviderAttempt {
   @@map("PROVIDER_ATTEMPT")
 }
 
-/// Supertype kết quả bất biến: total, disjoint AI/TEACHER/ANSWER_KEY. Điểm dự kiến không tự là accepted evidence.
-/// SQL CHECK: (kind = 'ANSWER_KEY' AND rubric_version_id IS NULL) OR (kind IN ('AI','TEACHER') AND rubric_version_id IS NOT NULL)
+/// Polymorphic result container for a submission revision. A single revision
+/// may have up to three result rows: one AI, one TEACHER, and one ANSWER_KEY.
+/// The rubricVersionId is set only for rubric-based (AI or TEACHER) results.
 model AssessmentResult {
   id              String     @id @default(uuid()) @db.Uuid
   revisionId      String     @map("revision_id") @db.Uuid
+  /// Source that produced this result (AI, TEACHER, or ANSWER_KEY).
   kind            ResultKind
+  /// Rubric used for holistic scoring; NULL for ANSWER_KEY results.
   rubricVersionId String?    @map("rubric_version_id") @db.Uuid
+  /// Aggregated overall score; NULL until scoring is complete.
   overallScore    Decimal?   @map("overall_score") @db.Decimal(6, 2)
   scoreScale      ScoreScale @map("score_scale")
+  /// High-level textual summary of the result.
   summary         String?    @db.Text
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -955,14 +1134,17 @@ model AssessmentResult {
   @@map("ASSESSMENT_RESULT")
 }
 
-/// Subtype AI; kết quả chuẩn hóa hợp lệ. Refusal/invalid ở PROVIDER_ATTEMPT. Nhận xét vẫn là dự kiến.
-/// SQL CHECK: kind = 'AI'
+/// AI-specific metadata for an AssessmentResult of kind = AI. Records the
+/// quality gate outcome and validation details from the post-processing step.
 model AiResult {
   id             String        @id @db.Uuid
   kind           ResultKind    @default(AI)
   revisionId     String        @map("revision_id") @db.Uuid
+  /// The GradingRun that produced this result; unique 1-to-1 relationship.
   gradingRunId   String        @unique(map: "uq_ai_result_grading_run_id") @map("grading_run_id") @db.Uuid
+  /// Whether the result passed automated quality checks.
   qualityStatus  QualityStatus @map("quality_status")
+  /// JSON details from the validation pipeline (schema checks, range checks, etc.).
   validationJson Json          @map("validation_json") @db.JsonB
 
   assessmentResult AssessmentResult @relation("AiResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_ai_result_id_kind_revision_id")
@@ -973,12 +1155,13 @@ model AiResult {
   @@map("AI_RESULT")
 }
 
-/// Subtype giáo viên; được tạo cùng quyết định xác nhận trong transaction.
-/// SQL CHECK: kind = 'TEACHER'
+/// Teacher-specific metadata for an AssessmentResult of kind = TEACHER.
+/// Links the result back to the ReviewDecision that produced it.
 model TeacherResult {
   id         String     @id @db.Uuid
   kind       ResultKind @default(TEACHER)
   revisionId String     @map("revision_id") @db.Uuid
+  /// The review decision that generated this teacher result.
   decisionId String     @unique(map: "uq_teacher_result_decision_id") @map("decision_id") @db.Uuid
 
   assessmentResult AssessmentResult @relation("TeacherResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_teacher_result_id_kind_revision_id")
@@ -989,15 +1172,16 @@ model TeacherResult {
   @@map("TEACHER_RESULT")
 }
 
-/// Subtype chấm đáp án; không cần GRADING_RUN hoặc giáo viên để chấp nhận tự động theo quy tắc.
-/// SQL CHECK: kind = 'ANSWER_KEY'
-/// SQL CHECK: raw_score >= 0 AND raw_score <= max_score
+/// Answer-key-specific metadata for an AssessmentResult of kind = ANSWER_KEY.
+/// Stores the raw marks and the version of the answer key that was applied.
 model AnswerKeyResult {
   id                 String     @id @db.Uuid
   kind               ResultKind @default(ANSWER_KEY)
   revisionId         String     @map("revision_id") @db.Uuid
   answerKeyVersionId String     @map("answer_key_version_id") @db.Uuid
+  /// Total marks awarded across all assessment items.
   rawScore           Decimal    @map("raw_score") @db.Decimal(6, 2)
+  /// Maximum possible marks from the answer key.
   maxScore           Decimal    @map("max_score") @db.Decimal(6, 2)
 
   assessmentResult AssessmentResult @relation("AnswerKeyResult_id_kind_revisionId", fields: [id, kind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_answer_key_result_id_kind_revision_id")
@@ -1009,13 +1193,17 @@ model AnswerKeyResult {
   @@map("ANSWER_KEY_RESULT")
 }
 
-/// Điểm tiêu chí chung cho AI và giáo viên; cùng rubric của result.
+/// Per-criterion score within an AssessmentResult that uses a rubric.
+/// One row per RubricCriterion per result.
 model CriterionScore {
   id              String  @id @default(uuid()) @db.Uuid
   resultId        String  @map("result_id") @db.Uuid
+  /// Denormalised rubric version for enforcing the composite FK.
   rubricVersionId String  @map("rubric_version_id") @db.Uuid
   criterionId     String  @map("criterion_id") @db.Uuid
+  /// Score awarded for this criterion (must be <= RubricCriterion.maxScore).
   score           Decimal @db.Decimal(6, 2)
+  /// Textual justification for the awarded score.
   explanation     String? @db.Text
 
   result    AssessmentResult @relation("CriterionScore_resultId_rubricVersionId", fields: [resultId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_criterion_score_result_id_rubric_version_id")
@@ -1029,13 +1217,16 @@ model CriterionScore {
   @@map("CRITERION_SCORE")
 }
 
-/// Chấm từng câu; response/key phải cùng revision, item và version phù hợp.
+/// Records the marks awarded for one learner response against one answer key
+/// entry. Exists only for ANSWER_KEY results.
 model QuestionMark {
   id                String  @id @default(uuid()) @db.Uuid
   answerKeyResultId String  @map("answer_key_result_id") @db.Uuid
   responseId        String  @map("response_id") @db.Uuid
   keyEntryId        String  @map("key_entry_id") @db.Uuid
+  /// Actual marks awarded (may be fractional for partial-credit schemes).
   awardedMarks      Decimal @map("awarded_marks") @db.Decimal(6, 2)
+  /// Optional explanation of why these marks were awarded.
   explanation       String? @db.Text
 
   answerKeyResult AnswerKeyResult @relation("QuestionMark_answerKeyResultId", fields: [answerKeyResultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_question_mark_answer_key_result_id")
@@ -1048,14 +1239,21 @@ model QuestionMark {
   @@map("QUESTION_MARK")
 }
 
-/// Nhận xét cục bộ hoặc toàn bài. Finding thuộc kết quả AI không được tự dùng làm SkillEvidence.
+/// An individual piece of feedback (error, strength, suggestion) attached to
+/// an AssessmentResult. Optionally linked to a specific CriterionScore or Skill,
+/// and to text spans via FindingAnchor records.
 model Finding {
   id               String  @id @default(uuid()) @db.Uuid
   resultId         String  @map("result_id") @db.Uuid
+  /// The criterion this finding relates to; NULL for cross-criterion findings.
   criterionScoreId String? @map("criterion_score_id") @db.Uuid
+  /// The skill this finding relates to; NULL if not skill-mapped.
   skillId          String? @map("skill_id") @db.Uuid
+  /// Category of the finding (e.g. "ERROR", "STRENGTH", "SUGGESTION").
   findingKind      String  @map("finding_kind") @db.VarChar(30)
+  /// Human-readable feedback text shown to the learner.
   explanation      String  @db.Text
+  /// JSON validation metadata (confidence scores, rule IDs, etc.).
   validationJson   Json?   @map("validation_json") @db.JsonB
 
   result               AssessmentResult      @relation("Finding_resultId", fields: [resultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_result_id")
@@ -1070,14 +1268,17 @@ model Finding {
   @@map("FINDING")
 }
 
-/// Một finding có thể viện dẫn nhiều đoạn. Đoạn phải cùng revision của result; trích dẫn được kiểm tra.
-/// SQL CHECK: start_offset >= 0 AND end_offset > start_offset
+/// Pins a Finding to a specific character range within a RevisionParagraph,
+/// enabling the UI to highlight the exact text that triggered the feedback.
 model FindingAnchor {
   id          String @id @default(uuid()) @db.Uuid
   findingId   String @map("finding_id") @db.Uuid
   paragraphId String @map("paragraph_id") @db.Uuid
+  /// Start character offset within the paragraph's text.
   startOffset Int    @map("start_offset")
+  /// End character offset within the paragraph's text.
   endOffset   Int    @map("end_offset")
+  /// The exact text span that was highlighted; used as a human-readable anchor.
   exactQuote  String @map("exact_quote") @db.Text
 
   finding   Finding           @relation("FindingAnchor_findingId", fields: [findingId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_finding_anchor_finding_id")
@@ -1092,17 +1293,25 @@ model FindingAnchor {
 // Instructor review and accepted publication
 // ==========================================================================
 
-/// Review luôn trỏ revision. Run tùy chọn: Speaking/manual hoặc AI lỗi vẫn được review. Tối đa một case hoạt động cho một revision.
+/// A work item that queues a SubmissionRevision for manual teacher review.
+/// Created automatically when an AI result is flagged or when business rules
+/// require human oversight. Priority determines queue order.
 model ReviewCase {
   id          String       @id @default(uuid()) @db.Uuid
   revisionId  String       @map("revision_id") @db.Uuid
+  /// The AI GradingRun being reviewed; NULL for non-AI-triggered cases.
   targetRunId String?      @map("target_run_id") @db.Uuid
+  /// Teacher currently assigned to this case; NULL until claimed.
   assigneeId  String?      @map("assignee_id") @db.Uuid
   status      ReviewStatus @default(PENDING)
+  /// Machine-readable reason the case was created (e.g. "QUALITY_FLAGGED").
   reasonCode  String       @map("reason_code") @db.VarChar(60)
+  /// Higher priority values are surfaced first in the review queue.
   priority    Int
+  /// Optimistic-locking counter to prevent concurrent claim conflicts.
   lockVersion Int          @default(0) @map("lock_version")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Timestamp when a teacher claimed the case.
   claimedAt   DateTime?    @map("claimed_at") @db.Timestamptz(3)
 
   revision        SubmissionRevision @relation("ReviewCase_revisionId", fields: [revisionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_review_case_revision_id")
@@ -1119,14 +1328,20 @@ model ReviewCase {
   @@map("REVIEW_CASE")
 }
 
-/// Quyết định bất biến; sửa sau duyệt tạo quyết định mới. Không trỏ ngược TeacherResult bằng FK bắt buộc.
+/// A formal grading decision made by a teacher for a ReviewCase. If a
+/// decision is superseded (e.g. corrected), the new decision references the
+/// old one via supersedesId and produces a new TeacherResult.
 model ReviewDecision {
   id           String   @id @default(uuid()) @db.Uuid
   reviewCaseId String   @map("review_case_id") @db.Uuid
+  /// Denormalised revisionId for composite FK to TeacherResult.
   revisionId   String   @map("revision_id") @db.Uuid
   teacherId    String   @map("teacher_id") @db.Uuid
+  /// 1-based sequence number within the review case.
   decisionNo   Int      @map("decision_no")
+  /// Decision that this one supersedes (non-NULL when correcting a mistake).
   supersedesId String?  @map("supersedes_id") @db.Uuid
+  /// Teacher's written justification for the scores awarded.
   reason       String   @db.Text
   decidedAt    DateTime @default(now()) @map("decided_at") @db.Timestamptz(3)
 
@@ -1144,18 +1359,23 @@ model ReviewDecision {
   @@map("REVIEW_DECISION")
 }
 
-/// Nguồn được chấp nhận: chỉ TEACHER hoặc ANSWER_KEY, có FK thật đến result. Một nguồn hiện hành đã công bố mỗi revision.
-/// SQL CHECK: result_kind IN ('TEACHER','ANSWER_KEY')
-/// SQL CHECK: (NOT is_current) OR published_at IS NOT NULL
+/// The canonical result that has been accepted for publication to the learner.
+/// At most one accepted assessment should have isCurrent = true per revision.
+/// When a result is superseded (e.g. after an appeal), supersedesId points
+/// to the previous accepted assessment.
 model AcceptedAssessment {
   id           String     @id @default(uuid()) @db.Uuid
   resultId     String     @unique(map: "uq_accepted_assessment_result_id") @map("result_id") @db.Uuid
   resultKind   ResultKind @map("result_kind")
   revisionId   String     @map("revision_id") @db.Uuid
   acceptedAt   DateTime   @default(now()) @map("accepted_at") @db.Timestamptz(3)
+  /// If set, the result is embargoed until this time before being shown to the learner.
   releaseAfter DateTime?  @map("release_after") @db.Timestamptz(3)
+  /// Timestamp when the result was made visible to the learner.
   publishedAt  DateTime?  @map("published_at") @db.Timestamptz(3)
+  /// True for the most recently accepted result for this revision.
   isCurrent    Boolean    @default(false) @map("is_current")
+  /// Previous accepted assessment replaced by this one, if any.
   supersedesId String?    @map("supersedes_id") @db.Uuid
 
   result              AssessmentResult     @relation("AcceptedAssessment_resultId_resultKind_revisionId", fields: [resultId, resultKind, revisionId], references: [id, kind, revisionId], onDelete: Restrict, onUpdate: Restrict, map: "fk_accepted_assessment_result_id_result_kind_revision_id")
@@ -1172,15 +1392,19 @@ model AcceptedAssessment {
   @@map("ACCEPTED_ASSESSMENT")
 }
 
-/// Yêu cầu xem lại kết quả đã chấp nhận. Composite FK buộc accepted và review case cùng revision; kiểm tra quyền của requester. ReviewCase có thể được tạo sau khi tiếp nhận.
+/// A learner's formal objection to an AcceptedAssessment. If upheld, a new
+/// ReviewCase is created and the accepted assessment may be replaced.
 model Appeal {
   id           String       @id @default(uuid()) @db.Uuid
   acceptedId   String       @map("accepted_id") @db.Uuid
   revisionId   String       @map("revision_id") @db.Uuid
   requesterId  String       @map("requester_id") @db.Uuid
+  /// ReviewCase created to handle this appeal; NULL until the appeal is escalated.
   reviewCaseId String?      @map("review_case_id") @db.Uuid
   status       AppealStatus @default(PENDING)
+  /// Learner's written explanation of why they are appealing.
   reason       String       @db.Text
+  /// Staff's written outcome after the appeal has been reviewed.
   resolution   String?      @db.Text
   requestedAt  DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
   resolvedAt   DateTime?    @map("resolved_at") @db.Timestamptz(3)
@@ -1199,12 +1423,16 @@ model Appeal {
 // Skills, evidence, profile snapshots and recommendations
 // ==========================================================================
 
-/// Kỹ năng nội bộ do giáo viên xác nhận, không đồng nhất với band criterion.
+/// A discrete, observable IELTS sub-skill (e.g. "Uses cohesive devices
+/// effectively"). Skills are tagged to learning items and assessment items,
+/// and are observed in assessment results to build learner profiles.
 model Skill {
   id                   String            @id @default(uuid()) @db.Uuid
+  /// Stable machine-readable identifier (e.g. "writing.coherence.cohesive_devices").
   code                 String            @unique(map: "uq_skill_code") @db.VarChar(80)
   name                 String            @db.VarChar(160)
   skillArea            SkillArea         @map("skill_area")
+  /// Description of what a learner must do to demonstrate this skill.
   observableDefinition String            @map("observable_definition") @db.Text
   status               PublicationStatus @default(DRAFT)
 
@@ -1219,12 +1447,15 @@ model Skill {
   @@map("SKILL")
 }
 
-/// Đồ thị tiên quyết: không tự trỏ và không chu trình. Ngưỡng là policy, chưa phải xác suất mastery.
-/// SQL CHECK: skill_id <> prerequisite_skill_id
+/// Prerequisite relationship between two skills. A learner is expected to
+/// demonstrate prerequisiteSkill before tackling skill. minStrength and
+/// minSupport define the minimum evidence thresholds required.
 model SkillPrerequisite {
   skillId             String   @map("skill_id") @db.Uuid
   prerequisiteSkillId String   @map("prerequisite_skill_id") @db.Uuid
+  /// Minimum mastery strength (0-1) the learner must achieve in the prerequisite.
   minStrength         Decimal? @map("min_strength") @db.Decimal(5, 4)
+  /// Minimum evidence support level (0-1) required to unlock the dependent skill.
   minSupport          Decimal? @map("min_support") @db.Decimal(5, 4)
 
   skill             Skill @relation("SkillPrerequisite_skillId", fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_prerequisite_skill_id")
@@ -1235,11 +1466,14 @@ model SkillPrerequisite {
   @@map("SKILL_PREREQUISITE")
 }
 
-/// Tag dùng để chọn lesson hoặc practice; purpose phân biệt TEACH/PRACTISE/ASSESS. Một mapping tổng hợp cho mỗi item–skill.
+/// Tags a LearningItem with a Skill, indicating the purpose of the tag
+/// (e.g. "TEACHES", "REINFORCES") and how heavily the item covers the skill.
 model LearningItemSkill {
   learningItemId String  @map("learning_item_id") @db.Uuid
   skillId        String  @map("skill_id") @db.Uuid
+  /// How this item relates to the skill (e.g. "TEACHES", "REINFORCES", "ASSESSES").
   purpose        String  @db.VarChar(24)
+  /// Fractional weight (0-1) representing how much of the skill this item covers.
   coverageWeight Decimal @default(1) @map("coverage_weight") @db.Decimal(5, 4)
 
   learningItem LearningItem @relation("LearningItemSkill_learningItemId", fields: [learningItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_learning_item_skill_learning_item_id")
@@ -1250,10 +1484,14 @@ model LearningItemSkill {
   @@map("LEARNING_ITEM_SKILL")
 }
 
-/// Một câu hỏi cung cấp cơ hội quan sát kỹ năng nào. Khác với tag hoạt động phục vụ gợi ý.
+/// Tags an AssessmentItem with a Skill, indicating that a correct response
+/// to the item provides evidence of the learner's skill level. The
+/// observationWeight controls how much this item contributes to the skill
+/// state relative to other items in the same result.
 model ItemSkill {
   assessmentItemId  String  @map("assessment_item_id") @db.Uuid
   skillId           String  @map("skill_id") @db.Uuid
+  /// Weight applied when aggregating skill observations from this item.
   observationWeight Decimal @default(1) @map("observation_weight") @db.Decimal(5, 4)
 
   assessmentItem AssessmentItem @relation("ItemSkill_assessmentItemId", fields: [assessmentItemId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_skill_assessment_item_id")
@@ -1264,12 +1502,15 @@ model ItemSkill {
   @@map("ITEM_SKILL")
 }
 
-/// Quan sát rõ MET/PARTIAL/NOT_MET/NOT_OBSERVED. AI có thể đề xuất; giáo viên hoặc đáp án tạo quan sát được chấp nhận. Không có lỗi không đồng nghĩa đạt.
+/// Records whether a specific skill was observed (and to what degree) within
+/// a single AssessmentResult. One row per skill per result.
 model SkillObservation {
   id        String             @id @default(uuid()) @db.Uuid
   resultId  String             @map("result_id") @db.Uuid
   skillId   String             @map("skill_id") @db.Uuid
+  /// How well the skill was demonstrated in this result.
   outcome   ObservationOutcome
+  /// Textual justification for the assigned outcome.
   rationale String             @db.Text
 
   result         AssessmentResult @relation("SkillObservation_resultId", fields: [resultId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_skill_observation_result_id")
@@ -1282,12 +1523,17 @@ model SkillObservation {
   @@map("SKILL_OBSERVATION")
 }
 
-/// Hai composite FK bắt buộc observation và accepted cùng result. Chỉ dùng nguồn đã công bố; NOT_OBSERVED không ánh xạ thành 0.
+/// A confirmed piece of skill evidence derived from an AcceptedAssessment.
+/// Bridges between the accepted result and the SkillObservation that supports
+/// a specific learner profile build. The evidencePolicyVersion records which
+/// evidence promotion policy was applied when the evidence was created.
 model SkillEvidence {
   id                    String   @id @default(uuid()) @db.Uuid
   acceptedId            String   @map("accepted_id") @db.Uuid
   observationId         String   @map("observation_id") @db.Uuid
+  /// Denormalised resultId for composite FK to SkillObservation.
   resultId              String   @map("result_id") @db.Uuid
+  /// Identifies the version of the evidence promotion policy used.
   evidencePolicyVersion String   @map("evidence_policy_version") @db.VarChar(60)
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -1301,13 +1547,19 @@ model SkillEvidence {
   @@map("SKILL_EVIDENCE")
 }
 
-/// Chính sách projection và recommendation bất biến theo phiên bản.
+/// An immutable, versioned projection and recommendation policy. Policies are
+/// versioned so that old profile builds and recommendation runs can be
+/// reproduced and explained using the policy in effect at the time.
 model PolicyVersion {
   id          String @id @default(uuid()) @db.Uuid
+  /// Machine-readable code shared across all versions of this policy.
   policyCode  String @map("policy_code") @db.VarChar(80)
   versionNo   Int    @default(1) @map("version_no")
+  /// Indicates what the policy governs (e.g. "PROJECTION", "RECOMMENDATION").
   policyKind  String @map("policy_kind") @db.VarChar(30)
+  /// Algorithm parameters and thresholds stored as JSON.
   configJson  Json   @map("config_json") @db.JsonB
+  /// Git SHA or semantic version of the application code that introduced this policy.
   codeVersion String @map("code_version") @db.VarChar(120)
 
   learnerProfileVersions LearnerProfileVersion[] @relation("LearnerProfileVersion_projectionPolicyId")
@@ -1317,13 +1569,18 @@ model PolicyVersion {
   @@map("POLICY_VERSION")
 }
 
-/// Snapshot hồ sơ để lưu lịch sử và gắn với recommendation.
+/// A versioned snapshot of a learner's skill profile at a point in time.
+/// Created whenever the profile is rebuilt; older versions are retained for
+/// history and to allow old recommendation runs to be explained.
 model LearnerProfileVersion {
   id                 String   @id @default(uuid()) @db.Uuid
   learnerId          String   @map("learner_id") @db.Uuid
   versionNo          Int      @default(1) @map("version_no")
+  /// The projection policy used when building this profile version.
   projectionPolicyId String   @map("projection_policy_id") @db.Uuid
+  /// JSON snapshot of the learner's goals (target band, exam date, etc.) at build time.
   goalSnapshotJson   Json     @map("goal_snapshot_json") @db.JsonB
+  /// Opaque cursor representing the latest SkillEvidence included in this build.
   evidenceWatermark  String   @map("evidence_watermark") @db.Text
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -1340,12 +1597,17 @@ model LearnerProfileVersion {
   @@map("LEARNER_PROFILE_VERSION")
 }
 
-/// Projection theo kỹ năng; UNKNOWN dùng strength NULL. Support là mức đầy đủ bằng chứng, không là độ tự tin của LLM.
+/// Per-skill state within a LearnerProfileVersion. strength = NULL when
+/// observationStatus = UNKNOWN (no evidence yet). support represents the
+/// sufficiency of evidence, NOT the AI model's confidence level.
 model LearnerSkillState {
   profileId         String            @map("profile_id") @db.Uuid
   skillId           String            @map("skill_id") @db.Uuid
+  /// Estimated mastery level (0-1); NULL when observationStatus = UNKNOWN.
   strength          Decimal?          @db.Decimal(5, 4)
+  /// Evidence sufficiency score (0-1); 0 = no evidence, 1 = fully observed.
   support           Decimal           @default(0) @db.Decimal(5, 4)
+  /// Number of individual evidence items included in this state.
   evidenceCount     Int               @default(0) @map("evidence_count")
   observationStatus ObservationStatus @map("observation_status")
 
@@ -1357,10 +1619,15 @@ model LearnerSkillState {
   @@map("LEARNER_SKILL_STATE")
 }
 
-/// Lineage evidence dùng dựng profile, phải cùng learner. Mỗi Attempt–Skill chỉ một contribution hiện hành; chọn revision_no cao nhất đã đủ điều kiện và quyết định hiện hành, không xếp chỉ theo ngày công bố và không cộng mọi revision.
+/// Records which SkillEvidence items contributed to a LearnerProfileVersion.
+/// Each attempt-skill pair has at most one active contribution: the revision
+/// with the highest revision_no that qualifies under the current decision.
+/// Contributions are NOT accumulated across all revisions or sorted simply by
+/// publication date.
 model ProfileContribution {
   profileId       String  @map("profile_id") @db.Uuid
   evidenceId      String  @map("evidence_id") @db.Uuid
+  /// Weight applied to this evidence item when computing the skill state.
   effectiveWeight Decimal @default(1) @map("effective_weight") @db.Decimal(7, 4)
 
   profile  LearnerProfileVersion @relation("ProfileContribution_profileId", fields: [profileId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_profile_contribution_profile_id")
@@ -1371,13 +1638,18 @@ model ProfileContribution {
   @@map("PROFILE_CONTRIBUTION")
 }
 
-/// Giữ snapshot ứng viên, điều kiện lọc, metadata và policy để giải thích quyết định cũ.
+/// Stores a snapshot of the candidate pool, filter criteria, metadata, and
+/// the policy used during a recommendation run. Retained so that past
+/// recommendation decisions can be audited and explained even after content
+/// or policy changes.
 model RecommendationRun {
   id                    String   @id @default(uuid()) @db.Uuid
   learnerId             String   @map("learner_id") @db.Uuid
   profileId             String   @map("profile_id") @db.Uuid
   policyId              String   @map("policy_id") @db.Uuid
+  /// JSON snapshot of the learner's context at the time of the run (goals, skill gaps, etc.).
   contextSnapshotJson   Json     @map("context_snapshot_json") @db.JsonB
+  /// JSON snapshot of all candidate learning items considered during the run.
   candidateSnapshotJson Json     @map("candidate_snapshot_json") @db.JsonB
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -1391,20 +1663,33 @@ model RecommendationRun {
   @@map("RECOMMENDATION_RUN")
 }
 
-/// Đích có FK là lesson hoặc practice. Practice phải ghim cả activity version và assignment version đúng mode/quyền; lesson để hai trường này NULL. Metadata giữ snapshot để giải thích khi nội dung đổi.
+/// One recommended learning item within a RecommendationRun (ranked 1-3).
+/// If the target is a practice activity, both targetActivityVersionId and
+/// targetAssignmentVersionId must be set; for lessons both must be NULL.
+/// A snapshot of the target is stored so the recommendation can be explained
+/// even if the underlying content changes later.
+///
 /// SQL CHECK: rank >= 1 AND rank <= 3
 /// SQL CHECK: (target_activity_version_id IS NULL) = (target_assignment_version_id IS NULL)
 model RecommendationItem {
   id                        String  @id @default(uuid()) @db.Uuid
   runId                     String  @map("run_id") @db.Uuid
   learningItemId            String  @map("learning_item_id") @db.Uuid
+  /// NULL for lesson recommendations; required for practice activity recommendations.
   targetActivityVersionId   String? @map("target_activity_version_id") @db.Uuid
+  /// NULL for lesson recommendations; required for practice activity recommendations.
   targetAssignmentVersionId String? @map("target_assignment_version_id") @db.Uuid
+  /// Rank of this item within the run (1 = highest priority).
   rank                      Int
+  /// Composite relevance score used to rank candidates.
   totalScore                Decimal @map("total_score") @db.Decimal(9, 5)
+  /// Breakdown of the score by individual scoring components.
   scoreComponentsJson       Json    @map("score_components_json") @db.JsonB
+  /// Machine-readable reason code (e.g. "SKILL_GAP", "PREREQUISITE_MET").
   reasonCode                String  @map("reason_code") @db.VarChar(60)
+  /// Human-readable explanation shown to the learner.
   reasonText                String  @map("reason_text") @db.Text
+  /// JSON snapshot of the target item's content at recommendation time.
   targetSnapshotJson        Json    @map("target_snapshot_json") @db.JsonB
 
   attempts                Attempt[]          @relation("Attempt_recommendationItemId_assignmentVersionId_activityVersionId")
@@ -1426,13 +1711,16 @@ model RecommendationItem {
 // Discussions, notifications and durable operations
 // ==========================================================================
 
-/// Thảo luận theo khóa hoặc learning item cùng khóa.
+/// A discussion thread scoped to a course, optionally tied to a specific
+/// learning item within that course.
 model DiscussionThread {
   id            String   @id @default(uuid()) @db.Uuid
   courseId      String   @map("course_id") @db.Uuid
+  /// Optional learning item that contextualises the discussion (e.g. a lesson or activity).
   contextItemId String?  @map("context_item_id") @db.Uuid
   creatorId     String   @map("creator_id") @db.Uuid
   title         String   @db.VarChar(240)
+  /// Current state of the thread (e.g. "OPEN", "CLOSED", "LOCKED").
   status        String   @default("OPEN") @db.VarChar(24)
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -1447,15 +1735,20 @@ model DiscussionThread {
   @@map("DISCUSSION_THREAD")
 }
 
-/// Reply phải cùng thread, không tự trỏ/chu trình.
+/// A post (top-level or reply) within a DiscussionThread. A reply must belong
+/// to the same thread as its parent; circular references are prohibited.
 model DiscussionPost {
   id           String    @id @default(uuid()) @db.Uuid
   threadId     String    @map("thread_id") @db.Uuid
   authorId     String    @map("author_id") @db.Uuid
+  /// Parent post for replies; NULL for top-level posts.
   parentPostId String?   @map("parent_post_id") @db.Uuid
+  /// Full text content of the post.
   body         String    @db.Text
+  /// Visibility state (e.g. "VISIBLE", "HIDDEN", "DELETED").
   status       String    @default("VISIBLE") @db.VarChar(24)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Set when the author edits the post after initial publication.
   editedAt     DateTime? @map("edited_at") @db.Timestamptz(3)
 
   thread            DiscussionThread   @relation("DiscussionPost_threadId", fields: [threadId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_discussion_post_thread_id")
@@ -1470,16 +1763,21 @@ model DiscussionPost {
   @@map("DISCUSSION_POST")
 }
 
-/// Thông báo cho một người; link điều hướng không cấp quyền truy cập.
+/// An in-app notification delivered to a single recipient. The navigationPath
+/// provides a deep link for the UI but does not grant any permissions.
 model Notification {
   id                  String    @id @default(uuid()) @db.Uuid
   recipientId         String    @map("recipient_id") @db.Uuid
+  /// Category of notification (e.g. "RESULT_PUBLISHED", "APPEAL_RESOLVED").
   notificationType    String    @map("notification_type") @db.VarChar(60)
   title               String    @db.VarChar(240)
   body                String    @db.Text
+  /// Optional deep-link path for routing the user to the relevant screen.
   navigationPath      String?   @map("navigation_path") @db.Text
+  /// JSON snapshot of contextual data needed to render the notification body.
   contextSnapshotJson Json?     @map("context_snapshot_json") @db.JsonB
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Set when the recipient opens/reads the notification; NULL = unread.
   readAt              DateTime? @map("read_at") @db.Timestamptz(3)
 
   recipient User @relation("Notification_recipientId", fields: [recipientId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_notification_recipient_id")
@@ -1489,17 +1787,25 @@ model Notification {
   @@map("NOTIFICATION")
 }
 
-/// Đúng một target có FK: course, learning item hoặc post.
-/// SQL CHECK: (CASE WHEN course_id IS NULL THEN 0 ELSE 1 END + CASE WHEN learning_item_id IS NULL THEN 0 ELSE 1 END + CASE WHEN post_id IS NULL THEN 0 ELSE 1 END) = 1
+/// A content moderation report filed against exactly one target: a course,
+/// a learning item, or a discussion post.
+///
+/// SQL CHECK: exactly one of (course_id, learning_item_id, post_id) must be non-NULL.
 model ModerationReport {
   id             String           @id @default(uuid()) @db.Uuid
   reporterId     String           @map("reporter_id") @db.Uuid
+  /// Staff member who resolved or dismissed the report; NULL while pending.
   resolverId     String?          @map("resolver_id") @db.Uuid
+  /// Targeted course; exactly one of the three target fields must be non-NULL.
   courseId       String?          @map("course_id") @db.Uuid
+  /// Targeted learning item; exactly one of the three target fields must be non-NULL.
   learningItemId String?          @map("learning_item_id") @db.Uuid
+  /// Targeted discussion post; exactly one of the three target fields must be non-NULL.
   postId         String?          @map("post_id") @db.Uuid
+  /// Reporter's description of the policy violation.
   reason         String           @db.Text
   status         ModerationStatus @default(PENDING)
+  /// Staff's description of the action taken when the report was resolved.
   resolution     String?          @db.Text
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   resolvedAt     DateTime?        @map("resolved_at") @db.Timestamptz(3)
@@ -1518,31 +1824,49 @@ model ModerationReport {
   @@map("MODERATION_REPORT")
 }
 
-/// Sự kiện hạ tầng bền vững. Aggregate locator là dữ liệu routing lịch sử, không giả làm FK nghiệp vụ.
+/// A durable domain event stored using the transactional outbox pattern.
+/// Written in the same transaction as the business operation; dispatched to
+/// the message bus by a background relay. The aggregate locator fields
+/// are historical routing data, NOT foreign keys to live business records.
 model OutboxEvent {
   id               String       @id @default(uuid()) @db.Uuid
+  /// Type of domain event (e.g. "AssessmentResultPublished", "EnrollmentCreated").
   eventType        String       @map("event_type") @db.VarChar(80)
+  /// The aggregate type that raised the event (e.g. "Attempt", "ReviewCase").
   aggregateType    String       @map("aggregate_type") @db.VarChar(80)
+  /// String representation of the aggregate's primary key.
   aggregateId      String       @map("aggregate_id") @db.Text
+  /// Optimistic-lock version of the aggregate when the event was emitted; NULL if unused.
   aggregateVersion Int?         @map("aggregate_version")
+  /// Full event payload serialised as JSON.
   payloadJson      Json         @map("payload_json") @db.JsonB
   status           OutboxStatus @default(PENDING)
+  /// Number of dispatch attempts made so far.
   attempts         Int          @default(0)
   createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Timestamp of the most recent successful dispatch.
   dispatchedAt     DateTime?    @map("dispatched_at") @db.Timestamptz(3)
 
   @@index([status, createdAt], map: "ix_outbox_event_status_created_at")
   @@map("OUTBOX_EVENT")
 }
 
-/// Append-only ở ứng dụng. Entity locator là snapshot audit, không bắt cascade theo đối tượng bị xóa.
+/// Append-only audit trail of significant actions performed by actors in the
+/// system. Entity locator fields (entityType, entityKey) are audit snapshots;
+/// they do NOT cascade when the referenced business object is deleted.
 model AuditEvent {
   id         String   @id @default(uuid()) @db.Uuid
+  /// The user who performed the action; NULL for system-initiated events.
   actorId    String?  @map("actor_id") @db.Uuid
+  /// Verb describing the action taken (e.g. "ENROLL", "SUBMIT", "APPROVE").
   action     String   @db.VarChar(100)
+  /// Type name of the entity that was acted on (e.g. "Enrollment", "ReviewCase").
   entityType String   @map("entity_type") @db.VarChar(100)
+  /// String key that identifies the specific entity instance (e.g. UUID).
   entityKey  String   @map("entity_key") @db.Text
+  /// JSON snapshot of the entity's state before the action; NULL for creations.
   beforeJson Json?    @map("before_json") @db.JsonB
+  /// JSON snapshot of the entity's state after the action; NULL for deletions.
   afterJson  Json?    @map("after_json") @db.JsonB
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
 
@@ -1556,14 +1880,18 @@ model AuditEvent {
 // Optional RAG extension: vector requires pgvector before table creation
 // ==========================================================================
 
-/// EXTENSION: nguồn học liệu có kiểm soát truy cập.
+/// EXTENSION: A knowledge document with access-control scoping to a course.
+/// Used as the source corpus for Retrieval-Augmented Generation (RAG) when
+/// generating feedback explanations.
 model KnowledgeDocument {
   id           String            @id @default(uuid()) @db.Uuid
   courseId     String            @map("course_id") @db.Uuid
+  /// Optional learning item that this document was derived from.
   sourceItemId String?           @map("source_item_id") @db.Uuid
   ownerId      String            @map("owner_id") @db.Uuid
   title        String            @db.VarChar(240)
   status       PublicationStatus @default(DRAFT)
+  /// Access level (e.g. "PUBLIC", "ENROLLED", "INSTRUCTOR_ONLY").
   visibility   String            @db.VarChar(30)
 
   course                    Course                     @relation("KnowledgeDocument_courseId", fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_document_course_id")
@@ -1577,13 +1905,18 @@ model KnowledgeDocument {
   @@map("KNOWLEDGE_DOCUMENT")
 }
 
-/// EXTENSION: snapshot nội dung nguồn bất biến.
+/// EXTENSION: An immutable versioned snapshot of a KnowledgeDocument's content.
+/// Creating a new version preserves the history of the document while allowing
+/// the vector index to be rebuilt for the updated content.
 model KnowledgeDocumentVersion {
   id           String    @id @default(uuid()) @db.Uuid
   documentId   String    @map("document_id") @db.Uuid
   versionNo    Int       @default(1) @map("version_no")
+  /// Optional source file; NULL if content was entered directly as text.
   fileAssetId  String?   @map("file_asset_id") @db.Uuid
+  /// Full text of the document captured at the time this version was created.
   textSnapshot String    @map("text_snapshot") @db.Text
+  /// SHA-256 hash of textSnapshot for deduplication and integrity checks.
   contentHash  String    @map("content_hash") @db.VarChar(128)
   publishedAt  DateTime? @map("published_at") @db.Timestamptz(3)
 
@@ -1596,14 +1929,21 @@ model KnowledgeDocumentVersion {
   @@map("KNOWLEDGE_DOCUMENT_VERSION")
 }
 
-/// EXTENSION: vector có dimension tùy model, cần pgvector migration riêng khi triển khai.
+/// EXTENSION: A text chunk from a KnowledgeDocumentVersion, optionally
+/// equipped with a pgvector embedding. The embedding dimension depends on the
+/// model used and requires a separate pgvector migration before deployment.
 model KnowledgeChunk {
   id                  String                 @id @default(uuid()) @db.Uuid
   documentVersionId   String                 @map("document_version_id") @db.Uuid
+  /// 1-based sequence number of this chunk within the document version.
   chunkNo             Int                    @map("chunk_no")
+  /// The text content of this chunk.
   text                String                 @db.Text
+  /// pgvector embedding; requires pgvector extension and a dedicated migration.
   embedding           Unsupported("vector")?
+  /// Name/version of the embedding model used to produce the vector.
   embeddingModel      String?                @map("embedding_model") @db.VarChar(120)
+  /// JSON configuration of the embedding model (e.g. dimensions, normalisation).
   embeddingConfigJson Json?                  @map("embedding_config_json") @db.JsonB
 
   documentVersion      KnowledgeDocumentVersion @relation("KnowledgeChunk_documentVersionId", fields: [documentVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_knowledge_chunk_document_version_id")
@@ -1613,17 +1953,25 @@ model KnowledgeChunk {
   @@map("KNOWLEDGE_CHUNK")
 }
 
-/// EXTENSION: giải thích có nguồn; kết quả này không phải assessment result hay accepted evidence.
+/// EXTENSION: A sourced AI-generated explanation provided to a learner in
+/// response to a question about their feedback. This is NOT an assessment
+/// result or accepted evidence; it is purely informational.
 model FeedbackExplanation {
   id                    String   @id @default(uuid()) @db.Uuid
   learnerId             String   @map("learner_id") @db.Uuid
+  /// The submission revision the learner is asking about; NULL for general questions.
   revisionId            String?  @map("revision_id") @db.Uuid
+  /// The specific finding the learner wants explained; NULL for general questions.
   findingId             String?  @map("finding_id") @db.Uuid
   promptVersionId       String   @map("prompt_version_id") @db.Uuid
+  /// The learner's question as entered.
   question              String   @db.Text
+  /// The AI-generated answer returned to the learner.
   answer                String   @db.Text
+  /// AI provider used to generate the explanation (e.g. "openai", "google").
   provider              String   @db.VarChar(60)
   modelId               String   @map("model_id") @db.VarChar(120)
+  /// JSON snapshot of the retrieved knowledge chunks used to ground the answer.
   retrievalSnapshotJson Json     @map("retrieval_snapshot_json") @db.JsonB
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -1640,11 +1988,15 @@ model FeedbackExplanation {
   @@map("FEEDBACK_EXPLANATION")
 }
 
-/// EXTENSION: trích dẫn vào chunk thuộc document version bất biến.
+/// EXTENSION: Links a FeedbackExplanation to the specific KnowledgeChunk(s)
+/// that were retrieved and cited when generating the answer. The chunk belongs
+/// to an immutable document version, guaranteeing citation stability.
 model ExplanationCitation {
   explanationId String @map("explanation_id") @db.Uuid
+  /// 1-based citation number within the explanation.
   citationNo    Int    @map("citation_no")
   chunkId       String @map("chunk_id") @db.Uuid
+  /// Verbatim quote from the chunk that supports the cited claim.
   exactQuote    String @map("exact_quote") @db.Text
 
   explanation FeedbackExplanation @relation("ExplanationCitation_explanationId", fields: [explanationId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_explanation_citation_explanation_id")
