@@ -1,47 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CourseCard from './CourseCard'
 import type { Course } from './course'
-import { mockCourses } from './mockCourses'
-
-type CourseFilter = 'All' | Course['category'] | 'Enrolled'
+import { getCourses } from './coursesApi'
 
 const PAGE_SIZE = 6
 
-const filterOptions: CourseFilter[] = [
-    'All',
-    'Writing Task 1',
-    'Writing Task 2',
-    'Reading & Listening',
-    'Enrolled',
-]
-
 export default function CourseCatalogPage() {
+    const [courses, setCourses] = useState<Course[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [reloadKey, setReloadKey] = useState(0)
+
     const [search, setSearch] = useState('')
-    const [activeFilter, setActiveFilter] = useState<CourseFilter>('All')
+    const [openOnly, setOpenOnly] = useState(false)
     const [page, setPage] = useState(1)
 
-    const enrolledCount = mockCourses.filter((course) => course.enrolled).length
+    useEffect(() => {
+        const controller = new AbortController()
+
+        async function loadCourses() {
+            setLoading(true)
+            setError(null)
+
+            try {
+                const result = await getCourses(controller.signal)
+
+                if (!controller.signal.aborted) {
+                    setCourses(result)
+                }
+            } catch (caught) {
+                if (!controller.signal.aborted) {
+                    setError(
+                        caught instanceof Error
+                            ? caught.message
+                            : 'Unable to load courses.',
+                    )
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false)
+                }
+            }
+        }
+
+        void loadCourses()
+
+        return () => controller.abort()
+    }, [reloadKey])
+
     const keyword = search.trim().toLowerCase()
 
-    const filteredCourses = mockCourses.filter((course) => {
+    const filteredCourses = courses.filter((course) => {
         const searchableText = [
             course.title,
             course.description,
-            course.category,
             course.instructorName,
         ]
             .join(' ')
             .toLowerCase()
 
-        const matchesSearch = searchableText.includes(keyword)
-
-        const matchesFilter =
-            activeFilter === 'All' ||
-            (activeFilter === 'Enrolled'
-                ? course.enrolled
-                : course.category === activeFilter)
-
-        return matchesSearch && matchesFilter
+        return (
+            searchableText.includes(keyword) &&
+            (!openOnly || course.enrollmentOpen === true)
+        )
     })
 
     const totalPages = Math.ceil(filteredCourses.length / PAGE_SIZE)
@@ -52,21 +73,9 @@ export default function CourseCatalogPage() {
         currentPage * PAGE_SIZE,
     )
 
-    function getFilterLabel(filter: CourseFilter) {
-        if (filter === 'All') {
-            return `All Courses (${mockCourses.length})`
-        }
-
-        if (filter === 'Enrolled') {
-            return `My Enrolled (${enrolledCount})`
-        }
-
-        return filter
-    }
-
     function resetFilters() {
         setSearch('')
-        setActiveFilter('All')
+        setOpenOnly(false)
         setPage(1)
     }
 
@@ -116,7 +125,7 @@ export default function CourseCatalogPage() {
                             setSearch(event.target.value)
                             setPage(1)
                         }}
-                        placeholder="Search by keyword, skill, or instructor..."
+                        placeholder="Search by keyword or instructor..."
                         className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                     />
                 </div>
@@ -127,107 +136,144 @@ export default function CourseCatalogPage() {
                 aria-label="Filter courses"
                 className="mt-4 flex flex-wrap justify-center gap-2"
             >
-                {filterOptions.map((filter) => (
+                {[false, true].map((onlyOpen) => (
                     <button
-                        key={filter}
+                        key={String(onlyOpen)}
                         type="button"
-                        aria-pressed={activeFilter === filter}
+                        aria-pressed={openOnly === onlyOpen}
                         onClick={() => {
-                            setActiveFilter(filter)
+                            setOpenOnly(onlyOpen)
                             setPage(1)
                         }}
                         className={
-                            'rounded-full px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ' +
-                            (activeFilter === filter
+                            'rounded-full px-4 py-2 text-xs font-semibold ' +
+                            (openOnly === onlyOpen
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200')
                         }
                     >
-                        {getFilterLabel(filter)}
+                        {onlyOpen ? 'Open for enrollment' : 'All Courses'}
                     </button>
                 ))}
             </div>
 
-            <section aria-label="Available courses" className="mt-6">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                    <p role="status">
-                        {filteredCourses.length} courses found
-                    </p>
-
-                    <p>Preview with sample course data.</p>
-                </div>
-
-                {filteredCourses.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                        {visibleCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
+            <section
+                aria-label="Available courses"
+                aria-busy={loading}
+                className="mt-6"
+            >
+                {loading ? (
+                    <div
+                        role="status"
+                        className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600"
+                    >
+                        Loading courses...
                     </div>
-                ) : (
-                    <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-                        <h2 className="text-lg font-semibold">
-                            No courses found
+                ) : error !== null ? (
+                    <div
+                        role="alert"
+                        className="rounded-xl border border-red-200 bg-white p-8 text-center"
+                    >
+                        <h2 className="font-semibold text-red-700">
+                            Could not load courses
                         </h2>
 
-                        <p className="mt-2 text-sm text-slate-600">
-                            Try a different keyword or course filter.
-                        </p>
+                        <p className="mt-2 text-sm text-slate-600">{error}</p>
 
                         <button
                             type="button"
-                            onClick={resetFilters}
-                            className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                            onClick={() => setReloadKey((previous) => previous + 1)}
+                            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
                         >
-                            Clear filters
+                            Try again
                         </button>
                     </div>
-                )}
+                ) : (
+                    <>
+                        <p role="status" className="mb-4 text-xs text-slate-500">
+                            {filteredCourses.length}{' '}
+                            {filteredCourses.length === 1 ? 'course' : 'courses'} found
+                        </p>
 
-                {totalPages > 1 && (
-                    <nav
-                        aria-label="Course pagination"
-                        className="mt-8 flex flex-wrap items-center justify-center gap-2"
-                    >
-                        <button
-                            type="button"
-                            disabled={currentPage === 1}
-                            onClick={() => setPage(currentPage - 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            ← Previous
-                        </button>
+                        {visibleCourses.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                {visibleCourses.map((course) => (
+                                    <CourseCard key={course.id} course={course} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+                                <h2 className="text-lg font-semibold">
+                                    {courses.length === 0
+                                        ? 'No courses available yet'
+                                        : 'No courses found'}
+                                </h2>
 
-                        {Array.from(
-                            { length: totalPages },
-                            (_, index) => index + 1,
-                        ).map((pageNumber) => (
-                            <button
-                                key={pageNumber}
-                                type="button"
-                                aria-current={
-                                    currentPage === pageNumber ? 'page' : undefined
-                                }
-                                onClick={() => setPage(pageNumber)}
-                                className={
-                                    'rounded-lg px-3 py-2 text-sm font-medium ' +
-                                    (currentPage === pageNumber
-                                        ? 'bg-blue-600 text-white'
-                                        : 'border border-slate-300 bg-white text-slate-700')
-                                }
+                                <p className="mt-2 text-sm text-slate-600">
+                                    {courses.length === 0
+                                        ? 'Please check back later.'
+                                        : 'Try a different keyword or course filter.'}
+                                </p>
+
+                                {courses.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+                                    >
+                                        Clear filters
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {totalPages > 1 && (
+                            <nav
+                                aria-label="Course pagination"
+                                className="mt-8 flex flex-wrap justify-center gap-2"
                             >
-                                {pageNumber}
-                            </button>
-                        ))}
+                                <button
+                                    type="button"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setPage(currentPage - 1)}
+                                    className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+                                >
+                                    ← Previous
+                                </button>
 
-                        <button
-                            type="button"
-                            disabled={currentPage === totalPages}
-                            onClick={() => setPage(currentPage + 1)}
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Next →
-                        </button>
-                    </nav>
+                                {Array.from(
+                                    { length: totalPages },
+                                    (_, index) => index + 1,
+                                ).map((pageNumber) => (
+                                    <button
+                                        key={pageNumber}
+                                        type="button"
+                                        aria-current={
+                                            currentPage === pageNumber ? 'page' : undefined
+                                        }
+                                        onClick={() => setPage(pageNumber)}
+                                        className={
+                                            'rounded-lg px-3 py-2 text-sm ' +
+                                            (currentPage === pageNumber
+                                                ? 'bg-blue-600 text-white'
+                                                : 'border border-slate-300 bg-white')
+                                        }
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setPage(currentPage + 1)}
+                                    className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+                                >
+                                    Next →
+                                </button>
+                            </nav>
+                        )}
+                    </>
                 )}
             </section>
         </main>

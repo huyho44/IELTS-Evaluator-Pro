@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   font-family: Inter, system-ui, Arial, sans-serif;
   color: #0f172a;
