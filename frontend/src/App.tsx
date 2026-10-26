@@ -9,6 +9,9 @@ import StudentNavbar from "./components/StudentNavbar";
 import CourseCatalogPage from "./features/courses/CourseCatalogPage";
 import CourseDetailPage from "./features/courses/CourseDetailPage";
 import LessonPage from "./features/courses/LessonPage";
+import PracticePage from "./features/courses/PracticePage";
+import PracticeAttemptPage from "./features/courses/PracticeAttemptPage";
+import PracticeHistoryPage from "./features/courses/PracticeHistoryPage";
 
 export default function App() {
   return (
@@ -25,6 +28,21 @@ export default function App() {
         <Route
           path="/courses/:courseId/lessons/:lessonId"
           element={<LessonPage />}
+        />
+
+        <Route
+          path="/courses/:courseId/practices/:activityId"
+          element={<PracticePage />}
+        />
+
+        <Route
+          path="/attempts/:attemptId"
+          element={<PracticeAttemptPage />}
+        />
+
+        <Route
+          path="/practice-history"
+          element={<PracticeHistoryPage />}
         />
 
         <Route

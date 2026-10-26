@@ -24,9 +24,14 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                 <li key={item.id} className="space-y-2 px-3 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 break-words text-sm font-medium text-slate-800">
-                            {item.kind === "LESSON" && courseId ? (
+                            {courseId &&
+                                (item.kind === "LESSON" || item.kind === "PRACTICE") ? (
                                 <Link
-                                    to={`/courses/${courseId}/lessons/${item.id}`}
+                                    to={
+                                        `/courses/${encodeURIComponent(courseId)}/` +
+                                        (item.kind === "LESSON" ? "lessons" : "practices") +
+                                        `/${encodeURIComponent(item.id)}`
+                                    }
                                     className="text-blue-700 hover:underline"
                                 >
                                     {item.title}
