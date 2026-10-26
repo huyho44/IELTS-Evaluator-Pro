@@ -173,12 +173,33 @@ function EnrollmentPanel({
                 {buttonText}
             </button>
 
-            <p
+            <div
                 role="status"
-                className="mt-3 text-sm leading-6 text-slate-500"
+                className={
+                    "mt-4 flex items-start gap-3 rounded-lg border p-3 text-sm leading-6 " +
+                    (status === "ACTIVE" || status === "COMPLETED"
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                        : "border-slate-200 bg-slate-50 text-slate-600")
+                }
             >
-                {description}
-            </p>
+                <span
+                    aria-hidden="true"
+                    className={
+                        "mt-2 h-2 w-2 shrink-0 rounded-full " +
+                        (status === "ACTIVE" || status === "COMPLETED"
+                            ? "bg-emerald-500"
+                            : "bg-blue-500")
+                    }
+                />
+
+                <p>{description}</p>
+            </div>
+
+            {status !== "ACTIVE" && status !== "COMPLETED" && (
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                    You can preview the syllabus before joining this course.
+                </p>
+            )}
 
             {error && (
                 <div className="mt-3">

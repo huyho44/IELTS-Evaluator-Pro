@@ -8,6 +8,7 @@ import {
 import StudentNavbar from "./components/StudentNavbar";
 import CourseCatalogPage from "./features/courses/CourseCatalogPage";
 import CourseDetailPage from "./features/courses/CourseDetailPage";
+import LessonPage from "./features/courses/LessonPage";
 
 export default function App() {
   return (
@@ -20,6 +21,11 @@ export default function App() {
         <Route path="/courses" element={<CourseCatalogPage />} />
 
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+
+        <Route
+          path="/courses/:courseId/lessons/:lessonId"
+          element={<LessonPage />}
+        />
 
         <Route
           path="*"
