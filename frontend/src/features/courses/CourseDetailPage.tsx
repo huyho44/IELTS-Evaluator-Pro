@@ -5,6 +5,7 @@ import {
     type CourseDetail,
     type CourseLearningItem,
 } from "./courseDetailApi";
+import CourseEnrollmentPanel from "./CourseEnrollmentPanel";
 
 function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
     if (items.length === 0) {
@@ -46,7 +47,13 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
     );
 }
 
-export default function CourseDetailPage() {
+type CourseDetailPageProps = {
+    accessToken?: string | null;
+};
+
+export default function CourseDetailPage({
+    accessToken = null,
+}: CourseDetailPageProps) {
     const { courseId } = useParams<{ courseId: string }>();
     const [course, setCourse] = useState<CourseDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -195,23 +202,11 @@ export default function CourseDetailPage() {
                                 ))}
                             </dl>
 
-                            <div className="mt-6 border-t border-slate-100 pt-5">
-                                <button
-                                    type="button"
-                                    disabled
-                                    className="cursor-not-allowed rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white opacity-60"
-                                >
-                                    {course.enrollmentOpen
-                                        ? "Enroll in Course"
-                                        : "Enrollment closed"}
-                                </button>
-
-                                <p className="mt-3 text-sm leading-6 text-slate-500">
-                                    {course.enrollmentOpen
-                                        ? "You can preview the syllabus. Enrollment will be available in the next update."
-                                        : "This course is currently not accepting new enrollments."}
-                                </p>
-                            </div>
+                            <CourseEnrollmentPanel
+                                courseId={course.id}
+                                enrollmentOpen={course.enrollmentOpen}
+                                accessToken={accessToken}
+                            />
                         </section>
 
                         <aside
