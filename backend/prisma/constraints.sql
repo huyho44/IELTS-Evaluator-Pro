@@ -1,12 +1,9 @@
--- Companion constraints for backend/prisma/schema.prisma (PostgreSQL).
--- NOT EXECUTED. Review and append to a new migration AFTER creating/backfilling
--- the target tables. This file is intentionally outside prisma/migrations.
--- Existing integer IDs and old table names require a separate migration plan.
--- Apply once, as migration SQL; this is not an idempotent installation script.
--- Check SCHEMA_NOTES.md for cross-table rules that remain service responsibilities.
--- If KnowledgeChunk.embedding uses Unsupported("vector"), install pgvector in the
--- migration BEFORE the CREATE TABLE that references vector, not after this file.
-
+-- Reference SQL for the domain constraints in schema.prisma (PostgreSQL).
+-- Canonical installation: migrations/20261025000000_enforce_domain_constraints/migration.sql.
+-- Apply migrations with prisma migrate deploy; do not execute this file again
+-- on a database that has already applied that migration.
+-- Retained as a readable companion to schema.prisma and SCHEMA_NOTES.md.
+-- Statements below are a reference copy, not an idempotent installer.
 BEGIN;
 
 -- Row-level checks from docs/eerd/model.json. Prisma schema comments alone do not
