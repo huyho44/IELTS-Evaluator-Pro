@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { createHash, randomBytes, scryptSync } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
+import { seedLessons } from './seed-lessons.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const connectionString = process.env.DATABASE_URL;
@@ -87,6 +88,8 @@ async function main() {
         create: { learnerId: learner.id, courseId: course.id, status: 'ACTIVE' },
       });
     }
+
+    await seedLessons(tx, course.id, fixtureId);
 
     const activityId = fixtureId(10);
     await tx.learningItem.upsert({
