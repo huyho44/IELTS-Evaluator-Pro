@@ -1,3 +1,9 @@
+import LoginPage from './features/auth/pages/LoginPage';
+import RegisterPage from './features/auth/pages/RegisterPage';
+import PrivateRoute from './features/auth/components/PrivateRoute';
+import Dashboard from './pages/Dashboard';
+import ReviewQueuePage from './features/instructor/pages/ReviewQueuePage';
+import ReviewDetailPage from './features/instructor/pages/ReviewDetailPage';
 import {
   BrowserRouter,
   Link,
@@ -19,6 +25,13 @@ export default function App() {
       <StudentNavbar studentName="Hải" targetBand={7.0} />
 
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route element={<PrivateRoute />}><Route path="/dashboard" element={<Dashboard />} /></Route>
+        <Route element={<PrivateRoute allowedRoles={['INSTRUCTOR']} />}>
+          <Route path="/teacher/reviews" element={<ReviewQueuePage />} />
+          <Route path="/teacher/reviews/:id" element={<ReviewDetailPage />} />
+        </Route>
         <Route path="/" element={<Navigate to="/courses" replace />} />
 
         <Route path="/courses" element={<CourseCatalogPage />} />
