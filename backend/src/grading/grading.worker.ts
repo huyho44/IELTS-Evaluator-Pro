@@ -12,11 +12,13 @@ import { GradingProvider, ProviderFailure } from './grading-provider.js';
 import { PublicationService } from './publication.service.js';
 import { validateAssessment } from './assessment-validation.js';
 import { serializable } from '../submissions/transaction.js';
+import { workerError } from './worker-error.js';
 
 @Injectable()
 export class GradingWorker implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private busy = false;
+  private phase = 'idle';
   private readonly logger = new Logger(GradingWorker.name);
   constructor(
     private readonly prisma: PrismaService,
@@ -31,8 +33,8 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
     )
       return;
     this.timer = setInterval(() => {
-      void this.tick().catch(() =>
-        this.logger.error('Grading poll failed; durable work will be retried'),
+      void this.tick().catch((error: unknown) =>
+        this.logger.error(`Grading poll failed; durable work will be retried (phase=${this.phase}) ${workerError(error)}`),
       );
     }, 3000);
     this.timer.unref();
@@ -44,8 +46,11 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
     if (this.busy) return;
     this.busy = true;
     try {
+      this.phase = 'publication';
       await this.publication.publishDue();
+      this.phase = 'objective';
       await this.processObjective();
+      this.phase = 'grading-run';
       const now = new Date();
       const run = await this.prisma.gradingRun.findFirst({
         where: {
