@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   Param,
   ParseUUIDPipe,
@@ -73,7 +74,9 @@ export class CoursesController {
     return this.courses.mine(await this.auth.authenticate(h));
   }
   // GET /courses/:id
-  @Get(':id') async one(
+  @Header('Cache-Control', 'private, no-store')
+  @Get(':id')
+  async one(
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('authorization') h?: string,
   ) {
@@ -119,7 +122,9 @@ export class CoursesController {
     return this.courses.assignments(id, await this.auth.authenticate(h));
   }
   // GET /courses/:id/lessons/:lessonId
-  @Get(':id/lessons/:lessonId') async lesson(
+  @Header('Cache-Control', 'private, no-store')
+  @Get(':id/lessons/:lessonId')
+  async lesson(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('lessonId', ParseUUIDPipe) lessonId: string,
     @Headers('authorization') h?: string,

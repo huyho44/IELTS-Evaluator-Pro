@@ -66,11 +66,13 @@ export class CoursesService {
       },
     });
     if (!course) throw new NotFoundException('Course not found');
+    const enrolled = actor
+      ? await this.prisma.enrollment.findUnique({
+          where: { learnerId_courseId: { learnerId: actor.id, courseId: id } },
+        })
+      : null;
     if (course.status !== 'PUBLISHED') {
       if (!actor) throw new NotFoundException('Course not found');
-      const enrolled = await this.prisma.enrollment.findUnique({
-        where: { learnerId_courseId: { learnerId: actor.id, courseId: id } },
-      });
       if (
         !enrolled ||
         !['ACTIVE', 'COMPLETED'].includes(enrolled.status) ||
@@ -79,12 +81,32 @@ export class CoursesService {
         await this.access.instructor(actor, id);
     }
     const { chapters, learningItems, ...details } = course;
+    const lessonIds = learningItems
+      .filter((item) => item.kind === 'LESSON')
+      .map((item) => item.id);
+    const progresses =
+      enrolled && lessonIds.length
+        ? await this.prisma.lessonProgress.findMany({
+            where: { enrollmentId: enrolled.id, lessonId: { in: lessonIds } },
+            select: { lessonId: true, status: true, completedAt: true },
+          })
+        : [];
+    const progressByLesson = new Map(
+      progresses.map(({ lessonId, ...progress }) => [lessonId, progress]),
+    );
     return {
       ...details,
       sections: chapters,
       learningItems: learningItems.map(({ chapterId, ...item }) => ({
         ...item,
         sectionId: chapterId,
+        progress:
+          item.kind === 'LESSON' && enrolled
+            ? (progressByLesson.get(item.id) ?? {
+                status: 'NOT_STARTED',
+                completedAt: null,
+              })
+            : null,
       })),
     };
   }
@@ -182,7 +204,7 @@ export class CoursesService {
   }
   // Get lesson content.
   async lesson(courseId: string, lessonId: string, actor: Actor) {
-    await this.access.learner(actor, courseId);
+    const enrollment = await this.access.learner(actor, courseId);
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, learningItem: { courseId, status: 'PUBLISHED' } },
       include: {
@@ -191,7 +213,16 @@ export class CoursesService {
       },
     });
     if (!lesson) throw new NotFoundException('Published lesson not found');
-    return lesson;
+    const progress = await this.prisma.lessonProgress.findUnique({
+      where: {
+        enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId },
+      },
+      select: { status: true, completedAt: true },
+    });
+    return {
+      ...lesson,
+      progress: progress ?? { status: 'NOT_STARTED', completedAt: null },
+    };
   }
   // Mark a lesson as completed.
   async completeLesson(courseId: string, lessonId: string, actor: Actor) {
