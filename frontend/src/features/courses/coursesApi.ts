@@ -1,3 +1,4 @@
+import { sessionFetch as fetch } from "../auth/session";
 import type { Course } from './course'
 
 type CourseResponse = {

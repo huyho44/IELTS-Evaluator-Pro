@@ -1,53 +1,51 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authApi } from '../services/authApi';
+import { useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { signIn, safeReturn } from '../session';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const pending = useRef(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (pending.current) return;
+    pending.current = true;
     setError('');
     setLoading(true);
 
     try {
-  // Inside handleLogin:
-    const data = await authApi.login({ email, password });
-    if (data.token || data.accessToken) {
-    const token = data.accessToken || data.token;
-    localStorage.setItem('accessToken', token);
-  
-  // Lưu thông tin người dùng hoặc role vào LocalStorage
-    if (data.user) {
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-  
-  navigate('/dashboard');
-}
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+      await signIn({ email, password });
+      setPassword('');
+      navigate(safeReturn(location.state?.from), { replace: true });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unable to sign in. Please try again.');
     } finally {
+      pending.current = false;
       setLoading(false);
     }
   };
 
   return (
     <form onSubmit={handleLogin} className="space-y-4 w-full">
+      {location.state?.registered && <p role="status" className="text-sm text-emerald-700">Account created. Please sign in.</p>}
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
+        <div role="alert" className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
         <input
           type="email"
           placeholder="name@company.com"
+          id="login-email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -57,11 +55,13 @@ export default function LoginForm() {
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">Password</label>
         </div>
         <input
           type="password"
           placeholder="••••••••"
+          id="login-password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

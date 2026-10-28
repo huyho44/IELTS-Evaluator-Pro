@@ -1,3 +1,4 @@
+import CompletionBadge from "./CompletionBadge";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -27,7 +28,7 @@ type LessonContentProps = {
 function MaterialContent({ material }: { material: LessonMaterial }) {
     if (material.kind === "TEXT") {
         return (
-            <div className="whitespace-pre-wrap break-words text-base leading-8 text-slate-700">
+            <div className="max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-slate-700">
                 {material.contentText || "No content available."}
             </div>
         );
@@ -82,6 +83,7 @@ function LessonContent({
     const [reloadKey, setReloadKey] = useState(0);
     const [saving, setSaving] = useState(false);
     const [completionSaved, setCompletionSaved] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
     const [completionError, setCompletionError] = useState("");
     const mounted = useRef(false);
 
@@ -107,13 +109,14 @@ function LessonContent({
 
             try {
                 const [courseData, lessonData] = await Promise.all([
-                    getCourseDetail(courseId, controller.signal),
+                    getCourseDetail(courseId, controller.signal, token),
                     getLesson(courseId, lessonId, token, controller.signal),
                 ]);
 
                 if (!controller.signal.aborted) {
                     setCourse(courseData);
                     setLesson(lessonData);
+                    setCompletionSaved(lessonData.progress.status === "COMPLETED");
                 }
             } catch (cause) {
                 if (!controller.signal.aborted) {
@@ -148,10 +151,12 @@ function LessonContent({
         setCompletionError("");
 
         try {
-            await completeLesson(courseId, lessonId, accessToken);
+            const progress = await completeLesson(courseId, lessonId, accessToken);
 
             if (mounted.current) {
                 setCompletionSaved(true);
+                setJustSaved(true);
+                setCourse(previous => previous ? { ...previous, learningItems: previous.learningItems.map(item => item.id === lessonId ? { ...item, progress } : item) } : previous);
             }
         } catch (cause) {
             if (mounted.current) {
@@ -205,7 +210,7 @@ function LessonContent({
                 to={`/courses/${courseId}`}
                 className="text-sm font-semibold text-blue-600 hover:underline"
             >
-                ← Course overview
+                ← Back to course overview
             </Link>
 
             {!accessToken ? (
@@ -280,35 +285,31 @@ function LessonContent({
                                 )}
                             </div>
 
-                            <div className="mt-8 border-t border-slate-200 pt-5">
-                                <button
+                            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
+                                {completionSaved ? <CompletionBadge /> : <button
                                     type="button"
-                                    disabled={saving || completionSaved}
+                                    disabled={saving}
                                     onClick={() => void handleComplete()}
                                     className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    {saving
-                                        ? "Saving..."
-                                        : completionSaved
-                                            ? "Completion saved"
-                                            : "Mark completed"}
-                                </button>
+                                    {saving ? "Saving..." : "Mark complete"}
+                                </button>}
 
-                                {completionSaved && (
-                                    <p role="status" className="mt-3 text-sm text-emerald-700">
+                                {justSaved && (
+                                    <p role="status" className="order-last basis-full text-sm text-emerald-700">
                                         Your lesson completion has been saved.
                                     </p>
                                 )}
 
                                 {completionError && (
-                                    <p role="alert" className="mt-3 text-sm text-red-700">
+                                    <p role="alert" className="order-last basis-full text-sm text-red-700">
                                         {completionError}
                                     </p>
                                 )}
 
                                 <nav
                                     aria-label="Lesson navigation"
-                                    className="mt-6 flex flex-wrap justify-between gap-3"
+                                    className="flex flex-wrap gap-3"
                                 >
                                     {previousLesson && (
                                         <Link
@@ -331,7 +332,7 @@ function LessonContent({
                             </div>
                         </section>
 
-                        <aside className="min-w-0 rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
+                        <aside className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h2 className="text-lg font-semibold">Course lessons</h2>
 
                             <p className="mt-2 text-sm text-slate-500">
@@ -341,19 +342,21 @@ function LessonContent({
 
                             <nav aria-label="Course lessons" className="mt-4 space-y-2">
                                 {lessons.map((item, index) => (
+                                    <div key={item.id} className="space-y-2">
                                     <Link
-                                        key={item.id}
                                         to={`/courses/${courseId}/lessons/${item.id}`}
                                         aria-current={item.id === lessonId ? "page" : undefined}
                                         className={
-                                            "block break-words rounded-lg border p-3 text-sm leading-6 " +
+                                            "block break-words rounded-lg border p-3 text-sm leading-6 no-underline " +
                                             (item.id === lessonId
                                                 ? "border-blue-200 bg-blue-50 font-semibold text-blue-700"
                                                 : "border-slate-200 text-slate-600 hover:bg-slate-50")
                                         }
                                     >
-                                        {index + 1}. {item.title}
+                                        <span className="block">{index + 1}. {item.title}</span>
+                                    {item.progress?.status === "COMPLETED" && <span className="mt-2 block"><CompletionBadge /></span>}
                                     </Link>
+                                    </div>
                                 ))}
                             </nav>
                         </aside>

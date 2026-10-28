@@ -1,28 +1,15 @@
-import { Navigate, Outlet } from 'react-router-dom';
-
-interface PrivateRouteProps {
-  allowedRoles?: string[];
-}
-
-export default function PrivateRoute({ allowedRoles }: PrivateRouteProps) {
-  const token = localStorage.getItem('accessToken');
-  
-  // Lấy thông tin role của người dùng từ LocalStorage
-  const userRaw = localStorage.getItem('user');
-  const user = userRaw ? JSON.parse(userRaw) : null;
-  const userRole = user?.role || localStorage.getItem('userRole'); // Hỗ trợ cả 'teacher' hoặc 'INSTRUCTOR'
-
-  // 1. Nếu chưa đăng nhập -> Chuyển về trang Sign In
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // 2. Nếu Route yêu cầu Role cụ thể mà người dùng không đáp ứng -> Đẩy về Dashboard
-  if (allowedRoles && (!userRole || !allowedRoles.includes(userRole))) {
-    alert('Tài khoản của bạn không có quyền truy cập vào khu vực Giáo viên!');
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // 3. Đúng quyền -> Cho phép truy cập route con
-  return <Outlet />;
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useSession } from '../session';
+export default function PrivateRoute({ allowedRoles }: { allowedRoles?: string[] }) {
+ const { session, restoring } = useSession(); const location = useLocation();
+ if (restoring) return <p role="status">Restoring session...</p>;
+ if (!session) return <Navigate to="/login" replace state={{ from: location.pathname + location.search + location.hash }} />;
+ if (allowedRoles && !allowedRoles.some(role => session.user.roles.includes(role))) return (
+   <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8">
+     <div role="alert" className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-700">
+       You do not have access to this page.
+     </div>
+   </main>
+ );
+ return <Outlet />;
 }

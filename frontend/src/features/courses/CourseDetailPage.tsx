@@ -1,3 +1,4 @@
+import CompletionBadge from "./CompletionBadge";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -39,6 +40,7 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                             ) : (
                                 item.title
                             )}
+                            {item.progress?.status === "COMPLETED" && <div className="mt-2"><CompletionBadge /></div>}
                         </div>
 
                         <span
@@ -99,7 +101,7 @@ export default function CourseDetailPage({
                     throw new Error("The course link is invalid.");
                 }
 
-                const data = await getCourseDetail(courseId, controller.signal);
+                const data = await getCourseDetail(courseId, controller.signal, accessToken);
 
                 if (!controller.signal.aborted) {
                     setCourse(data);
@@ -122,7 +124,7 @@ export default function CourseDetailPage({
         void loadCourse();
 
         return () => controller.abort();
-    }, [courseId, reloadKey]);
+    }, [courseId, reloadKey, accessToken]);
 
     const sections = [...(course?.sections ?? [])].sort(
         (a, b) => a.position - b.position,
@@ -143,6 +145,7 @@ export default function CourseDetailPage({
 
     return (
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+            <Link to="/courses" className="mb-5 inline-block text-sm font-semibold text-blue-600 hover:underline">← Back to courses</Link>
             {loading ? (
                 <div
                     role="status"
@@ -270,6 +273,7 @@ export default function CourseDetailPage({
                                     return (
                                         <details
                                             key={section.id}
+                                            open={index === 0}
                                             className="group overflow-hidden rounded-xl border border-slate-200"
                                         >
                                             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50 p-4 text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden">
@@ -320,7 +324,7 @@ export default function CourseDetailPage({
                                 to="/courses"
                                 className="mt-5 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                             >
-                                ← Course Catalog
+                                ← Back to courses
                             </Link>
                         </aside>
                     </div>

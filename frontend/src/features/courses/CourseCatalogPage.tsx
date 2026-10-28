@@ -3,9 +3,9 @@ import CourseCard from './CourseCard'
 import type { Course } from './course'
 import { getCourses } from './coursesApi'
 
-const PAGE_SIZE = 6
+import { catalogPage } from './catalogPagination'
 
-export default function CourseCatalogPage() {
+export default function CourseCatalogPage({ loadCourses = getCourses }: { loadCourses?: typeof getCourses }) {
     const [courses, setCourses] = useState<Course[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -18,12 +18,12 @@ export default function CourseCatalogPage() {
     useEffect(() => {
         const controller = new AbortController()
 
-        async function loadCourses() {
+        async function loadCatalog() {
             setLoading(true)
             setError(null)
 
             try {
-                const result = await getCourses(controller.signal)
+                const result = await loadCourses(controller.signal)
 
                 if (!controller.signal.aborted) {
                     setCourses(result)
@@ -43,35 +43,12 @@ export default function CourseCatalogPage() {
             }
         }
 
-        void loadCourses()
+        void loadCatalog()
 
         return () => controller.abort()
-    }, [reloadKey])
+    }, [reloadKey, loadCourses])
 
-    const keyword = search.trim().toLowerCase()
-
-    const filteredCourses = courses.filter((course) => {
-        const searchableText = [
-            course.title,
-            course.description,
-            course.instructorName,
-        ]
-            .join(' ')
-            .toLowerCase()
-
-        return (
-            searchableText.includes(keyword) &&
-            (!openOnly || course.enrollmentOpen === true)
-        )
-    })
-
-    const totalPages = Math.ceil(filteredCourses.length / PAGE_SIZE)
-    const currentPage = Math.min(page, Math.max(1, totalPages))
-
-    const visibleCourses = filteredCourses.slice(
-        (currentPage - 1) * PAGE_SIZE,
-        currentPage * PAGE_SIZE,
-    )
+    const { filteredCourses, totalPages, currentPage, visibleCourses } = catalogPage(courses, search, openOnly, page)
 
     function resetFilters() {
         setSearch('')

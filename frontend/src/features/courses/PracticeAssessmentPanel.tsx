@@ -80,7 +80,7 @@ export default function PracticeAssessmentPanel({
         <ul className="mt-4 space-y-4">
           {results.map((result) => (
             <li key={result.id}>
-              <p className="text-xs font-semibold text-blue-700">
+              <p className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">
                 {result.isOfficial ? "Official result" : "Result"}
               </p>
 
@@ -103,7 +103,7 @@ export default function PracticeAssessmentPanel({
         type="button"
         disabled={loading}
         onClick={() => setReloadKey((value) => value + 1)}
-        className="mt-4 text-sm font-semibold text-blue-700 hover:underline disabled:opacity-50"
+        className="mt-4 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
       >
         Refresh result
       </button>

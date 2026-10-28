@@ -37,7 +37,7 @@ export default function ReviewDetailPage() {
       await instructorApi.claimReview(id);
       setReview((prev: any) => ({ ...prev, status: 'IN_PROGRESS' }));
       alert('Successfully claimed this essay!');
-    } catch (err) {
+    } catch {
       alert('Failed to claim essay.');
     } finally {
       setClaiming(false);
@@ -53,7 +53,7 @@ export default function ReviewDetailPage() {
       await instructorApi.publishAssessment(id, scores);
       alert('Assessment published successfully!');
       navigate('/teacher/reviews');
-    } catch (err) {
+    } catch {
       alert('Failed to publish assessment.');
     } finally {
       setSubmitting(false);

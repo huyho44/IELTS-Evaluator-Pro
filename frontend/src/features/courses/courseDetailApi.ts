@@ -1,3 +1,5 @@
+import { isLessonProgress, type LessonProgress } from "./lessonProgress";
+import { sessionFetch as fetch } from "../auth/session";
 export type CourseSection = {
     id: string;
     title: string;
@@ -5,6 +7,7 @@ export type CourseSection = {
 };
 
 export type CourseLearningItem = {
+    progress?: LessonProgress | null;
     id: string;
     sectionId: string | null;
     title: string;
@@ -35,10 +38,11 @@ export type CourseDetail = {
 export async function getCourseDetail(
     courseId: string,
     signal: AbortSignal,
+    accessToken?: string | null,
 ): Promise<CourseDetail> {
     const response = await fetch(
         `/api/courses/${encodeURIComponent(courseId)}`,
-        { signal },
+        { signal, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined },
     );
 
     if (response.status === 404) {
@@ -62,7 +66,8 @@ export async function getCourseDetail(
         typeof data.id !== "string" ||
         typeof data.title !== "string" ||
         !Array.isArray(data.sections) ||
-        !Array.isArray(data.learningItems)
+        !Array.isArray(data.learningItems) ||
+        !data.learningItems.every(item => item && (item.progress == null || isLessonProgress(item.progress)))
     ) {
         throw new Error("The server returned an unexpected course format.");
     }

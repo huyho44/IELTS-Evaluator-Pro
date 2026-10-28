@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import {
     EnrollmentApiError,
@@ -137,7 +138,7 @@ function EnrollmentPanel({
         description = "Please sign in again to continue.";
     } else if (status === "ACTIVE") {
         buttonText = "Enrolled";
-        description = "You are enrolled in this course.";
+        description = "You are enrolled in this course. Choose a lesson or practice from the syllabus to begin.";
     } else if (status === "COMPLETED") {
         buttonText = "Course completed";
         description = "You have completed this course.";
@@ -163,7 +164,7 @@ function EnrollmentPanel({
 
     return (
         <div className="mt-6 border-t border-slate-100 pt-5">
-            <button
+            {!accessToken || sessionExpired ? <Link to="/login" state={{ from: `/courses/${encodeURIComponent(courseId)}` }} className="inline-flex rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Sign in to enroll</Link> : status !== "ACTIVE" && status !== "COMPLETED" && <button
                 type="button"
                 onClick={() => void handleEnroll()}
                 disabled={disabled}
@@ -171,7 +172,7 @@ function EnrollmentPanel({
                 className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
                 {buttonText}
-            </button>
+            </button>}
 
             <div
                 role="status"

@@ -1,3 +1,4 @@
+import AttemptStatusBadge from "./AttemptStatusBadge";
 import PracticeAssessmentPanel from "./PracticeAssessmentPanel";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -406,23 +407,25 @@ function AttemptContent({
 
     return (
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+            <nav aria-label="Practice navigation" className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <Link
                 to={
                     accessToken && version
                         ? `/courses/${encodeURIComponent(version.assignment.courseId)}`
                         : "/courses"
                 }
-                className="mb-5 block w-fit text-sm font-semibold text-blue-600 hover:underline"
+                className="block w-fit text-sm font-semibold text-blue-600 hover:underline"
             >
-                {accessToken && version ? "← Course overview" : "← Back to courses"}
+                {accessToken && version ? "← Back to course overview" : "← Back to courses"}
             </Link>
 
             <Link
                 to="/practice-history"
-                className="mt-3 block w-fit text-sm font-semibold text-blue-600 hover:underline"
+                className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
                 My practice attempts
             </Link>
+            </nav>
 
             {!accessToken ? (
                 <section className="rounded-xl border border-slate-200 bg-white p-8">
@@ -464,10 +467,11 @@ function AttemptContent({
 
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-600">
                         <span>Attempt {attempt.attemptNo}</span>
-                        <span>Status: {attempt.status.replaceAll("_", " ")}</span>
+                        <AttemptStatusBadge status={attempt.status} />
+                        {attempt.status === "IN_PROGRESS" && attempt.expiresAt && new Date(attempt.expiresAt).getTime() <= now && <span className="text-xs text-amber-800">Time limit expired</span>}
                         {attempt.expiresAt && (
                             <span>
-                                Expires: {new Date(attempt.expiresAt).toLocaleString()}
+                                {attempt.status === "IN_PROGRESS" ? "Time limit ends" : "Time limit ended"}: {new Date(attempt.expiresAt).toLocaleString()}
                             </span>
                         )}
                     </div>
@@ -527,6 +531,7 @@ function AttemptContent({
                             </ol>
 
                             <div className="mt-6 border-t border-slate-200 pt-5">
+                                {!receipt && attempt.status !== "SUBMITTED" && attempt.status !== "FINISHED" && <>
                                 <button
                                     type="button"
                                     onClick={() => void handleSaveDraft()}
@@ -565,14 +570,16 @@ function AttemptContent({
                                             : "Submit answers"}
                                 </button>
 
+                                </>}
+
                                 {receipt && (
                                     <div
                                         role="status"
                                         className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900"
                                     >
                                         <p className="font-semibold">Your submission has been received.</p>
-                                        <p>Processing status: {receipt.status}</p>
-                                        <p className="break-all">Submission ID: {receipt.submissionId}</p>
+                                        <p className="mt-2">Processing: <AttemptStatusBadge status={receipt.status} /></p>
+                                        <details className="mt-2 text-xs"><summary className="cursor-pointer">Submission reference</summary><p className="mt-2 break-all font-mono">{receipt.submissionId}</p></details>
 
                                         <button
                                             type="button"

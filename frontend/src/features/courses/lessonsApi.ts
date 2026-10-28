@@ -1,3 +1,5 @@
+import { isLessonProgress, type LessonProgress } from "./lessonProgress";
+import { sessionFetch as fetch } from "../auth/session";
 export type LessonMaterial = {
     id: string;
     kind: "TEXT" | "URL" | "FILE";
@@ -8,6 +10,7 @@ export type LessonMaterial = {
 };
 
 export type LessonDetail = {
+    progress: LessonProgress;
     id: string;
     summary: string | null;
     learningItem: {
@@ -106,6 +109,7 @@ function isLessonDetail(value: unknown): value is LessonDetail {
     if (
         typeof value !== "object" ||
         value === null ||
+        !("progress" in value) || !isLessonProgress(value.progress) ||
         !("id" in value) ||
         typeof value.id !== "string" ||
         !("summary" in value) ||

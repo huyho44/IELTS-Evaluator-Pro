@@ -1,3 +1,4 @@
+import AttemptStatusBadge from "./AttemptStatusBadge";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -97,27 +98,20 @@ function HistoryContent({ accessToken, onSessionExpired }: Props) {
                             {entries.map((entry) => (
                                 <li
                                     key={entry.id}
-                                    className="rounded-lg border border-slate-200 p-4"
+                                    className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
                                 >
-                                    <h2 className="font-semibold">
-                                        Attempt {entry.attemptNo}
-                                    </h2>
-
-                                    <p className="mt-2 text-sm text-slate-600">
-                                        Status: {entry.status.replaceAll("_", " ")}
-                                    </p>
-
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        Started: {new Date(entry.startedAt).toLocaleString()}
-                                    </p>
-
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        Submissions: {entry.submissionRevisions.length}
-                                    </p>
-
-                                    <Link
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2.5">
+                                            <h2 className="font-semibold">Attempt {entry.attemptNo}</h2>
+                                            <AttemptStatusBadge status={entry.status} />
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                            <span>Started: {new Date(entry.startedAt).toLocaleString()}</span>
+                                            <span>Submissions: {entry.submissionRevisions.length}</span>
+                                        </div>
+                                    </div><Link
                                         to={`/attempts/${encodeURIComponent(entry.id)}`}
-                                        className="mt-3 inline-block font-semibold text-blue-600 hover:underline"
+                                        className="inline-flex shrink-0 justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-600 hover:text-blue-600"
                                     >
                                         Open attempt →
                                     </Link>

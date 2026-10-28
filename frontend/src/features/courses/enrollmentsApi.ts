@@ -1,3 +1,4 @@
+import { sessionFetch as fetch } from "../auth/session";
 export type EnrollmentStatus = "ACTIVE" | "COMPLETED" | "LEFT";
 
 export type Enrollment = {

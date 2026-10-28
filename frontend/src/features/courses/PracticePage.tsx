@@ -114,19 +114,21 @@ function PracticeContent({
 
     return (
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+            <nav aria-label="Practice navigation" className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <Link
                 to={`/courses/${encodeURIComponent(courseId)}`}
                 className="text-sm font-semibold text-blue-600 hover:underline"
             >
-                ← Course overview
+                ← Back to course overview
             </Link>
 
             <Link
                 to="/practice-history"
-                className="mt-3 block w-fit text-sm font-semibold text-blue-600 hover:underline"
+                className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
                 My practice attempts
             </Link>
+            </nav>
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
@@ -187,13 +189,13 @@ function PracticeContent({
                             {assignments.map((assignment) => (
                                 <li
                                     key={assignment.id}
-                                    className="rounded-xl border border-slate-200 p-5"
+                                    className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50/50 p-5 sm:grid-cols-[1fr_auto] sm:items-center"
                                 >
-                                    <h2 className="break-words text-lg font-semibold text-slate-900">
+                                    <h2 className="break-words text-lg font-semibold text-slate-900 sm:col-start-1">
                                         {assignment.title}
                                     </h2>
 
-                                    <p className="mt-2 text-sm text-slate-500">
+                                    <p className="text-sm text-slate-500 sm:col-start-1">
                                         Published version{" "}
                                         {assignment.assignmentVersions[0].versionNo}
                                     </p>
@@ -202,12 +204,12 @@ function PracticeContent({
                                         type="button"
                                         disabled={startingId !== null}
                                         onClick={() => void handleStart(assignment.id)}
-                                        className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="w-fit rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:col-start-2 sm:row-start-1 sm:row-span-2"
                                     >
                                         {startingId === assignment.id ? "Opening..." : "Start / resume"}
                                     </button>
 
-                                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                                    <p className="text-xs leading-5 text-slate-500 sm:col-span-2">
                                         Starting a new attempt uses an attempt and starts its time limit, if set.
                                     </p>
                                 </li>

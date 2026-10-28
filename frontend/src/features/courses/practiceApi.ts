@@ -1,3 +1,4 @@
+import { sessionFetch as fetch } from "../auth/session";
 export type PracticeAssignment = {
     id: string;
     title: string;

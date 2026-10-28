@@ -8,7 +8,7 @@ type CourseCardProps = {
 export default function CourseCard({ course }: CourseCardProps) {
     return (
         <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex h-40 flex-col items-center justify-center gap-3 bg-slate-800 px-6 text-center">
+            <div className="flex h-40 flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-700 to-slate-900 px-6 text-center">
                 <p className="text-xs font-semibold text-slate-300">
                     IELTS LEARNING SERIES
                 </p>
@@ -28,7 +28,7 @@ export default function CourseCard({ course }: CourseCardProps) {
 
                     <span
                         className={
-                            "rounded-lg px-2 py-1 text-xs font-semibold " +
+                            "rounded-full px-2.5 py-1 text-xs font-semibold " +
                             (course.enrollmentOpen
                                 ? "bg-emerald-50 text-emerald-700"
                                 : "bg-slate-100 text-slate-600")
@@ -38,7 +38,7 @@ export default function CourseCard({ course }: CourseCardProps) {
                     </span>
                 </div>
 
-                <h2 className="text-xl font-bold leading-snug">{course.title}</h2>
+                <h2 className="break-words text-xl font-bold leading-snug">{course.title}</h2>
 
                 <p className="text-sm leading-6 text-slate-600">
                     {course.description}
