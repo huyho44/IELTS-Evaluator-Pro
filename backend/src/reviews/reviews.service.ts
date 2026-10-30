@@ -87,25 +87,105 @@ export class ReviewsService {
   }
   // Get review details.
   async details(id: string, actor: Actor) {
-    await this.check(id, actor);
-    return this.prisma.reviewCase.findUnique({
+    const checked = await this.check(id, actor);
+    const review = await this.prisma.reviewCase.findUnique({
       where: { id },
       include: {
         revision: {
           include: {
-            revisionParagraphs: true,
+            revisionParagraphs: { orderBy: { paragraphNo: 'asc' } },
+            attempt: {
+              select: {
+                id: true,
+                learner: { select: { id: true, displayName: true } },
+                assignmentVersion: {
+                  select: {
+                    id: true,
+                    versionNo: true,
+                    mode: true,
+                    dueAt: true,
+                    releasePolicyJson: true,
+                    assignment: {
+                      select: { id: true, title: true, courseId: true },
+                    },
+                    activityVersion: {
+                      select: {
+                        id: true,
+                        versionNo: true,
+                        promptText: true,
+                        instructions: true,
+                      },
+                    },
+                    rubricVersion: {
+                      include: {
+                        rubricCriterions: { orderBy: { code: 'asc' } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
             assessmentResults: {
+              orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
               include: {
-                criterionScores: true,
+                criterionScores: {
+                  include: {
+                    criterion: {
+                      select: { id: true, code: true, name: true },
+                    },
+                  },
+                },
                 findings: { include: { findingAnchors: true } },
+                aiResult: {
+                  select: {
+                    gradingRunId: true,
+                    qualityStatus: true,
+                    validationJson: true,
+                  },
+                },
+                teacherResult: { select: { decisionId: true } },
+                acceptedAssessment: true,
+                skillObservations: true,
               },
             },
           },
         },
-        reviewDecisions: true,
+        targetRun: {
+          select: {
+            id: true,
+            status: true,
+            errorCode: true,
+            completedAt: true,
+          },
+        },
+        reviewDecisions: {
+          orderBy: [{ decidedAt: 'desc' }, { id: 'desc' }],
+        },
         appeals: true,
       },
     });
+    if (!review) throw new NotFoundException('Review case not found');
+    const mode = checked.revision.responseMode;
+    const skills =
+      mode === 'WRITING' || mode === 'SPEAKING'
+        ? await this.prisma.skill.findMany({
+            where: { status: 'PUBLISHED', skillArea: mode },
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              observableDefinition: true,
+            },
+            orderBy: [{ name: 'asc' }, { id: 'asc' }],
+          })
+        : [];
+    return {
+      ...review,
+      availableSkills: skills.map(({ observableDefinition, ...skill }) => ({
+        ...skill,
+        description: observableDefinition,
+      })),
+    };
   }
   // Claim a review case.
   async claimSubmission(id: string, actor: Actor) {

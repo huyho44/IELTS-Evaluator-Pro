@@ -1,35 +1,56 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { instructorApi } from '../services/instructorApi';
+import { useSession } from '../../auth/session';
+import type { ReviewQueueItem } from '../types';
 
 export default function ReviewQueuePage() {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const { session } = useSession();
+  const [reviews, setReviews] = useState<ReviewQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'CLAIMED'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    instructorApi.getReviewQueue()
-      .then((data) => setReviews(Array.isArray(data) ? data : []))
-      .catch((err) => console.error('Error fetching review queue:', err))
-      .finally(() => setLoading(false));
-  }, []);
+    let active = true;
+    async function load() {
+      setLoading(true);
+      setError('');
+      setReviews([]);
+      try {
+        const data = await instructorApi.getReviewQueue();
+        if (!Array.isArray(data)) throw new Error('Unexpected review queue response.');
+        if (active) setReviews(data);
+      } catch (cause) {
+        if (!active) return;
+        const message: unknown = isAxiosError(cause) ? cause.response?.data?.message : undefined;
+        setError(typeof message === 'string' ? message : 'Unable to load the review queue. Please try again.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void load();
+    return () => { active = false; };
+  }, [reloadKey, session?.user.id]);
 
   // Hàm hỗ trợ render Badge trạng thái theo màu chuẩn Figma
   const renderStatusBadge = (status: string) => {
     switch (status) {
-      case 'IN_PROGRESS':
+      case 'CLAIMED':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
             <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-blue-500"></span>
-            In Progress
+            Claimed
           </span>
         );
-      case 'COMPLETED':
+      case 'CONFIRMED':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
             <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span>
-            Completed
+            Confirmed
           </span>
         );
       default:
@@ -46,8 +67,8 @@ export default function ReviewQueuePage() {
   const filteredReviews = reviews.filter((item) => {
     const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
     const matchesSearch = 
-      (item.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.studentName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      item.revision.attempt.assignmentVersion.assignment.title.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+      item.revision.attempt.learner.displayName.toLowerCase().includes(searchTerm.trim().toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -59,7 +80,8 @@ export default function ReviewQueuePage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Central Grading Queue</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage, claim, and evaluate submitted IELTS Writing essays.</p>
+            <p className="text-sm text-gray-500 mt-1">Manage, claim, and evaluate submitted assessments.</p>
+            <p className="text-xs text-gray-500 mt-1">Counts cover open reviews returned by the server, up to 100.</p>
           </div>
         </div>
 
@@ -69,7 +91,7 @@ export default function ReviewQueuePage() {
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Review</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
-                {reviews.filter(r => !r.status || r.status === 'PENDING').length}
+                {reviews.filter(r => r.status === 'PENDING').length}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 font-semibold">
@@ -79,9 +101,9 @@ export default function ReviewQueuePage() {
 
           <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">In Progress</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Claimed</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
-                {reviews.filter(r => r.status === 'IN_PROGRESS').length}
+                {reviews.filter(r => r.status === 'CLAIMED').length}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-semibold">
@@ -91,9 +113,9 @@ export default function ReviewQueuePage() {
 
           <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Today</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned to me</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
-                {reviews.filter(r => r.status === 'COMPLETED').length}
+                {reviews.filter(r => r.status === 'CLAIMED' && r.assigneeId === session?.user.id).length}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-semibold">
@@ -108,7 +130,7 @@ export default function ReviewQueuePage() {
             
             {/* Thanh Tab trạng thái */}
             <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg self-start">
-              {(['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'] as const).map((tab) => (
+              {(['ALL', 'PENDING', 'CLAIMED'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setStatusFilter(tab)}
@@ -118,7 +140,7 @@ export default function ReviewQueuePage() {
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  {tab === 'ALL' ? 'All Submissions' : tab.replace('_', ' ')}
+                  {tab === 'ALL' ? 'All open reviews' : tab}
                 </button>
               ))}
             </div>
@@ -140,6 +162,11 @@ export default function ReviewQueuePage() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-8 text-center text-gray-500 text-sm">Loading submissions...</div>
+            ) : error ? (
+              <div className="p-8 text-center text-sm">
+                <p role="alert" className="text-red-700">{error}</p>
+                <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="mt-3 rounded border border-blue-200 px-3 py-2 font-semibold text-blue-700">Try again</button>
+              </div>
             ) : filteredReviews.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-gray-500 font-medium text-sm">No essays found matching your criteria.</p>
@@ -161,18 +188,18 @@ export default function ReviewQueuePage() {
                       
                       {/* Tiêu đề & Loại bài */}
                       <td className="py-4 px-4">
-                        <div className="font-semibold text-gray-900">{item.title || 'IELTS Writing Task 2'}</div>
-                        <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.prompt || 'Writing Assessment'}</div>
+                        <div className="font-semibold text-gray-900">{item.revision.attempt.assignmentVersion.assignment.title}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{item.revision.responseMode} assessment</div>
                       </td>
 
                       {/* Tên học viên */}
                       <td className="py-4 px-4 text-gray-700 font-medium">
-                        {item.studentName || 'Student User'}
+                        {item.revision.attempt.learner.displayName}
                       </td>
 
                       {/* Ngày nộp */}
                       <td className="py-4 px-4 text-gray-500 text-xs">
-                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Just now'}
+                        {new Date(item.revision.submittedAt).toLocaleString()}
                       </td>
 
                       {/* Badge trạng thái */}
@@ -183,10 +210,10 @@ export default function ReviewQueuePage() {
                       {/* Nút xem chi tiết / chấm bài */}
                       <td className="py-4 px-4 text-right">
                         <Link
-                          to={`/teacher/reviews/${item.id}`}
+                          to={`/teacher/reviews/${encodeURIComponent(item.id)}`}
                           className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
                         >
-                          {item.status === 'IN_PROGRESS' ? 'Continue Grading' : 'Review Essay'} &rarr;
+                          {item.status === 'CLAIMED' && item.assigneeId === session?.user.id ? 'Continue Grading' : 'Open Review'} &rarr;
                         </Link>
                       </td>
                     </tr>

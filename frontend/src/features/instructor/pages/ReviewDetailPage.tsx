@@ -1,300 +1,556 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { instructorApi } from '../services/instructorApi';
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useParams } from "react-router-dom";
+import { isAxiosError } from "axios";
+import { useSession } from "../../auth/session";
+import { instructorApi } from "../services/instructorApi";
+import {
+  acceptedAssessmentForReview,
+  aiAssessment,
+  buildConfirmPayload,
+  canConfirmReview,
+  createReviewForm,
+  teacherAssessment,
+  weightedOverall,
+} from "../reviewForm";
+import ReviewEvidenceEditor from "../ReviewEvidenceEditor";
+import type {
+  CriterionInput,
+  FindingInput,
+  ObservationInput,
+  ReviewStatus,
+  AcceptedAssessment,
+  ReviewDetail,
+} from "../types";
+function errorMessage(cause: unknown): string {
+  if (isAxiosError(cause)) {
+    const message: unknown = cause.response?.data?.message;
+    if (typeof message === "string") return message;
+    if (!cause.response)
+      return "Connection interrupted. Reload the review status before retrying.";
+  }
+  return cause instanceof Error ? cause.message : "The request failed.";
+}
+const statusLabels: Record<ReviewStatus, string> = {
+  PENDING: "Pending claim",
+  CLAIMED: "In progress",
+  CONFIRMED: "Confirmed",
+  CANCELLED: "Cancelled",
+};
 
 export default function ReviewDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [review, setReview] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const { session } = useSession();
+  return (
+    <ReviewDetailContent
+      key={`${id ?? "missing"}:${session?.user.id ?? "guest"}`}
+    />
+  );
+}
 
-  // State lưu điểm số theo tiêu chí IELTS và nhận xét
-  const [scores, setScores] = useState({
-    taskAchievement: 6.0,
-    coherenceCohesion: 6.0,
-    lexicalResource: 6.0,
-    grammarAccuracy: 6.0,
-    overallScore: 6.0,
-    feedback: '',
-  });
+function ReviewDetailContent() {
+  const { id } = useParams<{ id: string }>();
+  const { session } = useSession();
+  const [review, setReview] = useState<ReviewDetail | null>(null);
+  const [criteria, setCriteria] = useState<CriterionInput[]>([]);
+  const [reason, setReason] = useState("");
+  const [summary, setSummary] = useState("");
+  const [findings, setFindings] = useState<FindingInput[]>([]);
+  const [observations, setObservations] = useState<ObservationInput[]>([]);
+  const [accepted, setAccepted] = useState<AcceptedAssessment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const actionInFlight = useRef(false);
+  const [needsReload, setNeedsReload] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    if (id) {
-      instructorApi.getReviewDetail(id)
-        .then((data) => setReview(data))
-        .catch((err) => console.error('Error fetching review details:', err))
-        .finally(() => setLoading(false));
+    let active = true;
+    async function load() {
+      try {
+        if (!id) throw new Error("Missing review ID.");
+        const detail = await instructorApi.getReviewDetail(id);
+        if (!active) return;
+        const form = createReviewForm(detail);
+        setReview(detail);
+        setCriteria(form.criteria);
+        setSummary(form.summary);
+        setReason(form.reason);
+        setFindings(form.findings);
+        setObservations(form.observations);
+        setAccepted(acceptedAssessmentForReview(detail));
+      } catch (cause) {
+        if (active) setError(errorMessage(cause));
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }, [id]);
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [id, session?.user.id, reloadKey]);
 
-  // Xử lý khi giáo viên nhận bài
-  const handleClaim = async () => {
-    if (!id) return;
-    setClaiming(true);
+  async function reloadStatus() {
+    if (!review || actionInFlight.current) return;
+    actionInFlight.current = true;
+    setBusy(true);
+    setError("");
     try {
-      await instructorApi.claimReview(id);
-      setReview((prev: any) => ({ ...prev, status: 'IN_PROGRESS' }));
-      alert('Successfully claimed this essay!');
-    } catch {
-      alert('Failed to claim essay.');
+      const detail = await instructorApi.getReviewDetail(review.id);
+      setReview(detail);
+      setAccepted(acceptedAssessmentForReview(detail));
+      setNeedsReload(false);
+      setMessage(
+        "Status reloaded. Check the latest review before confirming; your form entries were preserved.",
+      );
+    } catch (cause) {
+      setError(errorMessage(cause));
     } finally {
-      setClaiming(false);
+      actionInFlight.current = false;
+      setBusy(false);
     }
-  };
-
-  // Xử lý gửi kết quả đánh giá
-  const handleSubmitAssessment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id) return;
-    setSubmitting(true);
+  }
+  async function handleClaim() {
+    if (
+      !review ||
+      actionInFlight.current ||
+      needsReload ||
+      review.status !== "PENDING"
+    )
+      return;
+    actionInFlight.current = true;
+    setBusy(true);
+    setError("");
     try {
-      await instructorApi.publishAssessment(id, scores);
-      alert('Assessment published successfully!');
-      navigate('/teacher/reviews');
-    } catch {
-      alert('Failed to publish assessment.');
+      const claimed = await instructorApi.claimReview(review.id);
+      setReview((previous) =>
+        previous ? { ...previous, ...claimed } : previous,
+      );
+      setMessage("Review claimed.");
+    } catch (cause) {
+      setError(errorMessage(cause));
+      setNeedsReload(true);
     } finally {
-      setSubmitting(false);
+      actionInFlight.current = false;
+      setBusy(false);
     }
-  };
-
-  // Tính tổng số từ trong bài làm
-  const getWordCount = (text: string) => {
-    if (!text) return 0;
-    return text.trim().split(/\s+/).length;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-gray-500 font-medium text-sm">Loading essay details...</div>
-      </div>
-    );
+  }
+  async function handleConfirm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!review || !session || actionInFlight.current || needsReload) return;
+    actionInFlight.current = true;
+    setError("");
+    setMessage("");
+    setBusy(true);
+    try {
+      const payload = buildConfirmPayload(
+        review,
+        { reason, summary, criteria, findings, observations },
+        session.user.id,
+      );
+      const result = await instructorApi.confirmReview(review.id, payload);
+      setAccepted(result.acceptedAssessment);
+      setReview((previous) =>
+        previous ? { ...previous, status: "CONFIRMED" } : previous,
+      );
+      setMessage(
+        result.acceptedAssessment.publishedAt
+          ? "Assessment confirmed and published."
+          : "Assessment confirmed. Publication is pending.",
+      );
+      try {
+        const detail = await instructorApi.getReviewDetail(review.id);
+        setReview(detail);
+        const savedForm = createReviewForm(detail);
+        setCriteria(savedForm.criteria);
+        setSummary(savedForm.summary);
+        setReason(savedForm.reason);
+        setFindings(savedForm.findings);
+        setObservations(savedForm.observations);
+      } catch {
+        setMessage(
+          "Assessment confirmed successfully, but the latest details could not be loaded. Reload the status.",
+        );
+      }
+    } catch (cause) {
+      setError(errorMessage(cause));
+      if (
+        isAxiosError(cause) &&
+        (!cause.response || cause.response.status === 409)
+      )
+        setNeedsReload(true);
+    } finally {
+      actionInFlight.current = false;
+      setBusy(false);
+    }
+  }
+  async function handlePublish() {
+    if (
+      !review ||
+      !accepted ||
+      accepted.publishedAt ||
+      actionInFlight.current ||
+      needsReload ||
+      review.status !== "CONFIRMED"
+    )
+      return;
+    const policy = review.revision.attempt.assignmentVersion.releasePolicyJson;
+    if (policy?.releaseMode !== "MANUAL") return;
+    actionInFlight.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await instructorApi.publishAccepted(accepted.id);
+      setAccepted(result);
+      setMessage(
+        result.publishedAt
+          ? "Assessment published."
+          : "This assessment was not published. Reload the review status.",
+      );
+    } catch (cause) {
+      setError(errorMessage(cause));
+      setNeedsReload(true);
+    } finally {
+      actionInFlight.current = false;
+      setBusy(false);
+    }
   }
 
-  if (!review) {
+  if (loading)
     return (
-      <div className="min-h-screen bg-slate-50 p-8 text-center">
-        <p className="text-gray-600 font-medium">Essay not found.</p>
-        <Link to="/teacher/reviews" className="text-blue-600 underline mt-2 inline-block text-sm">
-          Back to Review Queue
-        </Link>
-      </div>
+      <main className="p-8" role="status">
+        Loading review...
+      </main>
     );
-  }
+  if (!review)
+    return (
+      <main className="p-8">
+        <p role="alert">{error || "Review not found."}</p>
+        <button
+          onClick={() => {
+            setLoading(true);
+            setError("");
+            setReloadKey((value) => value + 1);
+          }}
+        >
+          Retry
+        </button>
+      </main>
+    );
+  if (review.revision.responseMode !== "WRITING")
+    return (
+      <main className="p-8">
+        <p>
+          This review needs the{" "}
+          {review.revision.responseMode === "SPEAKING"
+            ? "Speaking audio"
+            : "answer-key"}{" "}
+          workflow. Open a Writing review to assess an essay here.
+        </p>
+        <Link to="/teacher/reviews">Back to review queue</Link>
+      </main>
+    );
 
+  const version = review.revision.attempt.assignmentVersion;
+  const rubric = version.rubricVersion;
+  const essay = review.revision.writingText ?? "";
+  const wordCount = essay.trim() ? essay.trim().split(/\s+/).length : 0;
+  const canConfirm = canConfirmReview(review, session?.user.id) && !needsReload;
+  const ai = aiAssessment(review);
+  const overall = weightedOverall(review, criteria);
+  const latestTeacher = teacherAssessment(review);
+  const fieldClass = "w-full rounded border border-slate-300 p-2";
   return (
-    <div className="min-h-screen bg-slate-50 p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header trên cùng & Link quay lại Queue */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <div className="space-y-1">
-            <Link
-              to="/teacher/reviews"
-              className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-blue-600 transition mb-1"
-            >
-              &larr; Back to Central Queue
-            </Link>
-            <h1 className="text-xl font-bold text-gray-900">{review.title || 'IELTS Writing Task 2 Essay'}</h1>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span>Student: <strong className="text-gray-800">{review.studentName || 'Anonymous Student'}</strong></span>
-              <span>•</span>
-              <span>Submitted: {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Recent'}</span>
-            </div>
-          </div>
-
-          {/* Badge trạng thái */}
-          <div>
-            {review.status === 'IN_PROGRESS' ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                <span className="w-2 h-2 mr-1.5 rounded-full bg-blue-500"></span>
-                In Progress
-              </span>
-            ) : review.status === 'COMPLETED' ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-2 h-2 mr-1.5 rounded-full bg-emerald-500"></span>
-                Completed
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                <span className="w-2 h-2 mr-1.5 rounded-full bg-amber-500"></span>
-                Pending Claim
-              </span>
+    <main className="min-h-screen bg-slate-50 p-4 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <Link to="/teacher/reviews" className="text-blue-600">
+          Back to review queue
+        </Link>
+        <header className="space-y-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h1 className="text-2xl font-bold">{version.assignment.title}</h1>
+          <p>
+            {review.revision.attempt.learner.displayName} ·{" "}
+            {new Date(review.revision.submittedAt).toLocaleString()} ·{" "}
+            {statusLabels[review.status]}
+          </p>
+        </header>
+        {error && (
+          <p role="alert" className="text-red-700">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p role="status" className="text-blue-700">
+            {message}
+          </p>
+        )}
+        <button
+          disabled={busy}
+          onClick={() => void reloadStatus()}
+          className="rounded border px-3 py-2"
+        >
+          Reload review status
+        </button>
+        {review.status === "PENDING" && (
+          <button
+            disabled={busy || needsReload}
+            onClick={() => void handleClaim()}
+            className="ml-3 rounded bg-blue-600 px-3 py-2 text-white"
+          >
+            Claim review
+          </button>
+        )}
+        {review.status === "CLAIMED" &&
+          review.assigneeId !== session?.user.id && (
+            <p>This review is assigned to another instructor.</p>
+          )}
+        <div className="grid items-start gap-6 lg:grid-cols-12">
+          <div className="min-w-0 space-y-5 lg:col-span-7">
+            <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="font-bold">Writing prompt</h2>
+              <p className="whitespace-pre-wrap">
+                {version.activityVersion.promptText}
+              </p>
+              <p className="mt-3 whitespace-pre-wrap">
+                {version.activityVersion.instructions}
+              </p>
+            </section>
+            <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="font-bold">
+                Student response · {wordCount} words
+              </h2>
+              <p className="min-h-60 whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-sm leading-relaxed text-gray-800">
+                {essay ||
+                  "No essay text was returned. Reload the review or contact support."}
+              </p>
+              {!essay.trim() && (
+                <p role="alert" className="text-sm text-red-700">
+                  The submission text is missing. Reload the review;
+                  confirmation is disabled until the essay is available.
+                </p>
+              )}
+            </section>
+            <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="font-bold">AI assessment for this review</h2>
+              {ai ? (
+                <>
+                  <p>
+                    {ai.aiResult?.qualityStatus === "FLAGGED"
+                      ? "Flagged: inspect the feedback and evidence carefully."
+                      : "AI feedback requires instructor review."}
+                  </p>
+                  <p>{ai.summary}</p>
+                  {ai.criterionScores.map((score) => (
+                    <div key={score.id}>
+                      <strong>
+                        {score.criterion.code}: {score.score}
+                      </strong>
+                      <p>{score.explanation}</p>
+                    </div>
+                  ))}
+                  {ai.findings.map((finding) => (
+                    <div key={finding.id} className="border-t pt-2">
+                      <p>{finding.explanation}</p>
+                      {finding.findingAnchors.map((anchor, index) => (
+                        <blockquote
+                          key={`${anchor.paragraphId}-${index}`}
+                          className="border-l-2 pl-3"
+                        >
+                          {anchor.exactQuote}
+                        </blockquote>
+                      ))}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <p>
+                  {review.targetRun
+                    ? `AI processing: ${review.targetRun.status.toLowerCase()}.`
+                    : "No AI assessment is linked to this review."}{" "}
+                  You may assess the submission manually using its pinned
+                  rubric.
+                </p>
+              )}
+            </section>
+            {!!review.reviewDecisions.length && (
+              <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+                <h2 className="font-bold">Decision history</h2>
+                {review.reviewDecisions.map((decision) => {
+                  const assessment = review.revision.assessmentResults.find(
+                    (result) =>
+                      result.teacherResult?.decisionId === decision.id,
+                  );
+                  return (
+                    <details
+                      key={decision.id}
+                      className="rounded-lg border border-gray-200 p-3"
+                    >
+                      <summary className="cursor-pointer text-sm font-semibold">
+                        Decision {decision.decisionNo} ·{" "}
+                        {new Date(decision.decidedAt).toLocaleString()}
+                        {assessment?.overallScore != null
+                          ? ` · Band ${assessment.overallScore}`
+                          : ""}
+                      </summary>
+                      <div className="mt-3 space-y-2 text-sm text-gray-600">
+                        <p>{decision.reason}</p>
+                        <p className="whitespace-pre-wrap">
+                          {assessment?.summary}
+                        </p>
+                        {assessment?.criterionScores.map((score) => (
+                          <p key={score.id}>
+                            <strong>
+                              {score.criterion.code}: {score.score}.
+                            </strong>{" "}
+                            {score.explanation}
+                          </p>
+                        ))}
+                        <p>
+                          {assessment?.acceptedAssessment?.publishedAt
+                            ? `Published ${new Date(assessment.acceptedAssessment.publishedAt).toLocaleString()}`
+                            : "Awaiting publication"}
+                        </p>
+                      </div>
+                    </details>
+                  );
+                })}
+              </section>
             )}
           </div>
-        </div>
-
-        {/* Bố cục 2 Cột (Giao diện T04 Figma) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* CỘT TRÁI: Đề bài & Bài làm của Học viên (Chiếm 7 cột) */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* Card Đề bài */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-blue-600">Writing Prompt</h2>
-                <span className="text-xs bg-slate-100 text-gray-600 px-2.5 py-1 rounded-md font-medium">Task 2</span>
-              </div>
-              <p className="text-sm text-gray-800 leading-relaxed font-medium bg-slate-50 p-4 rounded-lg border border-gray-100">
-                {review.prompt || 'Some people believe that university education should be free for everyone. To what extent do you agree or disagree?'}
-              </p>
-            </div>
-
-            {/* Card Bài nộp */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-base font-bold text-gray-900">Student Response</h2>
-                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
-                  Word count: <strong className="text-gray-900">{getWordCount(review.content)}</strong> words
-                </span>
-              </div>
-
-              <div className="text-sm text-gray-800 leading-relaxed space-y-4 whitespace-pre-wrap font-sans bg-slate-50/50 p-5 rounded-lg border border-gray-100 min-h-[300px]">
-                {review.content || 'No submission text available.'}
-              </div>
-            </div>
-
-          </div>
-
-          {/* CỘT PHẢI: Form Chấm điểm & Nhận xét của Giáo viên (Chiếm 5 cột) */}
-          <div className="lg:col-span-5 space-y-6 sticky top-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
-              
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-base font-bold text-gray-900">IELTS Band Assessment</h2>
-                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">Rubric v2.0</span>
-              </div>
-
-              {/* Thông báo Claim nếu bài chưa được nhận */}
-              {review.status !== 'IN_PROGRESS' && review.status !== 'COMPLETED' && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
-                  <p className="text-xs text-amber-800 font-medium">
-                    You need to claim this essay before entering grades and feedback.
-                  </p>
-                  <button
-                    onClick={handleClaim}
-                    disabled={claiming}
-                    className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-lg transition disabled:opacity-50 shadow-sm"
-                  >
-                    {claiming ? 'Claiming Essay...' : 'Claim This Essay'}
-                  </button>
-                </div>
-              )}
-
-              {/* Form Chấm điểm */}
-              <form onSubmit={handleSubmitAssessment} className="space-y-5">
-                
-                {/* Khung Điểm Tổng Overall */}
-                <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 flex items-center justify-between">
+          <section className="min-w-0 space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 lg:col-span-5">
+            <h2 className="font-bold">Instructor assessment</h2>
+            <p>
+              {rubric
+                ? `${rubric.rubricCode} · version ${rubric.versionNo}`
+                : "No pinned rubric"}
+            </p>
+            <form onSubmit={(event) => void handleConfirm(event)}>
+              <fieldset disabled={!canConfirm || busy} className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 p-4">
                   <div>
-                    <label className="block text-xs font-semibold text-blue-900 uppercase tracking-wider">
-                      Overall Band Score
+                    <p className="text-xs font-bold uppercase text-blue-900">
+                      Overall band
+                    </p>
+                    <p className="mt-1 text-xs text-blue-700">
+                      Calculated from rubric weights
+                    </p>
+                  </div>
+                  <output className="text-2xl font-bold text-blue-900">
+                    {overall ?? "—"}
+                  </output>
+                </div>
+                {criteria.map((row) => (
+                  <div key={row.code} className="space-y-2">
+                    <label className="block">
+                      {row.code} · {row.name}
+                      <input
+                        required
+                        type="number"
+                        min={0}
+                        max={Math.min(9, row.maxScore)}
+                        step={0.5}
+                        value={row.score}
+                        onChange={(event) =>
+                          setCriteria((previous) =>
+                            previous.map((item) =>
+                              item.code === row.code
+                                ? { ...item, score: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        className={fieldClass}
+                      />
                     </label>
-                    <p className="text-xs text-blue-700 mt-0.5">Calculated target rating</p>
+                    <label className="block">
+                      {row.code} explanation
+                      <textarea
+                        required
+                        maxLength={10000}
+                        value={row.explanation}
+                        onChange={(event) =>
+                          setCriteria((previous) =>
+                            previous.map((item) =>
+                              item.code === row.code
+                                ? { ...item, explanation: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        className={fieldClass}
+                      />
+                    </label>
                   </div>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="1"
-                    max="9"
-                    value={scores.overallScore}
-                    onChange={(e) => setScores({ ...scores, overallScore: parseFloat(e.target.value) || 0 })}
-                    className="w-20 text-center py-2 text-xl font-bold text-blue-900 bg-white rounded-lg border border-blue-200 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-
-                {/* 4 Tiêu chí IELTS */}
-                <div className="space-y-3.5">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Core Criteria (1.0 - 9.0)</h3>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <label className="text-gray-700 font-medium text-xs">Task Achievement (TA)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="9"
-                      value={scores.taskAchievement}
-                      onChange={(e) => setScores({ ...scores, taskAchievement: parseFloat(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 text-center font-semibold text-gray-900 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <label className="text-gray-700 font-medium text-xs">Coherence & Cohesion (CC)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="9"
-                      value={scores.coherenceCohesion}
-                      onChange={(e) => setScores({ ...scores, coherenceCohesion: parseFloat(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 text-center font-semibold text-gray-900 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <label className="text-gray-700 font-medium text-xs">Lexical Resource (LR)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="9"
-                      value={scores.lexicalResource}
-                      onChange={(e) => setScores({ ...scores, lexicalResource: parseFloat(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 text-center font-semibold text-gray-900 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <label className="text-gray-700 font-medium text-xs">Grammatical Range & Accuracy (GRA)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="9"
-                      value={scores.grammarAccuracy}
-                      onChange={(e) => setScores({ ...scores, grammarAccuracy: parseFloat(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 text-center font-semibold text-gray-900 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Khung Nhận xét Chi tiết */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Instructor Comments & Detailed Feedback
-                  </label>
+                ))}
+                <label className="block">
+                  Overall feedback
                   <textarea
-                    rows={6}
-                    value={scores.feedback}
-                    onChange={(e) => setScores({ ...scores, feedback: e.target.value })}
-                    placeholder="Write constructive feedback detailing strengths, weaknesses, and key areas for improvement..."
                     required
-                    className="w-full p-3 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    maxLength={10000}
+                    value={summary}
+                    onChange={(event) => setSummary(event.target.value)}
+                    className={fieldClass}
                   />
-                </div>
-
-                {/* Nút Submit */}
+                </label>
+                <label className="block">
+                  Decision reason
+                  <textarea
+                    required
+                    maxLength={10000}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    className={fieldClass}
+                  />
+                </label>
+                <ReviewEvidenceEditor
+                  review={review}
+                  criteria={criteria}
+                  findings={findings}
+                  observations={observations}
+                  onFindingsChange={setFindings}
+                  onObservationsChange={setObservations}
+                />
                 <button
                   type="submit"
-                  disabled={submitting || review.status !== 'IN_PROGRESS'}
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 disabled:opacity-50"
+                  className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
                 >
-                  {submitting ? 'Publishing Review...' : 'Publish Assessment'}
+                  {busy ? "Saving..." : "Confirm assessment"}
                 </button>
-              </form>
-
-            </div>
-          </div>
-
+              </fieldset>
+            </form>
+            {accepted && (
+              <div className="space-y-2 border-t pt-4">
+                <h2 className="font-bold">Publication</h2>
+                {latestTeacher?.overallScore != null && (
+                  <p className="text-sm">
+                    Confirmed band: {latestTeacher.overallScore}
+                  </p>
+                )}
+                <p>
+                  {accepted.publishedAt
+                    ? `Published: ${new Date(accepted.publishedAt).toLocaleString()}`
+                    : accepted.releaseAfter
+                      ? `Awaiting publication: ${new Date(accepted.releaseAfter).toLocaleString()}`
+                      : "Confirmed; awaiting publication."}
+                </p>
+                {review.status === "CONFIRMED" &&
+                  version.releasePolicyJson?.releaseMode === "MANUAL" &&
+                  !accepted.publishedAt && (
+                    <button
+                      disabled={busy || needsReload}
+                      onClick={() => void handlePublish()}
+                      className="rounded border px-3 py-2"
+                    >
+                      Publish confirmed assessment
+                    </button>
+                  )}
+              </div>
+            )}
+          </section>
         </div>
-
       </div>
-    </div>
+    </main>
   );
 }

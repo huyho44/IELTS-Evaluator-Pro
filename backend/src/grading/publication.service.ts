@@ -132,12 +132,34 @@ export class PublicationService {
   }
   // Publish results whose release time has arrived.
   async publishDue() {
-    const due = await this.prisma.acceptedAssessment.findMany({
-      where: { publishedAt: null, releaseAfter: { lte: new Date() } },
-      orderBy: { acceptedAt: 'asc' },
-      take: 50,
-    });
-    for (const item of due)
-      await serializable(this.prisma, (tx) => this.publish(tx, item.id));
+    const cutoff = new Date();
+    let after: { acceptedAt: Date; id: string } | undefined;
+    for (;;) {
+      const due: { acceptedAt: Date; id: string }[] =
+        await this.prisma.acceptedAssessment.findMany({
+          where: {
+            publishedAt: null,
+            releaseAfter: { lte: cutoff },
+            acceptedAt: { lte: cutoff },
+            ...(after
+              ? {
+                  OR: [
+                    { acceptedAt: { gt: after.acceptedAt } },
+                    { acceptedAt: after.acceptedAt, id: { gt: after.id } },
+                  ],
+                }
+              : {}),
+          },
+          orderBy: [{ acceptedAt: 'asc' }, { id: 'asc' }],
+          select: { id: true, acceptedAt: true },
+          take: 50,
+        });
+      if (!due.length) return;
+      for (const item of due)
+        await serializable(this.prisma, (tx) => this.publish(tx, item.id));
+      // Advance past skipped obsolete decisions too; publishing shrinks the result set.
+      const last = due[due.length - 1];
+      after = { acceptedAt: last.acceptedAt, id: last.id };
+    }
   }
 }
