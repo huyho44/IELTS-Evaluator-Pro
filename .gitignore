@@ -4,6 +4,9 @@ node_modules/
 # ignore env variables
 .env
 .env.local
+.env.mvp
+backend/private/
+*.dump
 
 # ignore build files
 dist/

@@ -30,10 +30,7 @@ export class EnrollmentApiError extends Error {
 
 function createAuthHeaders(accessToken: string): Headers {
   if (!accessToken.trim()) {
-    throw new EnrollmentApiError(
-      "Please sign in to continue.",
-      401,
-    );
+    throw new EnrollmentApiError("Please sign in to continue.", 401);
   }
 
   return new Headers({
@@ -178,4 +175,43 @@ export async function enrollInCourse(
   }
 
   return data;
+}
+
+export async function checkCourseCompletion(
+  courseId: string,
+  accessToken: string,
+): Promise<{
+  status: "ACTIVE" | "COMPLETED";
+  remainingItemIds: string[];
+}> {
+  const response = await fetch(
+    `/api/courses/${encodeURIComponent(courseId)}/completion`,
+    {
+      method: "POST",
+      headers: createAuthHeaders(accessToken),
+    },
+  );
+  await checkResponse(
+    response,
+    "Unable to check course completion. Please try again.",
+  );
+  const data: unknown = await response.json();
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !("status" in data) ||
+    (data.status !== "ACTIVE" && data.status !== "COMPLETED") ||
+    ("courseId" in data && data.courseId !== courseId) ||
+    (data.status === "ACTIVE" && !("remainingItemIds" in data)) ||
+    ("remainingItemIds" in data &&
+      (!Array.isArray(data.remainingItemIds) ||
+        !data.remainingItemIds.every((id) => typeof id === "string")))
+  ) {
+    throw new Error("The course completion response could not be verified.");
+  }
+  return {
+    status: data.status,
+    remainingItemIds:
+      "remainingItemIds" in data ? (data.remainingItemIds as string[]) : [],
+  };
 }

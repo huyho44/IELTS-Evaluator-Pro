@@ -366,7 +366,9 @@ export class GradingService {
           include: { criterion: { select: { code: true, name: true } } },
         },
         findings: { include: { findingAnchors: true } },
-        acceptedAssessment: true,
+        acceptedAssessment: {
+          include: { appeals: { orderBy: { requestedAt: 'desc' } } },
+        },
         answerKeyResult: { include: { questionMarks: true } },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],

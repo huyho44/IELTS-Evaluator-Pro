@@ -323,7 +323,7 @@ describe('course lesson progress', () => {
     expect((await f.service.findOne(courseId, teacher)).id).toBe(courseId);
   });
 
-  it('keeps completed enrollment progress visible in a hidden course without reopening lesson access', async () => {
+  it('allows completed learners to read lessons while keeping progress writes closed', async () => {
     await f.service.completeLesson(courseId, lessonId, an);
     f.course.status = 'HIDDEN';
     f.enrollments[0].status = 'COMPLETED';
@@ -332,8 +332,11 @@ describe('course lesson progress', () => {
         (item) => item.id === lessonId,
       )?.progress?.status,
     ).toBe('COMPLETED');
+    expect(
+      (await f.service.lesson(courseId, lessonId, an)).progress.status,
+    ).toBe('COMPLETED');
     await expect(
-      f.service.lesson(courseId, lessonId, an),
+      f.service.completeLesson(courseId, lessonId, an),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

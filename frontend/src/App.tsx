@@ -26,7 +26,14 @@ import CourseCatalogPage from "./features/courses/CourseCatalogPage";
 import CourseDetailPage from "./features/courses/CourseDetailPage";
 import LessonPage from "./features/courses/LessonPage";
 import PracticePage from "./features/courses/PracticePage";
-import PracticeAttemptPage from "./features/courses/PracticeAttemptPage";
+import AttemptPage from "./features/courses/AttemptPage";
+import LearningPage from "./features/learning/LearningPage";
+import AdminPage from "./features/management/AdminPage";
+import AuthoringPage from "./features/management/AuthoringPage";
+import NotificationsPage from "./features/management/NotificationsPage";
+import ProfilePage from "./features/management/ProfilePage";
+import GradingReportPage from "./features/management/GradingReportPage";
+import SubmissionRedirect from "./features/writing/SubmissionRedirect";
 import PracticeHistoryPage from "./features/courses/PracticeHistoryPage";
 
 function LogoutPage() {
@@ -80,6 +87,21 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route
+                path="/submissions/:revisionId"
+                element={<SubmissionRedirect />}
+              />
+            </Route>
+            <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
+            <Route
+              element={<PrivateRoute allowedRoles={["INSTRUCTOR", "ADMIN"]} />}
+            >
+              <Route path="/teacher/authoring" element={<AuthoringPage />} />
+              <Route path="/grading-report" element={<GradingReportPage />} />
             </Route>
             <Route element={<PrivateRoute allowedRoles={["INSTRUCTOR"]} />}>
               <Route path="/teacher/reviews" element={<ReviewQueuePage />} />
@@ -104,6 +126,23 @@ export default function App() {
 
             <Route element={<PrivateRoute allowedRoles={["LEARNER"]} />}>
               <Route
+                path="/learning"
+                element={
+                  <LearningPage
+                    accessToken={accessToken}
+                    onSessionExpired={onSessionExpired}
+                  />
+                }
+              />
+              <Route
+                path="/skills"
+                element={<Navigate to="/learning" replace />}
+              />
+              <Route
+                path="/recommendations"
+                element={<Navigate to="/learning" replace />}
+              />
+              <Route
                 path="/courses/:courseId/lessons/:lessonId"
                 element={
                   <LessonPage
@@ -126,7 +165,7 @@ export default function App() {
               <Route
                 path="/attempts/:attemptId"
                 element={
-                  <PracticeAttemptPage
+                  <AttemptPage
                     accessToken={accessToken}
                     onSessionExpired={onSessionExpired}
                   />

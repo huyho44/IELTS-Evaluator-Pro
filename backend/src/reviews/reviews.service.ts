@@ -24,11 +24,26 @@ export class ReviewsService {
     private readonly publication: PublicationService,
   ) {}
   // List reviews assigned to my courses.
-  async getTeacherQueue(actor: Actor) {
+  async getTeacherQueue(actor: Actor, status?: string) {
     this.access.role(actor, 'INSTRUCTOR');
+    if (
+      status &&
+      !['OPEN', 'ALL', 'PENDING', 'CLAIMED', 'CONFIRMED', 'CANCELLED'].includes(
+        status,
+      )
+    )
+      throw new BadRequestException('Unknown review status filter');
     return this.prisma.reviewCase.findMany({
       where: {
-        status: { in: ['PENDING', 'CLAIMED'] },
+        ...(status === 'ALL'
+          ? {}
+          : {
+              status:
+                status && status !== 'OPEN'
+                  ? (status as
+                      'PENDING' | 'CLAIMED' | 'CONFIRMED' | 'CANCELLED')
+                  : { in: ['PENDING' as const, 'CLAIMED' as const] },
+            }),
         revision: {
           attempt: {
             assignmentVersion: {
@@ -179,13 +194,145 @@ export class ReviewsService {
             orderBy: [{ name: 'asc' }, { id: 'asc' }],
           })
         : [];
+    const reviewRequests = await this.prisma.auditEvent.findMany({
+      where: {
+        entityType: 'ReviewCase',
+        entityKey: id,
+        action: 'LEARNER_REVIEW_REQUESTED',
+      },
+      select: { occurredAt: true, afterJson: true },
+      orderBy: { occurredAt: 'desc' },
+      take: 20,
+    });
     return {
       ...review,
+      reviewRequests,
       availableSkills: skills.map(({ observableDefinition, ...skill }) => ({
         ...skill,
         description: observableDefinition,
       })),
     };
+  }
+  async requestReview(revisionId: string, input: unknown, actor: Actor) {
+    const reason = text(object(input).reason, 'reason');
+    const revision = await this.access.revision(actor, revisionId);
+    if (
+      revision.attempt.learnerId !== actor.id ||
+      revision.responseMode !== 'WRITING'
+    )
+      throw new ForbiddenException(
+        'Only your Writing submission can be requested for review',
+      );
+    await this.access.learner(
+      actor,
+      revision.attempt.assignmentVersion.assignment.courseId,
+    );
+    return serializable(this.prisma, async (tx) => {
+      const published = await tx.acceptedAssessment.findFirst({
+        where: {
+          revisionId,
+          isCurrent: true,
+          publishedAt: { lte: new Date() },
+        },
+      });
+      if (published)
+        throw new ConflictException(
+          'Use the appeal action for an official assessment',
+        );
+      const ai = await tx.aiResult.findFirst({
+        where: { revisionId },
+        orderBy: { id: 'desc' },
+      });
+      const review = await this.grading.review(
+        tx,
+        revisionId,
+        'LEARNER_REQUEST',
+        ai?.gradingRunId,
+      );
+      await tx.auditEvent.create({
+        data: {
+          actorId: actor.id,
+          action: 'LEARNER_REVIEW_REQUESTED',
+          entityType: 'ReviewCase',
+          entityKey: review.id,
+          afterJson: { reason, revisionId },
+        },
+      });
+      return review;
+    });
+  }
+  async release(id: string, input: unknown, actor: Actor) {
+    const review = await this.check(id, actor);
+    const dto = object(input),
+      lockVersion = integer(dto.lockVersion, 'lockVersion'),
+      reason = text(dto.reason, 'reason');
+    const assignment = await this.prisma.courseInstructor.findUnique({
+      where: {
+        courseId_instructorId: {
+          courseId:
+            review.revision.attempt.assignmentVersion.assignment.courseId,
+          instructorId: actor.id,
+        },
+      },
+    });
+    if (
+      review.assigneeId !== actor.id &&
+      assignment?.responsibility !== 'OWNER'
+    )
+      throw new ForbiddenException(
+        'Only the assignee or course owner can release a claim',
+      );
+    return serializable(this.prisma, async (tx) => {
+      const changed = await tx.reviewCase.updateMany({
+        where: {
+          id,
+          status: 'CLAIMED',
+          lockVersion,
+          assigneeId: review.assigneeId,
+        },
+        data: {
+          status: 'PENDING',
+          assigneeId: null,
+          claimedAt: null,
+          lockVersion: { increment: 1 },
+        },
+      });
+      if (!changed.count) throw new ConflictException('Review changed; reload');
+      await tx.auditEvent.create({
+        data: {
+          actorId: actor.id,
+          action: 'REVIEW_RELEASED',
+          entityType: 'ReviewCase',
+          entityKey: id,
+          afterJson: { reason },
+        },
+      });
+      return tx.reviewCase.findUniqueOrThrow({ where: { id } });
+    });
+  }
+  async reopen(id: string, input: unknown, actor: Actor) {
+    const review = await this.check(id, actor);
+    const reason = text(object(input).reason, 'reason');
+    if (review.status !== 'CONFIRMED')
+      throw new ConflictException('Only confirmed reviews can be corrected');
+    return serializable(this.prisma, async (tx) => {
+      const next = await this.grading.review(
+        tx,
+        review.revisionId,
+        'TEACHER_CORRECTION',
+        review.targetRunId ?? undefined,
+      );
+      await tx.auditEvent.create({
+        data: {
+          actorId: actor.id,
+          action: 'REVIEW_CORRECTION_OPENED',
+          entityType: 'ReviewCase',
+          entityKey: next.id,
+          afterJson: { reason, previousReviewId: id },
+        },
+      });
+      return next;
+    });
   }
   // Claim a review case.
   async claimSubmission(id: string, actor: Actor) {

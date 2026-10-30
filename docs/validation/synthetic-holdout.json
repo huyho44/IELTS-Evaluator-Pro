@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-10-30T08:05:42.054Z",
+  "split": "holdout",
+  "mode": "OFFLINE_PREDICTIONS",
+  "provider": null,
+  "model": null,
+  "promptVersion": "writing-clinic-demo-v1",
+  "datasetSha256": "7c4361d80393cfd20c1156792d9f6334715ced71ccb30e8795c0cc8d8462bc8b",
+  "promptSha256": "f93bd519ea0c519361c6fde979f1da4e9215d91b96d462f65f21be77713e0ac7",
+  "evaluationType": "SYNTHETIC_SMOKE_TEST_NOT_ACCURACY_EVIDENCE",
+  "rubric": {
+    "code": "DEMO_WRITING_CLINIC_TASK2",
+    "versionNo": 1,
+    "isDemo": true
+  },
+  "attempted": 1,
+  "valid": 1,
+  "invalidOrFailed": 0,
+  "errorCounts": {},
+  "validCoverage": 1,
+  "maeOverall": 0,
+  "maeByCriterion": {
+    "TR": 0,
+    "CC": 0,
+    "LR": 0,
+    "GRA": 0
+  },
+  "largeOverallErrorsAboveOneBand": 0,
+  "evidenceAnchors": {
+    "total": 0,
+    "valid": 0,
+    "invalid": 0,
+    "validityRate": null
+  },
+  "latencyMs": {
+    "observed": 0,
+    "mean": null,
+    "p95": null
+  },
+  "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "rowsWithUnknownUsage": 1
+  },
+  "limitations": [
+    "MAE excludes failed/invalid outputs; read validCoverage alongside it.",
+    "Quote validity checks existence, not pedagogical correctness.",
+    "No learning improvement, teacher effort or calibrated mastery claim follows from these metrics.",
+    "Synthetic labels are illustrative test values, not expert judgments.",
+    "Demo rubric is not an official or validated IELTS scoring rubric."
+  ],
+  "results": [
+    {
+      "id": "synthetic-holdout-1",
+      "valid": true,
+      "anchorsTotal": 0,
+      "anchorsValid": 0,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "predicted": {
+        "overall": 6,
+        "criteria": {
+          "TR": 6,
+          "CC": 6,
+          "LR": 6,
+          "GRA": 6
+        }
+      },
+      "absoluteErrors": {
+        "overall": 0,
+        "criteria": {
+          "TR": 0,
+          "CC": 0,
+          "LR": 0,
+          "GRA": 0
+        }
+      }
+    }
+  ]
+}

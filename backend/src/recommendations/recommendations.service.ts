@@ -8,7 +8,7 @@ import { serializable } from '../submissions/transaction.js';
 import { projectSkills } from './profile.js';
 
 const PROJECTION = 'core-evidence-v1';
-const RANKING = 'core-recommendation-v1';
+const RANKING = 'core-recommendation-v2';
 @Injectable()
 export class RecommendationsService {
   // Inject required services.
@@ -162,6 +162,7 @@ export class RecommendationsService {
             maxItems: 3,
             defaultPrerequisiteStrength: 0.6,
             defaultPrerequisiteSupport: 0.33,
+            diagnosticBypassesPrerequisites: true,
           },
         },
         update: {},
@@ -241,16 +242,19 @@ export class RecommendationsService {
           item.lesson?.lessonProgresses.length
         )
           continue;
-        const allowed = item.learningItemSkills.every((tag) =>
-          tag.skill.skillPrerequisites.every((p) => {
-            const state = states.get(p.prerequisiteSkillId);
-            return (
-              state?.strength !== null &&
-              state?.strength !== undefined &&
-              state.strength.toNumber() >= (p.minStrength?.toNumber() ?? 0.6) &&
-              state.support.toNumber() >= (p.minSupport?.toNumber() ?? 0.33)
-            );
-          }),
+        const allowed = item.learningItemSkills.every(
+          (tag) =>
+            tag.purpose === 'DIAGNOSTIC' ||
+            tag.skill.skillPrerequisites.every((p) => {
+              const state = states.get(p.prerequisiteSkillId);
+              return (
+                state?.strength !== null &&
+                state?.strength !== undefined &&
+                state.strength.toNumber() >=
+                  (p.minStrength?.toNumber() ?? 0.6) &&
+                state.support.toNumber() >= (p.minSupport?.toNumber() ?? 0.33)
+              );
+            }),
         );
         if (!allowed) continue;
         let targetActivityVersionId: string | null = null,
@@ -373,7 +377,17 @@ export class RecommendationsService {
             })),
           },
         },
-        include: { recommendationItems: { orderBy: { rank: 'asc' } } },
+        include: {
+          recommendationItems: {
+            orderBy: { rank: 'asc' },
+            include: {
+              learningItem: {
+                select: { id: true, title: true, kind: true, courseId: true },
+              },
+              targetAssignmentVersion: { select: { assignmentId: true } },
+            },
+          },
+        },
       });
       return {
         userId: actor.id,

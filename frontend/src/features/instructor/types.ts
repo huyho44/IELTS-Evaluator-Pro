@@ -1,6 +1,6 @@
-export type ReviewStatus = 'PENDING' | 'CLAIMED' | 'CONFIRMED' | 'CANCELLED';
-export type ResponseMode = 'OBJECTIVE' | 'WRITING' | 'SPEAKING';
-export type ObservationOutcome = 'MET' | 'PARTIAL' | 'NOT_MET' | 'NOT_OBSERVED';
+export type ReviewStatus = "PENDING" | "CLAIMED" | "CONFIRMED" | "CANCELLED";
+export type ResponseMode = "OBJECTIVE" | "WRITING" | "SPEAKING";
+export type ObservationOutcome = "MET" | "PARTIAL" | "NOT_MET" | "NOT_OBSERVED";
 export type DecimalJson = string | number;
 
 export type ReviewCase = {
@@ -41,7 +41,7 @@ export type AcceptedAssessment = {
   id: string;
   resultId: string;
   revisionId: string;
-  resultKind: 'TEACHER' | 'ANSWER_KEY';
+  resultKind: "TEACHER" | "ANSWER_KEY";
   acceptedAt: string;
   publishedAt: string | null;
   releaseAfter: string | null;
@@ -51,10 +51,10 @@ export type AcceptedAssessment = {
 export type AssessmentResult = {
   id: string;
   revisionId: string;
-  kind: 'AI' | 'TEACHER' | 'ANSWER_KEY';
+  kind: "AI" | "TEACHER" | "ANSWER_KEY";
   rubricVersionId: string | null;
   overallScore: DecimalJson | null;
-  scoreScale: 'BAND' | 'RAW';
+  scoreScale: "BAND" | "RAW";
   summary: string | null;
   createdAt: string;
 };
@@ -81,7 +81,7 @@ export type ReviewAssessment = AssessmentResult & {
   }[];
   aiResult: {
     gradingRunId: string;
-    qualityStatus: 'PASSED' | 'FLAGGED';
+    qualityStatus: "PASSED" | "FLAGGED";
     validationJson?: unknown;
   } | null;
   teacherResult: { decisionId: string } | null;
@@ -115,10 +115,17 @@ export type ReviewQueueItem = ReviewCase & {
   };
 };
 export type ReviewDetail = ReviewCase & {
+  appeals?: {
+    id: string;
+    reason: string;
+    status: string;
+    resolution: string | null;
+  }[];
+  reviewRequests?: { occurredAt: string; afterJson: { reason?: string } }[];
   availableSkills: AvailableSkill[];
   targetRun: {
     id: string;
-    status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+    status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
     errorCode: string | null;
     completedAt: string | null;
   } | null;
@@ -140,7 +147,7 @@ export type ReviewDetail = ReviewCase & {
       learner: { id: string; displayName: string };
       assignmentVersion: {
         id: string;
-        mode: 'PRACTICE' | 'GRADED';
+        mode: "PRACTICE" | "GRADED";
         dueAt: string | null;
         releasePolicyJson: { releaseMode?: string; releaseAt?: string } | null;
         assignment: { id: string; title: string; courseId: string };
@@ -164,7 +171,7 @@ export type ConfirmReviewPayload = {
   findings?: {
     code: string;
     skillId?: string;
-    kind: 'LOCAL' | 'GLOBAL';
+    kind: "LOCAL" | "GLOBAL";
     explanation: string;
     anchors: { paragraphId: string; exactQuote: string }[];
   }[];
@@ -190,7 +197,7 @@ export type FindingInput = {
   id: string;
   approved: boolean;
   code: string;
-  kind: 'LOCAL' | 'GLOBAL' | '';
+  kind: "LOCAL" | "GLOBAL" | "";
   explanation: string;
   skillId: string;
   anchors: { paragraphId: string; exactQuote: string }[];

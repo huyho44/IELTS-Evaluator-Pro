@@ -1,0 +1,95 @@
+name: ielts-mvp
+x-backend: &backend
+  build: ./backend
+  restart: unless-stopped
+  environment: &backend-env
+    NODE_ENV: production
+    DATABASE_URL: postgresql://ielts:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/ielts_db?schema=public
+    AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?Set AUTH_TOKEN_SECRET}
+    GRADING_WORKER_ENABLED: "false"
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    GRADING_PROVIDER_URL: ${GRADING_PROVIDER_URL:-}
+    GRADING_PROVIDER_KEY: ${GRADING_PROVIDER_KEY:-}
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ielts_db
+      POSTGRES_USER: ielts
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - mvp_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ielts -d ielts_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: ./backend
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://ielts:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/ielts_db?schema=public
+    command: ["npx", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api:
+    <<: *backend
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+  worker:
+    <<: *backend
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *backend-env
+      GRADING_WORKER_ENABLED: "true"
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND:-127.0.0.1}:8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["https"]
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deployment/Caddyfile:/etc/caddy/Caddyfile:ro
+      - mvp_certificates:/data
+      - mvp_caddy_config:/config
+    depends_on: [frontend]
+  seed:
+    <<: *backend
+    profiles: ["tools"]
+    restart: "no"
+    command: ["npm", "run", "db:seed"]
+    environment:
+      <<: *backend-env
+      DEMO_GRADING_PROVIDER: ${DEMO_GRADING_PROVIDER:-}
+      DEMO_GRADING_MODEL: ${DEMO_GRADING_MODEL:-}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-IeltsDemo123!}
+
+volumes:
+  mvp_database:
+  mvp_certificates:
+  mvp_caddy_config:

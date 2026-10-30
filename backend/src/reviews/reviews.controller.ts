@@ -6,6 +6,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
 import { ReviewsService } from './reviews.service.js';
@@ -16,8 +17,35 @@ export class ReviewsController {
     private readonly auth: AuthService,
   ) {}
   // GET /teacher/reviews
-  @Get('teacher/reviews') async queue(@Headers('authorization') h?: string) {
-    return this.service.getTeacherQueue(await this.auth.authenticate(h));
+  @Get('teacher/reviews') async queue(
+    @Headers('authorization') h?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.service.getTeacherQueue(
+      await this.auth.authenticate(h),
+      status,
+    );
+  }
+  @Post('submission-revisions/:id/review-requests') async request(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() b: unknown,
+    @Headers('authorization') h?: string,
+  ) {
+    return this.service.requestReview(id, b, await this.auth.authenticate(h));
+  }
+  @Post('reviews/:id/release') async release(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() b: unknown,
+    @Headers('authorization') h?: string,
+  ) {
+    return this.service.release(id, b, await this.auth.authenticate(h));
+  }
+  @Post('reviews/:id/reopen') async reopen(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() b: unknown,
+    @Headers('authorization') h?: string,
+  ) {
+    return this.service.reopen(id, b, await this.auth.authenticate(h));
   }
   // GET /reviews/:id
   @Get('reviews/:id') async details(

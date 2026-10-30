@@ -25,6 +25,38 @@ export default function Dashboard() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            to="/profile"
+          >
+            Edit profile and goals
+          </Link>
+          {user.roles.includes("LEARNER") && (
+            <Link
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+              to="/learning"
+            >
+              Skills and next steps
+            </Link>
+          )}
+          {user.roles.includes("ADMIN") && (
+            <Link
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+              to="/admin"
+            >
+              Administration
+            </Link>
+          )}
+          {user.roles.some((role) =>
+            ["ADMIN", "INSTRUCTOR"].includes(role),
+          ) && (
+            <Link
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+              to="/grading-report"
+            >
+              Grading operations
+            </Link>
+          )}
+          <Link
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             to="/courses"
           >
             Browse courses

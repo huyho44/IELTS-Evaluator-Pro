@@ -24,12 +24,16 @@ export class AccessService {
       throw new ForbiddenException('Course instructor assignment required');
   }
   // Check active course enrollment.
-  async learner(actor: Actor, courseId: string) {
+  async learner(actor: Actor, courseId: string, allowCompleted = false) {
     this.role(actor, 'LEARNER');
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { learnerId_courseId: { learnerId: actor.id, courseId } },
     });
-    if (!enrollment || enrollment.status !== 'ACTIVE')
+    if (
+      !enrollment ||
+      (enrollment.status !== 'ACTIVE' &&
+        !(allowCompleted && enrollment.status === 'COMPLETED'))
+    )
       throw new ForbiddenException('Active enrollment required');
     return enrollment;
   }

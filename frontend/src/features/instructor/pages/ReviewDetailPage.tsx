@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { useSession } from "../../auth/session";
 import { instructorApi } from "../services/instructorApi";
@@ -49,6 +49,7 @@ export default function ReviewDetailPage() {
 
 function ReviewDetailContent() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { session } = useSession();
   const [review, setReview] = useState<ReviewDetail | null>(null);
   const [criteria, setCriteria] = useState<CriterionInput[]>([]);
@@ -64,6 +65,53 @@ function ReviewDetailContent() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [actionReason, setActionReason] = useState("");
+
+  async function reviewAction(action: "release" | "reopen" | "reject") {
+    if (!review || actionInFlight.current || needsReload) return;
+    if (!actionReason.trim()) {
+      setError("Enter a reason for this action.");
+      return;
+    }
+    actionInFlight.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      if (action === "reopen") {
+        const next = await instructorApi.reopenReview(
+          review.id,
+          actionReason.trim(),
+        );
+        navigate(`/teacher/reviews/${encodeURIComponent(next.id)}`);
+      } else {
+        if (action === "release")
+          await instructorApi.releaseReview(
+            review.id,
+            review.lockVersion,
+            actionReason.trim(),
+          );
+        else
+          await instructorApi.rejectAppeal(
+            review.id,
+            review.lockVersion,
+            actionReason.trim(),
+          );
+        setReloadKey((value) => value + 1);
+        setMessage(
+          action === "release"
+            ? "Claim released."
+            : "Appeal rejected; the published assessment is retained.",
+        );
+      }
+      setActionReason("");
+    } catch (cause) {
+      setError(errorMessage(cause));
+      setNeedsReload(true);
+    } finally {
+      actionInFlight.current = false;
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -306,6 +354,74 @@ function ReviewDetailContent() {
           review.assigneeId !== session?.user.id && (
             <p>This review is assigned to another instructor.</p>
           )}
+        {review.appeals?.length || review.reviewRequests?.length ? (
+          <section className="rounded-xl border bg-white p-5 space-y-3">
+            <h2 className="font-bold">Learner review requests and appeals</h2>
+            {review.reviewRequests?.map((request, index) => (
+              <p key={index}>
+                {request.afterJson.reason} ·{" "}
+                {new Date(request.occurredAt).toLocaleString()}
+              </p>
+            ))}
+            {review.appeals?.map((appeal) => (
+              <div key={appeal.id}>
+                <p>
+                  {appeal.status}: {appeal.reason}
+                </p>
+                {appeal.resolution && <p>Resolution: {appeal.resolution}</p>}
+              </div>
+            ))}
+          </section>
+        ) : null}
+        {(review.status === "CONFIRMED" ||
+          (review.status === "CLAIMED" &&
+            review.assigneeId === session?.user.id)) && (
+          <section className="rounded-xl border bg-white p-5 space-y-3">
+            <label className="block">
+              Reason for review action
+              <input
+                value={actionReason}
+                onChange={(event) => setActionReason(event.target.value)}
+                maxLength={10000}
+                className="mt-1 w-full rounded border p-2"
+              />
+            </label>
+            {review.status === "CONFIRMED" ? (
+              <button
+                disabled={busy || needsReload}
+                onClick={() => void reviewAction("reopen")}
+                className="rounded border px-3 py-2"
+              >
+                Open a correction review
+              </button>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  disabled={busy || needsReload}
+                  onClick={() => void reviewAction("release")}
+                  className="rounded border px-3 py-2"
+                >
+                  Release claim
+                </button>
+                {review.appeals?.some((appeal) =>
+                  ["PENDING", "IN_REVIEW"].includes(appeal.status),
+                ) && (
+                  <button
+                    disabled={busy || needsReload}
+                    onClick={() => void reviewAction("reject")}
+                    className="rounded border px-3 py-2"
+                  >
+                    Reject appeal with reason
+                  </button>
+                )}
+              </div>
+            )}
+            <p className="text-sm text-slate-600">
+              Corrections create a new review and preserve the earlier decision.
+              To uphold an appeal, confirm a new assessment below.
+            </p>
+          </section>
+        )}
         <div className="grid items-start gap-6 lg:grid-cols-12">
           <div className="min-w-0 space-y-5 lg:col-span-7">
             <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">

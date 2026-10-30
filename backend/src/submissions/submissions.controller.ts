@@ -20,9 +20,16 @@ export class SubmissionsController {
   // POST /assignments/:id/attempts
   @Post('assignments/:id/attempts') async start(
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() b: unknown,
     @Headers('authorization') h?: string,
   ) {
-    return this.service.start(id, await this.auth.authenticate(h));
+    return this.service.start(id, await this.auth.authenticate(h), b);
+  }
+  @Post('attempts/:id/revise') async revise(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') h?: string,
+  ) {
+    return this.service.revise(id, await this.auth.authenticate(h));
   }
   // GET /attempts/:id
   @Get('attempts/:id') async attempt(

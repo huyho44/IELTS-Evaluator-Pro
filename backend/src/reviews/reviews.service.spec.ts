@@ -134,6 +134,7 @@ function fixture(mode: ResponseMode = 'WRITING') {
     appeals: [],
   };
   const prisma = {
+    auditEvent: { findMany: vi.fn().mockResolvedValue([]) },
     reviewCase: {
       findUnique: vi
         .fn<(args: Prisma.ReviewCaseFindUniqueArgs) => Promise<unknown>>()

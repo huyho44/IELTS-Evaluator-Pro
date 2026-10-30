@@ -6,6 +6,7 @@ import { PublicationService } from './publication.service.js';
 import { GradingProvider } from './grading-provider.js';
 import { GradingWorker } from './grading.worker.js';
 import { GradingConfigService } from './grading-config.service.js';
+import { GradingReportService } from './grading-report.service.js';
 @Module({
   imports: [AuthModule],
   controllers: [GradingController],
@@ -15,6 +16,7 @@ import { GradingConfigService } from './grading-config.service.js';
     GradingProvider,
     GradingWorker,
     GradingConfigService,
+    GradingReportService,
   ],
   exports: [GradingService, PublicationService],
 })

@@ -8,11 +8,16 @@ import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma.service.js';
 import { GradingService } from './grading.service.js';
-import { GradingProvider, ProviderFailure } from './grading-provider.js';
+import {
+  GradingProvider,
+  ProviderFailure,
+  type ProviderMetadata,
+} from './grading-provider.js';
 import { PublicationService } from './publication.service.js';
 import { validateAssessment } from './assessment-validation.js';
 import { serializable } from '../submissions/transaction.js';
 import { workerError } from './worker-error.js';
+import { assessmentQuality } from './assessment-quality.js';
 
 @Injectable()
 export class GradingWorker implements OnModuleInit, OnModuleDestroy {
@@ -34,7 +39,9 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
       return;
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) =>
-        this.logger.error(`Grading poll failed; durable work will be retried (phase=${this.phase}) ${workerError(error)}`),
+        this.logger.error(
+          `Grading poll failed; durable work will be retried (phase=${this.phase}) ${workerError(error)}`,
+        ),
       );
     }, 3000);
     this.timer.unref();
@@ -193,11 +200,14 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
       where: { status: 'PUBLISHED', skillArea: 'WRITING' },
     });
     let raw: unknown;
+    let rawResponse: unknown;
+    let metadata: ProviderMetadata = {};
     const started = Date.now();
     try {
-      if (run.config.provider !== 'JSON_HTTP')
+      if (!['JSON_HTTP', 'OPENAI'].includes(run.config.provider))
         throw new ProviderFailure('UNSUPPORTED_PROVIDER', false);
-      raw = await this.provider.evaluate({
+      const input = {
+        provider: run.config.provider,
         model: run.config.modelId,
         instructions: run.config.promptVersion.instructions,
         schema: run.config.promptVersion.outputSchemaJson,
@@ -216,7 +226,16 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
           })),
           untrustedSubmission: run.revision.writingText,
         },
-      });
+      };
+      if (typeof this.provider.evaluateWithMetadata === 'function') {
+        const result = await this.provider.evaluateWithMetadata(input);
+        raw = result.assessment;
+        rawResponse = result.rawResponse;
+        metadata = result;
+      } else {
+        raw = await this.provider.evaluate(input);
+        rawResponse = raw;
+      }
       if (raw && typeof raw === 'object' && 'status' in raw) {
         if (raw.status === 'REFUSED')
           throw new ProviderFailure('REFUSED', false);
@@ -234,6 +253,10 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
       } catch {
         throw new ProviderFailure('INVALID_OUTPUT', false);
       }
+      const quality = assessmentQuality(
+        run.revision.writingText ?? '',
+        validated,
+      );
       await serializable(this.prisma, async (tx) => {
         const won = await tx.gradingRun.updateMany({
           where: {
@@ -256,7 +279,10 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
             gradingRunId: id,
             attemptNo: run.attempts,
             status: 'SUCCESS',
-            rawResponseJson: raw as Prisma.InputJsonValue,
+            rawResponseJson: rawResponse as Prisma.InputJsonValue,
+            providerRequestId: metadata.providerRequestId,
+            inputTokens: metadata.inputTokens,
+            outputTokens: metadata.outputTokens,
             latencyMs: Date.now() - started,
           },
         });
@@ -272,13 +298,16 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
             id: result.id,
             revisionId: run.revisionId,
             gradingRunId: id,
-            qualityStatus: 'PASSED',
+            qualityStatus: quality.status,
             validationJson: {
               validator: 'rubric-and-evidence-v1',
               passed: true,
+              reviewRouting: quality,
             },
           },
         });
+        if (quality.status === 'FLAGGED')
+          await this.grading.review(tx, run.revisionId, 'AI_FLAGGED', id);
         await this.dispatch(tx, id);
       });
     } catch (error) {
@@ -287,6 +316,8 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
           ? error
           : new ProviderFailure('PROCESSING_ERROR', true);
       const retry = failure.retryable && run.attempts < 3;
+      metadata = { ...metadata, ...failure.metadata };
+      rawResponse = failure.rawResponse ?? rawResponse ?? raw;
       await serializable(this.prisma, async (tx) => {
         const won = await tx.gradingRun.updateMany({
           where: {
@@ -318,9 +349,12 @@ export class GradingWorker implements OnModuleInit, OnModuleDestroy {
                   : failure.code.startsWith('INVALID')
                     ? 'INVALID'
                     : 'ERROR',
-            ...(raw === undefined || raw === null
+            providerRequestId: metadata.providerRequestId,
+            inputTokens: metadata.inputTokens,
+            outputTokens: metadata.outputTokens,
+            ...(rawResponse === undefined || rawResponse === null
               ? {}
-              : { rawResponseJson: raw as Prisma.InputJsonValue }),
+              : { rawResponseJson: rawResponse as Prisma.InputJsonValue }),
             errorJson: { code: failure.code },
             latencyMs: Date.now() - started,
           },

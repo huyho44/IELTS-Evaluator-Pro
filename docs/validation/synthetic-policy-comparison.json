@@ -1,0 +1,117 @@
+{
+  "evaluationType": "POLICY_COMPARISON_NO_LEARNING_EFFECT_CLAIM",
+  "results": [
+    {
+      "learnerId": "synthetic-learner-a",
+      "proposed": {
+        "ids": [
+          "reference"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1
+      },
+      "fixedPath": {
+        "ids": [
+          "development",
+          "progression",
+          "reference"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1,
+        "explanations": [
+          {
+            "id": "development",
+            "reason": "First eligible activity in the fixed curriculum order."
+          },
+          {
+            "id": "progression",
+            "reason": "First eligible activity in the fixed curriculum order."
+          },
+          {
+            "id": "reference",
+            "reason": "First eligible activity in the fixed curriculum order."
+          }
+        ]
+      },
+      "lowestCriterion": {
+        "ids": [
+          "progression",
+          "reference"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1,
+        "explanations": [
+          {
+            "id": "progression",
+            "reason": "Targets the lowest criterion CC (5); ties use TR, CC, LR, GRA order."
+          },
+          {
+            "id": "reference",
+            "reason": "Targets the lowest criterion CC (5); ties use TR, CC, LR, GRA order."
+          }
+        ]
+      },
+      "relevanceLabelsProvided": false,
+      "limitations": "Candidate eligibility must come from the same published content/access/prerequisite snapshot for all policies. Overlap is descriptive, not learning effectiveness. Relevance precision is available only when external relevance labels are supplied."
+    },
+    {
+      "learnerId": "synthetic-learner-b",
+      "proposed": {
+        "ids": [
+          "progression"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1
+      },
+      "fixedPath": {
+        "ids": [
+          "development",
+          "progression",
+          "reference"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1,
+        "explanations": [
+          {
+            "id": "development",
+            "reason": "First eligible activity in the fixed curriculum order."
+          },
+          {
+            "id": "progression",
+            "reason": "First eligible activity in the fixed curriculum order."
+          },
+          {
+            "id": "reference",
+            "reason": "First eligible activity in the fixed curriculum order."
+          }
+        ]
+      },
+      "lowestCriterion": {
+        "ids": [
+          "progression",
+          "reference"
+        ],
+        "ineligibleOrUnknownIds": [],
+        "precisionAtReturnedCount": null,
+        "overlapWithProposed": 1,
+        "explanations": [
+          {
+            "id": "progression",
+            "reason": "Targets the lowest criterion CC (5); ties use TR, CC, LR, GRA order."
+          },
+          {
+            "id": "reference",
+            "reason": "Targets the lowest criterion CC (5); ties use TR, CC, LR, GRA order."
+          }
+        ]
+      },
+      "relevanceLabelsProvided": false,
+      "limitations": "Candidate eligibility must come from the same published content/access/prerequisite snapshot for all policies. Overlap is descriptive, not learning effectiveness. Relevance precision is available only when external relevance labels are supplied."
+    }
+  ]
+}

@@ -2,14 +2,29 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service.js';
 import { AccessService } from '../auth/access.service.js';
 import type { Actor } from '../auth/auth.service.js';
 import { integer, object, text, uuid } from '../auth/validation.js';
+import {
+  DEMO_CRITERIA,
+  WRITING_INSTRUCTIONS,
+  WRITING_SCHEMA,
+} from '../evaluation/writing-contract.js';
 @Injectable()
 export class GradingConfigService {
+  template(actor: Actor) {
+    if (!actor.roles.some((role) => ['ADMIN', 'INSTRUCTOR'].includes(role)))
+      throw new ForbiddenException('Instructor or administrator required');
+    return {
+      criteria: DEMO_CRITERIA,
+      instructions: WRITING_INSTRUCTIONS,
+      schema: WRITING_SCHEMA,
+    };
+  }
   // Inject required services.
   constructor(
     private readonly prisma: PrismaService,
@@ -60,6 +75,12 @@ export class GradingConfigService {
     this.access.role(actor, 'ADMIN');
     const dto = object(input),
       rubricVersionId = uuid(dto.rubricVersionId, 'rubricVersionId');
+    const provider = dto.provider ?? 'JSON_HTTP';
+    if (
+      typeof provider !== 'string' ||
+      !['JSON_HTTP', 'OPENAI'].includes(provider)
+    )
+      throw new BadRequestException('Unsupported grading provider');
     const rubric = await this.prisma.rubricVersion.findUnique({
       where: { id: rubricVersionId },
     });
@@ -71,7 +92,7 @@ export class GradingConfigService {
       throw new NotFoundException('Published Writing rubric required');
     return this.prisma.gradingConfig.create({
       data: {
-        provider: 'JSON_HTTP',
+        provider,
         modelId: text(dto.modelId, 'modelId', 120),
         settingsJson: object(dto.settingsJson ?? {}) as Prisma.InputJsonObject,
         rubricVersion: { connect: { id: rubricVersionId } },

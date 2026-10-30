@@ -10,13 +10,23 @@ import {
 import { AuthService } from '../auth/auth.service.js';
 import { GradingService } from './grading.service.js';
 import { GradingConfigService } from './grading-config.service.js';
+import { GradingReportService } from './grading-report.service.js';
 @Controller()
 export class GradingController {
   constructor(
     private readonly service: GradingService,
     private readonly auth: AuthService,
     private readonly config: GradingConfigService,
+    private readonly reports: GradingReportService,
   ) {}
+  @Get('grading/report') async report(@Headers('authorization') h?: string) {
+    return this.reports.report(await this.auth.authenticate(h));
+  }
+  @Get('grading/templates/writing-task-2') async template(
+    @Headers('authorization') h?: string,
+  ) {
+    return this.config.template(await this.auth.authenticate(h));
+  }
   // POST /grading/rubrics
   @Post('grading/rubrics') async rubric(
     @Body() b: unknown,

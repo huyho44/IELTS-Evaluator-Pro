@@ -204,7 +204,7 @@ export class CoursesService {
   }
   // Get lesson content.
   async lesson(courseId: string, lessonId: string, actor: Actor) {
-    const enrollment = await this.access.learner(actor, courseId);
+    const enrollment = await this.access.learner(actor, courseId, true);
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, learningItem: { courseId, status: 'PUBLISHED' } },
       include: {
@@ -243,7 +243,7 @@ export class CoursesService {
   }
   // List course assignments.
   async assignments(courseId: string, actor: Actor) {
-    await this.access.learner(actor, courseId);
+    await this.access.learner(actor, courseId, true);
     return this.prisma.assignment.findMany({
       where: {
         courseId,

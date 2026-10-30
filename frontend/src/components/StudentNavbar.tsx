@@ -64,17 +64,33 @@ export default function StudentNavbar() {
         >
           My practice attempts
         </Link>
-        {["Feedback & Homework", "My Progress"].map((label) => (
-          <span
-            key={label}
-            className="flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] text-slate-500"
+        {user?.roles.includes("LEARNER") && (
+          <Link
+            to="/learning"
+            className={tab(location.pathname === "/learning")}
+            onClick={() => setMenu(null)}
           >
-            {label}
-            <span className="inline-flex w-fit shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-              Coming soon
-            </span>
-          </span>
-        ))}
+            Skills & next steps
+          </Link>
+        )}
+        {user?.roles.includes("INSTRUCTOR") && (
+          <Link
+            to="/teacher/reviews"
+            className={tab(location.pathname.startsWith("/teacher/reviews"))}
+            onClick={() => setMenu(null)}
+          >
+            Review queue
+          </Link>
+        )}
+        {user?.roles.includes("ADMIN") && (
+          <Link
+            to="/admin"
+            className={tab(location.pathname === "/admin")}
+            onClick={() => setMenu(null)}
+          >
+            Administration
+          </Link>
+        )}
       </>
     );
   }
@@ -137,7 +153,15 @@ export default function StudentNavbar() {
                   </h2>
                 </div>
                 <div className="px-4 py-4 text-sm text-slate-500">
-                  Notifications are not available yet.
+                  <Link
+                    to={user ? "/notifications" : "/login"}
+                    onClick={() => setMenu(null)}
+                    className="font-semibold text-blue-600"
+                  >
+                    {user
+                      ? "View your notifications"
+                      : "Sign in to view notifications"}
+                  </Link>
                 </div>
               </div>
             )}
@@ -198,14 +222,44 @@ export default function StudentNavbar() {
                     </p>
                   </div>
                   <div className="p-1.5" onClick={() => setMenu(null)}>
-                    <Link className={`${link} text-slate-700 hover:bg-slate-50`} to="/dashboard">
+                    <Link
+                      className={`${link} text-slate-700 hover:bg-slate-50`}
+                      to="/dashboard"
+                    >
                       Account overview
                     </Link>
                     {user.roles.includes("INSTRUCTOR") && (
-                      <Link className={`${link} text-slate-700 hover:bg-slate-50`} to="/teacher/reviews">
+                      <Link
+                        className={`${link} text-slate-700 hover:bg-slate-50`}
+                        to="/teacher/reviews"
+                      >
                         Instructor reviews
                       </Link>
                     )}
+                    {user.roles.some((role) =>
+                      ["INSTRUCTOR", "ADMIN"].includes(role),
+                    ) && (
+                      <Link
+                        className={`${link} text-slate-700 hover:bg-slate-50`}
+                        to="/teacher/authoring"
+                      >
+                        Course authoring
+                      </Link>
+                    )}
+                    {user.roles.includes("ADMIN") && (
+                      <Link
+                        className={`${link} text-slate-700 hover:bg-slate-50`}
+                        to="/admin"
+                      >
+                        Administration
+                      </Link>
+                    )}
+                    <Link
+                      className={`${link} text-slate-700 hover:bg-slate-50`}
+                      to="/profile"
+                    >
+                      Profile & learning goals
+                    </Link>
                   </div>
                   <div className="border-t border-slate-100 p-1.5">
                     <button
