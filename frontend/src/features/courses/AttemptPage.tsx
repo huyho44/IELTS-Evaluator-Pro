@@ -4,6 +4,7 @@ import { useSession } from "../auth/session";
 import { StudentApiError } from "../../lib/api/studentRequest";
 import { getStudentAttempt, type StudentAttempt } from "../writing/writingApi";
 import WritingAttemptPage from "../writing/WritingAttemptPage";
+import SpeakingAttempt from "./SpeakingAttempt";
 import PracticeAttemptPage from "./PracticeAttemptPage";
 
 type Props = { accessToken?: string | null; onSessionExpired?: () => void };
@@ -93,20 +94,12 @@ function AttemptContent({
     );
   if (mode === "OBJECTIVE")
     return (
-      <PracticeAttemptPage
+      <PracticeAttemptPage listening={attempt.assignmentVersion.assignment.activity.skillArea === 'LISTENING'}
         accessToken={accessToken}
         onSessionExpired={onSessionExpired}
       />
     );
   return (
-    <main className="p-8">
-      <p>
-        This Speaking activity requires an audio submission workflow. Your
-        attempt is preserved.
-      </p>
-      <Link className="mt-4 block text-blue-600" to="/practice-history">
-        Back to your attempts
-      </Link>
-    </main>
+    <SpeakingAttempt attempt={attempt} token={accessToken} />
   );
 }

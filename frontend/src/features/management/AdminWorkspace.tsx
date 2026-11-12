@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 
 const sections = [
   ["/admin", "Overview"], ["/admin/manage", "Users & instructors"],
-  ["/admin/catalog", "Courses"], ["/admin/skills", "Skills"], ["/grading-report", "Reports"],
+  ["/admin/catalog", "Courses"], ["/admin/skills", "Skills"], ["/admin/assessment","AI assessment"], ["/grading-report", "Reports"],
 ];
 export default function AdminWorkspace() {
   const { pathname } = useLocation();

@@ -14,7 +14,9 @@ import {
     getSubmittedPractice,
 } from "./practiceApi";
 
+import AttemptAudio from './AttemptAudio';
 type Props = {
+    listening?: boolean;
     accessToken?: string | null;
     onSessionExpired?: () => void;
 };
@@ -71,7 +73,8 @@ function AnswerInput({
         );
     }
 
-    if (question.questionType === "SINGLE_CHOICE") {
+    const multiple = question.questionType === "MULTIPLE_CHOICE";
+    if (multiple || question.questionType === "SINGLE_CHOICE") {
         return (
             <fieldset disabled={disabled} className="mt-3 space-y-2">
                 <legend className="sr-only">{question.promptText}</legend>
@@ -91,14 +94,16 @@ function AnswerInput({
                             }
                         >
                             <input
-                                type="radio"
+                                type={multiple ? "checkbox" : "radio"}
                                 name={`question-${itemId}`}
                                 value={option.id}
                                 checked={selected}
                                 onChange={() =>
                                     onChange({
                                         textAnswer: "",
-                                        optionIds: [option.id],
+                                        optionIds: multiple
+                                            ? selected ? answer.optionIds.filter(id => id !== option.id) : [...answer.optionIds, option.id]
+                                            : [option.id],
                                     })
                                 }
                                 className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
@@ -132,6 +137,7 @@ function AnswerInput({
 }
 
 function AttemptContent({
+    listening,
     attemptId,
     accessToken,
     onSessionExpired,
@@ -260,7 +266,7 @@ function AttemptContent({
     const unsupportedQuestions =
         activity?.assessmentItems.some(
             (item) =>
-                !["SHORT_ANSWER", "SINGLE_CHOICE"].includes(
+                !["SHORT_ANSWER", "SINGLE_CHOICE", "MULTIPLE_CHOICE"].includes(
                     item.questionVersion.questionType,
                 ),
         ) ?? false;
@@ -484,9 +490,12 @@ function AttemptContent({
 
                     <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
                         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-6">
-                            <h2 className="text-lg font-semibold">Reading passage</h2>
+                            <h2 className="text-lg font-semibold">{listening ? "Listening audio" : "Reading passage"}</h2>
+                            {listening && Array.from(new Set(activity.assessmentItems.map(i => i.questionVersion.stimulusAssetId).filter((id): id is string => !!id))).map((id, index) =>
+                              <AttemptAudio key={id} attemptId={attemptId} assetId={id} token={accessToken ?? ""} label={'Track ' + (index + 1)} />)}
+                            {listening && !activity.assessmentItems.some(i => i.questionVersion.stimulusAssetId) && <p>No recording has been attached to this activity.</p>}
                             <div className="mt-4 whitespace-pre-wrap break-words leading-8 text-slate-700">
-                                {activity.promptText || "No passage available."}
+                                {activity.promptText || (listening ? "" : "No passage available.")}
                             </div>
                         </section>
 
@@ -656,6 +665,7 @@ function AttemptContent({
 }
 
 export default function PracticeAttemptPage({
+    listening,
     accessToken = null,
     onSessionExpired,
 }: Props) {
@@ -668,6 +678,7 @@ export default function PracticeAttemptPage({
     return (
         <AttemptContent
             key={JSON.stringify([attemptId, accessToken])}
+            listening={listening}
             attemptId={attemptId}
             accessToken={accessToken}
             onSessionExpired={onSessionExpired}

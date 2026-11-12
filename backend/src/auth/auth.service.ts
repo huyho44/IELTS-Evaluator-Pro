@@ -95,6 +95,24 @@ export class AuthService {
     });
     return { message: 'Password updated. Sign in with your new password.' };
   }
+  // Change the password and invalidate recovery links and other sessions.
+  async changePassword(header: string | undefined, input: unknown) {
+    const actor = await this.authenticate(header);
+    const { sid } = this.decode(header!.slice(7));
+    const { currentPassword, newPassword } = object(input);
+    if (typeof currentPassword !== 'string' || currentPassword.length > 256 ||
+        typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 256 || currentPassword === newPassword)
+      throw new BadRequestException('Choose a different password of 8 to 256 characters');
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: actor.id } });
+    if (!verifyPassword(currentPassword, user.passwordHash)) throw new BadRequestException('Current password is incorrect');
+    await this.prisma.$transaction(async tx => {
+      const changed = await tx.user.updateMany({ where: { id: actor.id, passwordHash: user.passwordHash, status: 'ACTIVE' }, data: { passwordHash: hashPassword(newPassword) } });
+      if (!changed.count) throw new ConflictException('Account changed. Please try again.');
+      await tx.passwordReset.deleteMany({ where: { userId: actor.id } });
+      await tx.authSession.updateMany({ where: { userId: actor.id, revokedAt: null, id: { not: sid } }, data: { revokedAt: new Date() } });
+    });
+    return { message: 'Password changed' };
+  }
   // Get the JWT signing secret.
   private secret() {
     const secret = process.env.AUTH_TOKEN_SECRET;

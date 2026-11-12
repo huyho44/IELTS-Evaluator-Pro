@@ -1,5 +1,5 @@
 import {
-  Body,
+  Body, UploadedFile, UseInterceptors, BadRequestException,
   Controller,
   Get,
   Header,
@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CoursesService } from './courses.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { CourseAuthoringService } from './course-authoring.service.js';
@@ -19,6 +20,10 @@ export class CoursesController {
     private readonly auth: AuthService,
     private readonly authoring: CourseAuthoringService,
   ) {}
+  // PATCH /courses/:id/content/:itemId/order
+  @Patch(':id/content/:itemId/order') async order(@Param('id', ParseUUIDPipe) id: string, @Param('itemId', ParseUUIDPipe) itemId: string, @Body() body: unknown, @Headers('authorization') header?: string) {
+    return this.authoring.moveItem(id, itemId, body, await this.auth.authenticate(header));
+  }
   // POST /courses/:id/sections
   @Post(':id/sections') async section(
     @Param('id', ParseUUIDPipe) id: string,
@@ -42,6 +47,16 @@ export class CoursesController {
     @Headers('authorization') h?: string,
   ) {
     return this.authoring.activity(id, b, await this.auth.authenticate(h));
+  }
+  // POST /courses/:id/objective-activities
+  @Post(':id/objective-activities')
+  @UseInterceptors(FileInterceptor('audio', { limits: { files: 1, fileSize: 12 * 1024 * 1024, fields: 1, fieldSize: 250000, parts: 3 } }))
+  async objective(@Param('id', ParseUUIDPipe) id: string, @Body('activity') activity: string,
+    @UploadedFile() audio: { buffer: Buffer; mimetype: string } | undefined, @Headers('authorization') h?: string) {
+    const actor = await this.auth.authenticate(h);
+    let data: unknown;
+    try { data = JSON.parse(activity); } catch { throw new BadRequestException('Invalid activity'); }
+    return this.authoring.objective(id, data, actor, audio);
   }
   // POST /courses/:id/assignments
   @Post(':id/assignments') async addAssignment(

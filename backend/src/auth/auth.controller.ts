@@ -11,6 +11,10 @@ export class AuthController {
   @Post('reset-password') @HttpCode(200) resetPassword(@Body() body: unknown) {
     return this.auth.resetPassword(body);
   }
+  // POST /auth/change-password
+  @Post('change-password') @HttpCode(200) changePassword(@Body() body: unknown, @Headers('authorization') header?: string) {
+    return this.auth.changePassword(header, body);
+  }
   // POST /auth/register
   @Post('register') register(@Body() body: unknown) {
     return this.auth.register(body);

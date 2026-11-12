@@ -106,6 +106,7 @@ export default function App() {
             <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
               <Route path="/admin" element={<AdminOverview />} />
               <Route path="/admin/manage" element={<AdminPage section="users" />} />
+              <Route path="/admin/assessment" element={<AuthoringPage adminAssessment />} />
               <Route path="/admin/skills" element={<AdminPage section="skills" />} />
               <Route path="/admin/assign" element={<AdminPage section="assignment" />} />
               <Route path="/admin/catalog" element={<CourseCatalogPage />} />

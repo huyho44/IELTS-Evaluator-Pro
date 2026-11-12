@@ -326,7 +326,16 @@ model InstructorApplication {
 
 /// Metadata record for an uploaded file. The actual binary is stored in
 /// object storage; only the lookup key and integrity hash are kept here.
+model AudioContent {
+  assetId String @id @map("asset_id") @db.Uuid
+  asset FileAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  bytes Bytes
+
+  @@map("AUDIO_CONTENT")
+}
+
 model FileAsset {
+  audioContent AudioContent?
   id           String   @id @default(uuid()) @db.Uuid
   ownerId      String   @map("owner_id") @db.Uuid
   /// Unique object key used to retrieve the file from object storage.

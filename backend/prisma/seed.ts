@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { createHash, randomBytes, scryptSync } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
+import { seedAudioPractice } from './seed-audio-practice.js';
 import { seedLessons } from './seed-lessons.js';
 import { seedWriting } from './seed-writing.js';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -424,6 +425,7 @@ async function main() {
         });
       }
 
+      await seedAudioPractice(tx, course.id, teacher.id, fixtureId);
       const writing = await seedWriting(tx, teacher.id, [an.id, binh.id]);
       // Learner attempts, grades, evidence and recommendations must come from actual workflows.
       return {

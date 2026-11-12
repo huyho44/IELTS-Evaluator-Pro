@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { refreshSession, useSession } from "../auth/session";
+import { refreshSession, showsTargetBand, useSession } from "../auth/session";
 import ActionForm from "./ActionForm";
 import {
   managementRequest as request,
@@ -120,9 +120,7 @@ function Content() {
                 "/me/profile",
                 {
                   displayName: data.get("displayName"),
-                  targetBand: data.get("targetBand")
-                    ? Number(data.get("targetBand"))
-                    : null,
+                  ...(showsTargetBand(user.roles) ? { targetBand: data.get("targetBand") ? Number(data.get("targetBand")) : null } : {}),
                   targetExamDate: data.get("examDate") || null,
                 },
                 "PATCH",
@@ -139,7 +137,7 @@ function Content() {
                 className={field}
               />
             </label>
-            <label className="block text-sm">
+            {showsTargetBand(user.roles) && <label className="block text-sm">
               Target band
               <input
                 name="targetBand"
@@ -150,7 +148,7 @@ function Content() {
                 defaultValue={user.targetBand ?? ""}
                 className={field}
               />
-            </label>
+            </label>}
             <label className="block text-sm">
               Target exam date
               <input
@@ -160,6 +158,14 @@ function Content() {
                 className={field}
               />
             </label>
+          </ActionForm>
+          <ActionForm title="Change password" label="Update password" busy={busy || loading} submit={async data => {
+            if (data.get('newPassword') !== data.get('confirm')) { setMessage(''); setError('Passwords must match.'); return false; }
+            return run('/auth/change-password', { currentPassword: data.get('currentPassword'), newPassword: data.get('newPassword') });
+          }}>
+            <label className="block">Current password<input required className={field} type="password" name="currentPassword" autoComplete="current-password" maxLength={256} /></label>
+            <label className="block">New password<input required className={field} type="password" name="newPassword" autoComplete="new-password" minLength={8} maxLength={256} /></label>
+            <label className="block">Confirm new password<input required className={field} type="password" name="confirm" autoComplete="new-password" /></label>
           </ActionForm>
           {user.roles.includes("LEARNER") &&
             !user.roles.includes("INSTRUCTOR") && (

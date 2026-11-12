@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useSession } from "../features/auth/session";
+import { showsTargetBand, useSession } from "../features/auth/session";
 
 export default function StudentNavbar() {
   const { session } = useSession();
@@ -186,11 +186,11 @@ export default function StudentNavbar() {
                   <span className="block truncate text-sm font-semibold">
                     {user.displayName}
                   </span>
-                  <span className="block text-[11px] font-semibold leading-4 text-blue-600">
+                  {showsTargetBand(user.roles) && <span className="block text-[11px] font-semibold leading-4 text-blue-600">
                     {user.targetBand == null
                       ? "Target not set"
                       : `Target ${user.targetBand}`}
-                  </span>
+                  </span>}
                 </span>
                 <svg
                   aria-hidden="true"
@@ -217,9 +217,9 @@ export default function StudentNavbar() {
                     <p className="mt-0.5 truncate text-xs text-slate-500">
                       {user.email}
                     </p>
-                    <p className="mt-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                    {showsTargetBand(user.roles) && <p className="mt-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
                       Target band: {user.targetBand ?? "Not set"}
-                    </p>
+                    </p>}
                   </div>
                   <div className="p-1.5" onClick={() => setMenu(null)}>
                     <Link
