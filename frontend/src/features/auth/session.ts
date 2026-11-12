@@ -6,6 +6,9 @@ export type User = {
   roles: string[];
   targetBand: number | null;
 };
+export function showsTargetBand(roles: string[]) {
+  return roles.includes("LEARNER") && !roles.includes("ADMIN") && !roles.includes("INSTRUCTOR");
+}
 type Session = { accessToken: string; refreshToken: string; user: User };
 let state: {
   session: Session | null;

@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createTransport } from 'nodemailer';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service.js';
@@ -40,6 +41,78 @@ const TTL = 7 * 86400000;
 export class AuthService {
   // Inject required services.
   constructor(private readonly prisma: PrismaService) {}
+  // Email an expiring recovery link to an active account.
+  async forgotPassword(input: unknown) {
+    const email = text(object(input).email, 'email', 320).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new BadRequestException('Invalid email address');
+    const { SMTP_URL, MAIL_FROM, PASSWORD_RESET_ORIGIN } = process.env;
+    if (!SMTP_URL || !MAIL_FROM || !PASSWORD_RESET_ORIGIN)
+      throw new ServiceUnavailableException('Password recovery is unavailable');
+    const link = new URL('/reset-password', PASSWORD_RESET_ORIGIN);
+    if (link.protocol !== 'https:' && !(link.protocol === 'http:' && ['localhost','127.0.0.1'].includes(link.hostname)))
+      throw new ServiceUnavailableException('Password recovery requires a secure origin');
+    const response = { message: 'If this email belongs to an active account, check your inbox for a reset link.' };
+    const user = await this.prisma.user.findUnique({ where: { email }, select: { id: true, status: true } });
+    if (user?.status !== 'ACTIVE') return response;
+    const token = newRefreshToken();
+    const digest = sha256(token);
+    const issued = await this.prisma.$executeRaw`
+      INSERT INTO "PASSWORD_RESET" ("user_id", "token_hash", "sent_at", "expires_at")
+      VALUES (${user.id}::uuid, ${digest}, now(), now() + interval '15 minutes')
+      ON CONFLICT ("user_id") DO UPDATE SET "token_hash" = excluded."token_hash",
+        "sent_at" = excluded."sent_at", "expires_at" = excluded."expires_at"
+      WHERE "PASSWORD_RESET"."sent_at" <= now() - interval '1 minute'`;
+    if (issued) {
+      link.hash = 'token=' + token;
+      void createTransport(SMTP_URL).sendMail({
+        from: MAIL_FROM, to: email, subject: 'Reset your IELTS Evaluator Pro password',
+        text: 'Open this link within 15 minutes to choose a new password:\n\n' + link.href,
+      }).catch(async () => {
+        console.error('Password recovery email delivery failed');
+        await this.prisma.passwordReset.deleteMany({ where: { tokenHash: digest } });
+      }).catch(() => console.error('Password recovery cleanup failed'));
+    }
+    return response;
+  }
+
+  // Verify the one-time token, replace the password, and revoke existing sessions.
+  async resetPassword(input: unknown) {
+    const { token, newPassword } = object(input);
+    const invalid = () => new BadRequestException('Invalid or expired reset link');
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) throw invalid();
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 256)
+      throw new BadRequestException('Use a password between 8 and 256 characters');
+    const tokenHash = sha256(token);
+    await this.prisma.$transaction(async (tx) => {
+      const reset = await tx.passwordReset.findUnique({ where: { tokenHash } });
+      if (!reset) throw invalid();
+      const consumed = await tx.passwordReset.deleteMany({ where: { tokenHash, expiresAt: { gt: new Date() } } });
+      if (!consumed.count) throw invalid();
+      const updated = await tx.user.updateMany({ where: { id: reset.userId, status: 'ACTIVE' }, data: { passwordHash: hashPassword(newPassword) } });
+      if (!updated.count) throw invalid();
+      await tx.authSession.updateMany({ where: { userId: reset.userId, revokedAt: null }, data: { revokedAt: new Date() } });
+    });
+    return { message: 'Password updated. Sign in with your new password.' };
+  }
+  // Change the password and invalidate recovery links and other sessions.
+  async changePassword(header: string | undefined, input: unknown) {
+    const actor = await this.authenticate(header);
+    const { sid } = this.decode(header!.slice(7));
+    const { currentPassword, newPassword } = object(input);
+    if (typeof currentPassword !== 'string' || currentPassword.length > 256 ||
+        typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 256 || currentPassword === newPassword)
+      throw new BadRequestException('Choose a different password of 8 to 256 characters');
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: actor.id } });
+    if (!verifyPassword(currentPassword, user.passwordHash)) throw new BadRequestException('Current password is incorrect');
+    await this.prisma.$transaction(async tx => {
+      const changed = await tx.user.updateMany({ where: { id: actor.id, passwordHash: user.passwordHash, status: 'ACTIVE' }, data: { passwordHash: hashPassword(newPassword) } });
+      if (!changed.count) throw new ConflictException('Account changed. Please try again.');
+      await tx.passwordReset.deleteMany({ where: { userId: actor.id } });
+      await tx.authSession.updateMany({ where: { userId: actor.id, revokedAt: null, id: { not: sid } }, data: { revokedAt: new Date() } });
+    });
+    return { message: 'Password changed' };
+  }
   // Get the JWT signing secret.
   private secret() {
     const secret = process.env.AUTH_TOKEN_SECRET;

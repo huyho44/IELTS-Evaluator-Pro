@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma.service.js';
 import { AccessService } from '../auth/access.service.js';
 import type { Actor } from '../auth/auth.service.js';
 import { date, integer, object, text, uuid } from '../auth/validation.js';
+import { publishObjective } from './objective-authoring.js';
 import { serializable } from '../submissions/transaction.js';
 @Injectable()
 export class CourseAuthoringService {
@@ -18,6 +19,24 @@ export class CourseAuthoringService {
     private readonly prisma: PrismaService,
     private readonly access: AccessService,
   ) {}
+  // Move an item past its adjacent sibling while preserving other sections.
+  async moveItem(courseId: string, id: string, input: unknown, actor: Actor) {
+    await this.access.instructor(actor, courseId);
+    const direction = object(input).direction;
+    if (direction !== 'up' && direction !== 'down') throw new BadRequestException('Invalid direction');
+    return serializable(this.prisma, async tx => {
+      const items = await tx.learningItem.findMany({where:{courseId},orderBy:[{position:'asc'},{id:'asc'}],select:{id:true,chapterId:true,position:true}});
+      const index = items.findIndex(item=>item.id===id);
+      if (index<0) throw new NotFoundException('Item not found');
+      const siblings = items.filter(item=>item.chapterId===items[index].chapterId);
+      const other = siblings[siblings.findIndex(item=>item.id===id)+(direction==='up'?-1:1)];
+      if (!other) return {moved:false};
+      const adjacent = items.findIndex(item=>item.id===other.id);
+      [items[index],items[adjacent]]=[items[adjacent],items[index]];
+      for (const [i,item] of items.entries()) if(item.position!==i+1) await tx.learningItem.update({where:{id:item.id},data:{position:i+1}});
+      return {moved:true};
+    });
+  }
   // Create a text lesson.
   async lesson(courseId: string, input: unknown, actor: Actor) {
     await this.access.instructor(actor, courseId);
@@ -83,9 +102,11 @@ export class CourseAuthoringService {
       position = integer(dto.position, 'position', 1);
     const difficulty = integer(dto.difficulty, 'difficulty', 1, 5),
       expectedMinutes = integer(dto.expectedMinutes, 'expectedMinutes', 1, 240);
+    const generalSpeaking = skillArea === 'SPEAKING' && dto.skillIds === undefined;
+    if (generalSpeaking) dto.skillIds = [];
     if (
       !Array.isArray(dto.skillIds) ||
-      !dto.skillIds.length ||
+      (!generalSpeaking && !dto.skillIds.length) ||
       dto.skillIds.length > 20
     )
       throw new BadRequestException('Provide 1-20 skillIds');
@@ -98,9 +119,11 @@ export class CourseAuthoringService {
       throw new BadRequestException(
         'Skills must be published and match the activity',
       );
+    const chapterId = dto.sectionId ? uuid(dto.sectionId, 'sectionId') : null;
+    if (chapterId && !await this.prisma.chapter.findFirst({where:{id:chapterId,courseId}})) throw new BadRequestException('Section must belong to this course');
     return this.prisma.learningItem.create({
       data: {
-        courseId,
+        courseId, chapterId,
         kind: 'PRACTICE',
         title,
         position,
@@ -130,6 +153,11 @@ export class CourseAuthoringService {
       },
       include: { practiceActivity: { include: { activityVersions: true } } },
     });
+  }
+  // Publish a Reading or Listening activity with its answer key.
+  async objective(courseId: string, input: unknown, actor: Actor, audio?: { buffer: Buffer; mimetype: string }) {
+    await this.access.instructor(actor, courseId);
+    return publishObjective(this.prisma, courseId, actor.id, input, audio);
   }
   // Create an assignment or a new version.
   async assignment(

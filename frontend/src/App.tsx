@@ -6,6 +6,7 @@ import {
   retryRestore,
   signOut,
 } from "./features/auth/session";
+import RecoveryPage from './features/auth/pages/RecoveryPage';
 import LoginPage from "./features/auth/pages/LoginPage";
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import PrivateRoute from "./features/auth/components/PrivateRoute";
@@ -28,6 +29,8 @@ import LessonPage from "./features/courses/LessonPage";
 import PracticePage from "./features/courses/PracticePage";
 import AttemptPage from "./features/courses/AttemptPage";
 import LearningPage from "./features/learning/LearningPage";
+import AdminWorkspace from "./features/management/AdminWorkspace";
+import AdminOverview from "./features/management/AdminOverview";
 import AdminPage from "./features/management/AdminPage";
 import AuthoringPage from "./features/management/AuthoringPage";
 import NotificationsPage from "./features/management/NotificationsPage";
@@ -45,7 +48,11 @@ function LogoutPage() {
 function StudentLayout() {
   const { session } = useSession();
   const location = useLocation();
-  const authPage = ["/login", "/register"].includes(location.pathname);
+  if (session?.user.roles.includes("ADMIN")) {
+    if (["/", "/courses", "/dashboard"].includes(location.pathname)) return <Navigate to="/admin" replace />;
+    if (!["/login", "/register", "/logout", "/forgot-password", "/reset-password"].includes(location.pathname)) return <AdminWorkspace />;
+  }
+  const authPage = ["/login", "/register", "/forgot-password", "/reset-password"].includes(location.pathname);
   return (
     <>
       {!authPage && <StudentNavbar key={session?.user.id ?? "guest"} />}
@@ -83,6 +90,8 @@ export default function App() {
         <Routes>
           <Route element={<StudentLayout />}>
             <Route path="/logout" element={<LogoutPage />} />
+            <Route path="/forgot-password" element={<RecoveryPage key="forgot" />} />
+            <Route path="/reset-password" element={<RecoveryPage key="reset" />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<PrivateRoute />}>
@@ -95,7 +104,12 @@ export default function App() {
               />
             </Route>
             <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin" element={<AdminOverview />} />
+              <Route path="/admin/manage" element={<AdminPage section="users" />} />
+              <Route path="/admin/assessment" element={<AuthoringPage adminAssessment />} />
+              <Route path="/admin/skills" element={<AdminPage section="skills" />} />
+              <Route path="/admin/assign" element={<AdminPage section="assignment" />} />
+              <Route path="/admin/catalog" element={<CourseCatalogPage />} />
             </Route>
             <Route
               element={<PrivateRoute allowedRoles={["INSTRUCTOR", "ADMIN"]} />}

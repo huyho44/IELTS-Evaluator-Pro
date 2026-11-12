@@ -122,6 +122,7 @@ export type PracticeQuestion = {
     position: number;
     questionVersion: {
         questionType: string;
+        stimulusAssetId?: string | null;
         promptText: string;
         questionOptions: {
             id: string;

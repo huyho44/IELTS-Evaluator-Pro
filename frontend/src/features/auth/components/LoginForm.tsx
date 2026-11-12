@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signIn, safeReturn } from '../session';
 
 export default function LoginForm() {
@@ -56,6 +56,7 @@ export default function LoginForm() {
       <div>
         <div className="flex items-center justify-between mb-1">
           <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">Password</label>
+          <Link to="/forgot-password" className="text-sm text-blue-700">Forgot password?</Link>
         </div>
         <input
           type="password"

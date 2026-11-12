@@ -1,20 +1,22 @@
+import LearningOverview from './LearningOverview';
 import { Link, useNavigate } from "react-router-dom";
-import { useSession } from "../features/auth/session";
+import { showsTargetBand, useSession } from "../features/auth/session";
 export default function Dashboard() {
-  const { session } = useSession();
+  const { session, requestToken } = useSession();
   const navigate = useNavigate();
   const user = session?.user;
   if (!user) return null;
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8">
       <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-        <h1 className="text-2xl font-bold">Account overview</h1>
+        <h1 className="text-2xl font-bold">{user.roles.includes("LEARNER") ? "Learning dashboard" : "Account overview"}</h1>
+        {user.roles.includes("LEARNER") && requestToken && <LearningOverview key={user.id} token={requestToken} />}
         <dl className="mt-6 grid gap-5 break-words sm:grid-cols-2">
           {[
             ["Display name", user.displayName],
             ["Email", user.email],
             ["Roles", user.roles.join(", ") || "Not set"],
-            ["Target band", user.targetBand ?? "Not set"],
+            ...(showsTargetBand(user.roles) ? [["Target band", user.targetBand ?? "Not set"]] : []),
           ].map(([label, value]) => (
             <div key={label}>
               <dt className="text-sm text-slate-500">{label}</dt>

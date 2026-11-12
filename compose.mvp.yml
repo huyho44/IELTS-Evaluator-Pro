@@ -6,6 +6,9 @@ x-backend: &backend
     NODE_ENV: production
     DATABASE_URL: postgresql://ielts:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/ielts_db?schema=public
     AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?Set AUTH_TOKEN_SECRET}
+    SMTP_URL: ${SMTP_URL:-}
+    MAIL_FROM: ${MAIL_FROM:-}
+    PASSWORD_RESET_ORIGIN: ${PASSWORD_RESET_ORIGIN:-}
     GRADING_WORKER_ENABLED: "false"
     OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}

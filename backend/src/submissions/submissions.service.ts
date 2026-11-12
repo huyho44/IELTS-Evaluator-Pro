@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  StreamableFile,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -302,6 +303,18 @@ export class SubmissionsService {
       );
     return attempt;
   }
+  // Read audio attached to this attempt or one of its questions.
+  async audio(attemptId: string, assetId: string, actor: Actor) {
+    const attempt = await this.attempt(attemptId, actor);
+    const asset = await this.prisma.fileAsset.findFirst({
+      where: { id: assetId, mimeType: { startsWith: 'audio/' }, OR: [
+        { questionVersions: { some: { assessmentItems: { some: { activityVersionId: attempt.activityVersionId } } } } },
+        { submissionRevisions: { some: { attemptId } } },
+      ] }, select: { mimeType: true, audioContent: true },
+    });
+    if (!asset?.audioContent) throw new NotFoundException('Audio unavailable');
+    return new StreamableFile(Buffer.from(asset.audioContent.bytes), { type: asset.mimeType });
+  }
   // Save a draft with version checking.
   async draft(id: string, input: unknown, actor: Actor) {
     const dto = object(input);
@@ -353,7 +366,7 @@ export class SubmissionsService {
     });
   }
   // Save a submission revision and queue grading.
-  async submitAssignment(assignmentId: string, input: unknown, actor: Actor) {
+  async submitAssignment(assignmentId: string, input: unknown, actor: Actor, audio?: { buffer: Buffer; mimetype: string }) {
     this.access.role(actor, 'LEARNER');
     const dto = object(input);
     const attemptId = uuid(dto.attemptId, 'attemptId');
@@ -373,6 +386,19 @@ export class SubmissionsService {
       const version = attempt.assignmentVersion;
       await this.activeEnrollment(tx, actor.id, version.assignment.courseId);
       const mode = version.assignment.activity.responseMode;
+      if (audio) {
+        if (mode !== 'SPEAKING' || !audio.buffer.length || !['audio/webm','audio/mp4','audio/mpeg','audio/ogg','audio/wav','audio/x-wav'].includes(audio.mimetype))
+          throw new BadRequestException('Choose a supported audio recording');
+        const digest = createHash('sha256').update(audio.buffer).digest('hex');
+        const storageKey = 'speaking/' + attemptId + '/' + digest;
+        const asset = await tx.fileAsset.upsert({
+          where: { storageKey }, update: {}, select: { id: true },
+          create: { ownerId: actor.id, storageKey, originalName: 'Speaking response',
+            mimeType: audio.mimetype, byteSize: audio.buffer.length, contentHash: digest,
+            audioContent: { create: { bytes: new Uint8Array(audio.buffer) } } },
+        });
+        dto.audioAssetId = asset.id;
+      }
       const payload = submissionPayload(dto, mode);
       const contentHash = createHash('sha256')
         .update(JSON.stringify(payload))

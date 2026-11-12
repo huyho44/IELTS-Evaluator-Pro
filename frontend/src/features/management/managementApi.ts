@@ -41,6 +41,7 @@ export type CourseRow = {
   learningItems: {
     id: string;
     title: string;
+    chapterId: string | null;
     kind: string;
     position: number;
     practiceActivity: {
@@ -51,6 +52,7 @@ export type CourseRow = {
   assignments: {
     id: string;
     title: string;
+    activityId: string;
     assignmentVersions: { id: string; versionNo: number; mode: string }[];
   }[];
   courseInstructors: {

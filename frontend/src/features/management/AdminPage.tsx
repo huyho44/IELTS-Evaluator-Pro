@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "../auth/session";
+
 import ActionForm from "./ActionForm";
 import {
   managementRequest as request,
@@ -12,11 +13,12 @@ import {
   type Catalog,
 } from "./managementApi";
 
-export default function AdminPage() {
+type Section = "users" | "skills" | "assignment";
+export default function AdminPage({ section }: { section: Section }) {
   const { session } = useSession();
-  return <AdminContent key={session?.user.id} />;
+  return <AdminContent key={session?.user.id} section={section} />;
 }
-function AdminContent() {
+function AdminContent({ section }: { section: Section }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [skills, setSkills] = useState<SkillRow[]>([]);
@@ -53,6 +55,9 @@ function AdminContent() {
       active = false;
     };
   }, [refresh]);
+  useEffect(() => {
+    if (!loading && window.location.hash) document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+  }, [loading]);
   async function run(
     method: "POST" | "PATCH" | "PUT",
     path: string,
@@ -78,11 +83,8 @@ function AdminContent() {
   }
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
-      <h1 className="text-2xl font-bold">Administration</h1>
-      <p className="text-sm text-slate-600">
-        Manage accounts, instructor approval, course assignments and the skill
-        catalog. Changes to access require a recorded reason.
-      </p>
+      <h1 className="text-2xl font-bold">{section === "users" ? "Users & instructors" : section === "skills" ? "Skills" : "Assign instructor"}</h1>
+
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">
           {error}
@@ -103,8 +105,8 @@ function AdminContent() {
         </p>
       )}
       {loading && <p role="status">Loading administration...</p>}
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold">Accounts</h2>
+      {section === "users" && <><section className="space-y-4">
+        <h2 id="accounts" className="scroll-mt-20 text-xl font-bold">Accounts</h2>
         <div className="grid gap-4 lg:grid-cols-2">
           {users.map((user) => (
             <ActionForm
@@ -158,7 +160,7 @@ function AdminContent() {
         </div>
       </section>
       <section className="space-y-4">
-        <h2 className="text-xl font-bold">Instructor applications</h2>
+        <h2 id="applications" className="scroll-mt-20 text-xl font-bold">Instructor applications</h2>
         {!applications.length && <p className={panel}>No applications.</p>}
         <div className="grid gap-4 lg:grid-cols-2">
           {applications.map((item) =>
@@ -201,8 +203,9 @@ function AdminContent() {
           )}
         </div>
       </section>
-      <div className="grid items-start gap-5 lg:grid-cols-2">
-        <ActionForm
+      </>}
+      <div id="course-assignment" className="scroll-mt-20 grid items-start gap-5 lg:grid-cols-2">
+        {section === "assignment" && <ActionForm
           title="Assign an instructor to a course"
           busy={busy}
           submit={(data) =>
@@ -251,8 +254,8 @@ function AdminContent() {
             Reason
             <input required name="reason" className={field} />
           </label>
-        </ActionForm>
-        <ActionForm
+        </ActionForm>}
+        {section === "skills" && <><ActionForm
           title="Publish a skill"
           busy={busy}
           submit={(data) =>
@@ -383,7 +386,7 @@ function AdminContent() {
               </button>
             </div>
           ))}
-        </section>
+        </section></>}
       </div>
     </main>
   );
