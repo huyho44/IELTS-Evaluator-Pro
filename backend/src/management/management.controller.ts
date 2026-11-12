@@ -19,6 +19,9 @@ export class ManagementController {
     private readonly service: ManagementService,
     private readonly auth: AuthService,
   ) {}
+  @Get('admin/overview') async overview(@Headers('authorization') h?: string) {
+    return this.service.overview(await this.auth.authenticate(h));
+  }
   @Get('admin/users') async users(@Headers('authorization') h?: string) {
     return this.service.users(await this.auth.authenticate(h));
   }

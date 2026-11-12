@@ -206,7 +206,18 @@ enum OutboxStatus {
 /// Core application user. Represents both learners and instructors/admins;
 /// the active roles are held in UserRole. Optional fields (targetBand,
 /// targetExamDate) are learner-specific goal settings.
+model PasswordReset {
+  userId    String   @id @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  sentAt    DateTime @map("sent_at") @db.Timestamptz(3)
+
+  @@map("PASSWORD_RESET")
+}
+
 model User {
+  passwordReset PasswordReset?
   id             String        @id @default(uuid()) @db.Uuid
   email          String        @unique(map: "uq_app_user_email") @db.VarChar(320)
   passwordHash   String        @map("password_hash") @db.Text

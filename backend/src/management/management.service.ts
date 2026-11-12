@@ -73,6 +73,21 @@ export class ManagementService {
     });
   }
 
+  async overview(actor: Actor) {
+    this.admin(actor);
+    const [accounts, courses, pending, activity] = await Promise.all([
+      this.prisma.user.groupBy({ by: ['status'], _count: true }),
+      this.prisma.course.groupBy({ by: ['status'], _count: true }),
+      this.prisma.instructorApplication.count({ where: { status: 'PENDING' } }),
+      this.prisma.auditEvent.findMany({
+        where: { action: { in: ['ACCOUNT_UPDATED', 'INSTRUCTOR_APPLICATION_DECIDED', 'COURSE_INSTRUCTOR_ASSIGNED', 'SKILL_SAVED', 'SKILL_PREREQUISITES_UPDATED'] } },
+        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }], take: 5,
+        select: { id: true, occurredAt: true, action: true, actor: { select: { displayName: true } } },
+      }),
+    ]);
+    return { accounts, courses, pending, activity };
+  }
+
   async users(actor: Actor) {
     this.admin(actor);
     const rows = await this.prisma.user.findMany({
