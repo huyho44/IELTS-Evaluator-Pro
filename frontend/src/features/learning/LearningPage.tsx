@@ -13,6 +13,42 @@ import {
   type SkillProfile,
 } from "./learningApi";
 
+const REASON_BADGES: Record<string, { label: string; className: string }> = {
+  DIAGNOSTIC: {
+    label: "Explore a skill",
+    className: "bg-[#eef2ff] text-[#3730a3]",
+  },
+  REINFORCEMENT: {
+    label: "Reinforce a skill",
+    className: "bg-[#ecfdf5] text-[#047857]",
+  },
+};
+
+const DEFAULT_REASON_BADGE = {
+  label: "Focused practice",
+  className: "bg-[#eff6ff] text-[#1e40af]",
+};
+
+const SKILL_CARD_THEMES: Record<string, { card: string; badge: string }> = {
+  "Needs focused practice": {
+    card: "border-[#fde68a] bg-[#fffbeb]",
+    badge: "bg-[#fef3c7] text-[#92400e]",
+  },
+  "Usually demonstrated": {
+    card: "border-[#a7f3d0] bg-[#ecfdf5]",
+    badge: "bg-[#d1fae5] text-[#047857]",
+  },
+  Developing: {
+    card: "border-[#bfdbfe] bg-[#eff6ff]",
+    badge: "bg-[#dbeafe] text-[#1e40af]",
+  },
+};
+
+const DEFAULT_SKILL_THEME = {
+  card: "border-[#e2e8f0] bg-white",
+  badge: "bg-[#f1f5f9] text-[#475569]",
+};
+
 type Props = { accessToken?: string | null; onSessionExpired?: () => void };
 export default function LearningPage(props: Props) {
   const { requestToken, session } = useSession();
@@ -104,141 +140,198 @@ function LearningContent({
     }
   }
   return (
-    <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-8">
-      <nav className="flex flex-wrap justify-between gap-3 text-sm font-semibold text-blue-600">
-        <Link to="/courses">← Browse courses</Link>
-        <Link to="/practice-history">My practice attempts</Link>
-      </nav>
-      <header className="rounded-xl border border-slate-200 bg-white p-6">
-        <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
-          Your learning
-        </span>
-        <h1 className="mt-2 text-2xl font-bold">Skills and next steps</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-          Build on confirmed feedback with focused learning activities. New or
-          unobserved skills start with diagnostic practice, so missing evidence
-          is not treated as a weakness.
-        </p>
+    <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
+      <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] bg-white p-3.5 sm:flex-row sm:items-start sm:gap-4 sm:p-5">
+        <div className="min-w-0 space-y-2">
+          <span className="block text-xs font-medium uppercase tracking-wide text-[#2563eb]">
+            Your learning
+          </span>
+          <h1 className="text-xl font-semibold leading-tight text-[#0f172a] sm:text-[28px] sm:font-bold">
+            Skills and next steps
+          </h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-[#64748b]">
+            Build on confirmed feedback. Start with a diagnostic activity when
+            you have little or no evidence.
+          </p>
+        </div>
         <button
+          type="button"
           disabled={loading || !!opening}
           onClick={() => setReloadKey((value) => value + 1)}
-          className="mt-4 rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50"
+          className="shrink-0 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#1e40af] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
         >
-          {loading ? "Updating..." : "Refresh skills and suggestions"}
+          {loading ? (
+            "Updating..."
+          ) : (
+            <>
+              <span className="sm:hidden">Refresh</span>
+              <span className="hidden sm:inline">
+                Refresh skills and suggestions
+              </span>
+            </>
+          )}
         </button>
       </header>
+      <nav
+        aria-label="Quick student links"
+        className="flex flex-wrap items-center gap-2 xl:hidden"
+      >
+        <Link
+          to="/courses"
+          className="rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+        >
+          Courses
+        </Link>
+        <Link
+          to="/practice-history"
+          className="rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+        >
+          My Practice Attempts
+        </Link>
+      </nav>
       {error && (
         <div
           role="alert"
-          className="space-y-2 rounded-lg bg-red-50 p-4 text-sm text-red-800"
+          className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
         >
           <p>{error}</p>
-          <button
-            disabled={loading || !!opening}
-            onClick={() => setReloadKey((value) => value + 1)}
-            className="font-semibold underline"
-          >
-            Try again
-          </button>
-          <Link to="/practice-history" className="ml-4 underline">
-            Check your practice history
-          </Link>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              disabled={loading || !!opening}
+              onClick={() => setReloadKey((value) => value + 1)}
+              className="font-semibold underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700"
+            >
+              Try again
+            </button>
+            <Link
+              to="/practice-history"
+              className="font-medium underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700"
+            >
+              Check your practice history
+            </Link>
+          </div>
         </div>
       )}
       {loading && (
-        <p role="status" className="text-sm text-slate-500">
+        <p
+          role="status"
+          className="rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 text-sm text-[#64748b]"
+        >
           Loading your skills and suggested activities...
         </p>
       )}
       {recommendations && (
-        <section className="space-y-4">
-          <h2 className="text-xl font-bold">Suggested next activities</h2>
-          <p className="text-sm text-slate-500">
-            These suggestions use your confirmed learning evidence and the
-            activities available in your courses.
-          </p>
+        <section className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-semibold text-[#0f172a]">
+              Suggested next activities
+            </h2>
+            <p className="text-sm leading-relaxed text-[#64748b]">
+              Based on your confirmed learning evidence and the activities
+              available in your courses.
+            </p>
+          </div>
           {!recommendations.recommendedActivities.length ? (
-            <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            <p className="rounded-xl border border-[#e2e8f0] bg-white p-5 text-sm text-[#64748b]">
               No suitable activity is available right now. Browse your enrolled
               courses or ask your instructor about the next practice.
             </p>
           ) : (
-            <div className="grid items-start gap-4 lg:grid-cols-3">
-              {recommendations.recommendedActivities.map((item) => (
-                <article
-                  key={item.id}
-                  className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
-                >
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-                    {item.reasonCode === "DIAGNOSTIC"
-                      ? "Explore a skill"
-                      : item.reasonCode === "REINFORCEMENT"
-                        ? "Reinforce a skill"
-                        : "Focused practice"}
-                  </span>
-                  <h3 className="text-lg font-bold">
-                    {item.learningItem.title}
-                  </h3>
-                  <p className="text-sm leading-6 text-slate-600">
-                    {item.reasonText}
-                  </p>
-                  <button
-                    disabled={!!opening || loading}
-                    onClick={() => void open(item)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            <div className="grid items-stretch gap-3.5 lg:grid-cols-3">
+              {recommendations.recommendedActivities.map((item) => {
+                const badge =
+                  REASON_BADGES[item.reasonCode] ?? DEFAULT_REASON_BADGE;
+                const isLesson = item.learningItem.kind === "LESSON";
+                return (
+                  <article
+                    key={item.id}
+                    className="flex flex-col items-start gap-3 rounded-xl border border-[#e2e8f0] bg-white p-3.5 sm:p-[18px]"
                   >
-                    {opening === item.id
-                      ? "Opening..."
-                      : item.learningItem.kind === "LESSON"
-                        ? "Open lesson"
-                        : "Start suggested practice"}
-                  </button>
-                  {item.learningItem.kind === "PRACTICE" && (
-                    <p className="text-xs leading-5 text-slate-500">
-                      Starting uses an available attempt and begins its time
-                      limit. An existing attempt for this suggested version will
-                      resume.
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <h3 className="text-lg font-semibold leading-snug text-[#0f172a] sm:text-xl">
+                      {item.learningItem.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-[#64748b]">
+                      {item.reasonText}
                     </p>
-                  )}
-                </article>
-              ))}
+                    <button
+                      type="button"
+                      disabled={!!opening || loading}
+                      onClick={() => void open(item)}
+                      className={
+                        isLesson
+                          ? "w-full rounded-[10px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50 sm:w-auto"
+                          : "w-full rounded-[10px] bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50 sm:w-auto"
+                      }
+                    >
+                      {opening === item.id
+                        ? "Opening..."
+                        : isLesson
+                          ? "Open lesson"
+                          : "Start suggested practice"}
+                    </button>
+                    {!isLesson && (
+                      <p className="text-xs leading-relaxed text-[#64748b]">
+                        Starting uses an available attempt and begins its time
+                        limit. An existing attempt for this version will resume.
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
       )}
       {profile && (
-        <section className="space-y-4">
-          <h2 className="text-xl font-bold">Your skill evidence</h2>
-          <p className="text-sm leading-6 text-slate-500">
-            Only accepted, published assessments update these observations. They
-            describe the evidence so far and are not an IELTS band prediction.
-          </p>
+        <section className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-semibold text-[#0f172a]">
+              Your skill evidence
+            </h2>
+            <p className="text-sm leading-relaxed text-[#64748b]">
+              Only accepted, published assessments update these observations. They
+              describe the evidence so far and are not an IELTS band prediction.
+            </p>
+          </div>
           {!profile.skills.length ? (
-            <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            <p className="rounded-xl border border-[#e2e8f0] bg-white p-5 text-sm text-[#64748b]">
               Your instructor has not published any skills yet.
             </p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {profile.skills.map((skill) => (
-                <article
-                  key={skill.skillId}
-                  className="space-y-3 rounded-xl border border-slate-200 bg-white p-5"
-                >
-                  <h3 className="font-bold">{skill.name}</h3>
-                  <p
-                    className={`text-sm font-semibold ${skill.strength === null ? "text-slate-500" : "text-blue-700"}`}
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {profile.skills.map((skill) => {
+                const statusLabel = describeSkill(skill);
+                const theme =
+                  SKILL_CARD_THEMES[statusLabel] ?? DEFAULT_SKILL_THEME;
+                return (
+                  <article
+                    key={skill.skillId}
+                    className={`flex flex-col items-start gap-2 rounded-xl border p-3.5 sm:p-4 ${theme.card}`}
                   >
-                    {describeSkill(skill)}
-                  </p>
-                  <p className="text-xs leading-5 text-slate-500">
-                    {skill.evidenceCount
-                      ? `Based on ${skill.evidenceCount} confirmed learning ${skill.evidenceCount === 1 ? "opportunity" : "opportunities"}.`
-                      : "Complete a diagnostic activity or receive confirmed instructor feedback to build evidence."}
-                    {skill.observationStatus === "INSUFFICIENT" &&
-                      " More observations are needed before drawing a stable conclusion."}
-                  </p>
-                </article>
-              ))}
+                    <h3 className="text-sm font-semibold text-[#0f172a]">
+                      {skill.name}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${theme.badge}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    <p className="text-xs leading-relaxed text-[#475569]">
+                      {skill.evidenceCount
+                        ? `Based on ${skill.evidenceCount} confirmed learning ${skill.evidenceCount === 1 ? "opportunity" : "opportunities"}.`
+                        : "Complete a diagnostic activity or receive confirmed instructor feedback to build evidence."}
+                      {skill.observationStatus === "INSUFFICIENT" &&
+                        " More observations are needed before drawing a stable conclusion."}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
