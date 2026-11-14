@@ -1,5 +1,10 @@
 export type ReviewStatus = 'PENDING' | 'CLAIMED' | 'CONFIRMED' | 'CANCELLED';
 export type ResponseMode = 'OBJECTIVE' | 'WRITING' | 'SPEAKING';
+export type SkillArea = 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING';
+export type PublicationStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'ARCHIVED';
+export type AssignmentMode = 'PRACTICE' | 'GRADED';
+export type ReleaseMode = 'IMMEDIATE' | 'AFTER_DUE_DATE' | 'SCHEDULED' | 'MANUAL';
+export type RubricTaskType = 'WRITING_TASK_1' | 'WRITING_TASK_2' | 'SPEAKING';
 export type ObservationOutcome = 'MET' | 'PARTIAL' | 'NOT_MET' | 'NOT_OBSERVED';
 export type DecimalJson = string | number;
 
@@ -15,12 +20,14 @@ export type ReviewCase = {
   createdAt: string;
   claimedAt: string | null;
 };
+
 export type AvailableSkill = {
   id: string;
   code: string;
   name: string;
   description: string;
 };
+
 export type RubricCriterion = {
   id: string;
   code: string;
@@ -29,6 +36,7 @@ export type RubricCriterion = {
   weight: DecimalJson;
   maxScore: DecimalJson;
 };
+
 export type ReviewRubric = {
   id: string;
   rubricCode: string;
@@ -37,6 +45,7 @@ export type ReviewRubric = {
   publishedAt: string | null;
   rubricCriterions: RubricCriterion[];
 };
+
 export type AcceptedAssessment = {
   id: string;
   resultId: string;
@@ -48,6 +57,7 @@ export type AcceptedAssessment = {
   isCurrent: boolean;
   supersedesId: string | null;
 };
+
 export type AssessmentResult = {
   id: string;
   revisionId: string;
@@ -58,6 +68,7 @@ export type AssessmentResult = {
   summary: string | null;
   createdAt: string;
 };
+
 export type ReviewAssessment = AssessmentResult & {
   criterionScores: {
     id: string;
@@ -93,6 +104,7 @@ export type ReviewAssessment = AssessmentResult & {
   }[];
   acceptedAssessment: AcceptedAssessment | null;
 };
+
 export type ReviewDecision = {
   id: string;
   reviewCaseId: string;
@@ -103,6 +115,7 @@ export type ReviewDecision = {
   reason: string;
   decidedAt: string;
 };
+
 export type ReviewQueueItem = ReviewCase & {
   revision: {
     id: string;
@@ -114,6 +127,7 @@ export type ReviewQueueItem = ReviewCase & {
     };
   };
 };
+
 export type ReviewDetail = ReviewCase & {
   availableSkills: AvailableSkill[];
   targetRun: {
@@ -140,7 +154,7 @@ export type ReviewDetail = ReviewCase & {
       learner: { id: string; displayName: string };
       assignmentVersion: {
         id: string;
-        mode: 'PRACTICE' | 'GRADED';
+        mode: AssignmentMode;
         dueAt: string | null;
         releasePolicyJson: { releaseMode?: string; releaseAt?: string } | null;
         assignment: { id: string; title: string; courseId: string };
@@ -156,6 +170,7 @@ export type ReviewDetail = ReviewCase & {
   };
   reviewDecisions: ReviewDecision[];
 };
+
 export type ConfirmReviewPayload = {
   lockVersion: number;
   reason: string;
@@ -174,11 +189,13 @@ export type ConfirmReviewPayload = {
     rationale: string;
   }[];
 };
+
 export type ConfirmResponse = {
   decision: ReviewDecision;
   assessment: AssessmentResult;
   acceptedAssessment: AcceptedAssessment;
 };
+
 export type CriterionInput = {
   code: string;
   name: string;
@@ -186,6 +203,7 @@ export type CriterionInput = {
   score: string;
   explanation: string;
 };
+
 export type FindingInput = {
   id: string;
   approved: boolean;
@@ -195,6 +213,7 @@ export type FindingInput = {
   skillId: string;
   anchors: { paragraphId: string; exactQuote: string }[];
 };
+
 export type ObservationInput = {
   id: string;
   approved: boolean;
@@ -202,10 +221,190 @@ export type ObservationInput = {
   outcome: ObservationOutcome;
   rationale: string;
 };
+
 export type ReviewFormState = {
   reason: string;
   summary: string;
   criteria: CriterionInput[];
   findings: FindingInput[];
   observations: ObservationInput[];
+};
+
+// ============================================================================
+// Course Authoring & Grading Configuration Types
+// ============================================================================
+
+export type CourseSummary = {
+  id: string;
+  title: string;
+  description: string;
+  status: PublicationStatus;
+  enrollmentOpen: boolean;
+  createdAt: string;
+  completionPolicyJson: Record<string, unknown>;
+  creator?: { id: string; displayName: string };
+  _count?: {
+    learningItems: number;
+    enrollments: number;
+  };
+};
+
+export type CourseSection = {
+  id: string;
+  courseId: string;
+  title: string;
+  position: number;
+};
+
+export type CourseLearningItem = {
+  id: string;
+  sectionId: string | null;
+  title: string;
+  kind: 'LESSON' | 'PRACTICE';
+  position: number;
+  lesson: { summary: string | null } | null;
+  practiceActivity: {
+    skillArea: SkillArea;
+    responseMode: ResponseMode;
+  } | null;
+};
+
+export type CourseDetail = {
+  id: string;
+  creatorId: string;
+  title: string;
+  description: string;
+  status: PublicationStatus;
+  enrollmentOpen: boolean;
+  completionPolicyJson: Record<string, unknown>;
+  createdAt: string;
+  creator: { id: string; displayName: string };
+  sections: CourseSection[];
+  learningItems: CourseLearningItem[];
+};
+
+export type CreateCoursePayload = {
+  title: string;
+  description: string;
+  completionPolicyJson: Record<string, unknown>;
+};
+
+export type UpdateCoursePayload = {
+  title?: string;
+  description?: string;
+  enrollmentOpen?: boolean;
+  status?: PublicationStatus;
+};
+
+export type CreateSectionPayload = {
+  title: string;
+  position: number;
+};
+
+export type CreateLessonPayload = {
+  title: string;
+  contentText: string;
+  position: number;
+  sectionId?: string | null;
+  summary?: string | null;
+};
+
+export type CreateActivityPayload = {
+  title: string;
+  skillArea: 'WRITING' | 'SPEAKING';
+  promptText: string;
+  instructions: string;
+  position: number;
+  difficulty: number;
+  expectedMinutes: number;
+  skillIds: string[];
+};
+
+export type CreatedActivityVersion = {
+  id: string;
+  activityId: string;
+  versionNo: number;
+  promptText: string;
+  instructions: string;
+  difficulty: number;
+  expectedMinutes: number;
+  publishedAt: string | null;
+};
+
+export type CreatedActivityResponse = {
+  id: string;
+  courseId: string;
+  chapterId: string | null;
+  kind: 'PRACTICE';
+  title: string;
+  status: PublicationStatus;
+  position: number;
+  practiceActivity: {
+    id: string;
+    skillArea: 'WRITING' | 'SPEAKING';
+    responseMode: 'WRITING' | 'SPEAKING';
+    activityVersions: CreatedActivityVersion[];
+  };
+};
+
+export type CreateRubricPayload = {
+  rubricCode: string;
+  versionNo: number;
+  title: string;
+  taskType: RubricTaskType;
+  criteria: {
+    code: string;
+    name: string;
+    definition: string;
+  }[];
+};
+
+export type CreatedRubricResponse = ReviewRubric & {
+  title: string;
+  sourceUrl?: string | null;
+};
+
+export type CreateGradingConfigPayload = {
+  rubricVersionId: string;
+  modelId: string;
+  promptCode: string;
+  promptVersionNo: number;
+  instructions: string;
+  outputSchemaJson: Record<string, unknown>;
+  settingsJson?: Record<string, unknown>;
+};
+
+export type CreateAssignmentPayload = {
+  activityVersionId: string;
+  title: string;
+  mode: AssignmentMode;
+  rubricVersionId?: string | null;
+  maxAttempts?: number;
+  maxRevisions?: number;
+  opensAt?: string | null;
+  dueAt?: string | null;
+  timeLimitSeconds?: number | null;
+  allowLate?: boolean;
+  releasePolicyJson: {
+    releaseMode: ReleaseMode;
+    releaseAt?: string;
+  };
+};
+
+export type CreatedAssignmentVersionResponse = {
+  id: string;
+  assignmentId: string;
+  activityId: string;
+  activityVersionId: string;
+  rubricVersionId: string | null;
+  versionNo: number;
+  mode: AssignmentMode;
+  opensAt: string | null;
+  dueAt: string | null;
+  timeLimitSeconds: number | null;
+  maxAttempts: number;
+  maxRevisions: number;
+  allowLate: boolean;
+  releasePolicyJson: Record<string, unknown>;
+  publishedAt: string | null;
 };

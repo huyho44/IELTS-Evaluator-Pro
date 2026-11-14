@@ -12,6 +12,9 @@ import PrivateRoute from "./features/auth/components/PrivateRoute";
 import Dashboard from "./pages/Dashboard";
 import ReviewQueuePage from "./features/instructor/pages/ReviewQueuePage";
 import ReviewDetailPage from "./features/instructor/pages/ReviewDetailPage";
+import InstructorLayout from "./components/layout/instructor/InstructorLayout";
+import CourseAuthoringPage from "./features/instructor/pages/CourseAuthoringPage";
+import GradingReportsPage from "./features/instructor/pages/GradingReportsPage";
 import {
   BrowserRouter,
   Link,
@@ -74,6 +77,14 @@ export default function App() {
         </section>
       ) : (
         <Routes>
+          <Route element={<PrivateRoute allowedRoles={["INSTRUCTOR", "ADMIN"]} />}>
+  <Route element={<InstructorLayout />}>
+    <Route path="/teacher/reviews" element={<ReviewQueuePage />} />
+    <Route path="/teacher/reviews/:id" element={<ReviewDetailPage />} />
+    <Route path="/teacher/courses" element={<CourseAuthoringPage />} />
+    <Route path="/teacher/reports" element={<GradingReportsPage />} />
+  </Route>
+</Route>
           <Route element={<StudentLayout />}>
             <Route path="/logout" element={<LogoutPage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -81,13 +92,7 @@ export default function App() {
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
-            <Route element={<PrivateRoute allowedRoles={["INSTRUCTOR"]} />}>
-              <Route path="/teacher/reviews" element={<ReviewQueuePage />} />
-              <Route
-                path="/teacher/reviews/:id"
-                element={<ReviewDetailPage />}
-              />
-            </Route>
+
             <Route path="/" element={<Navigate to="/courses" replace />} />
 
             <Route path="/courses" element={<CourseCatalogPage />} />
