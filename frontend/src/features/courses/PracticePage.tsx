@@ -114,20 +114,13 @@ function PracticeContent({
 
     return (
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
-            <nav aria-label="Practice navigation" className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <Link
-                to={`/courses/${encodeURIComponent(courseId)}`}
-                className="text-sm font-semibold text-blue-600 hover:underline"
-            >
-                ← Back to course overview
-            </Link>
-
-            <Link
-                to="/practice-history"
-                className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-                My practice attempts
-            </Link>
+            <nav aria-label="Practice navigation" className="mb-6">
+                <Link
+                    to={`/courses/${encodeURIComponent(courseId)}`}
+                    className="inline-flex text-sm font-semibold text-blue-600 hover:underline"
+                >
+                    ← Back to course overview
+                </Link>
             </nav>
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">

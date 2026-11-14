@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "../features/auth/session";
+import {
+  formatUnreadBadge,
+  isInternalNavigationPath,
+  loadNotifications,
+  markNotificationRead,
+  useNotifications,
+} from "../features/management/notificationsStore";
 
 export default function StudentNavbar() {
   const { session } = useSession();
@@ -12,20 +19,25 @@ export default function StudentNavbar() {
   >(null);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const {
+    items: notifications,
+    loading: notificationsLoading,
+    error: notificationsError,
+    markingIds,
+  } = useNotifications(user?.id);
+  const unread = formatUnreadBadge(notifications);
+  const recentNotifications = notifications.slice(0, 4);
+
   const learning = /^\/(learning|skills|recommendations)(\/|$)/.test(
     location.pathname,
   );
-  const practice =
-    /^\/(practice-history|attempts)(\/|$)/.test(location.pathname) ||
-    /\/practices\//.test(location.pathname);
-  const courses =
-    !practice && !learning && /^\/courses(\/|$)/.test(location.pathname);
+  const practice = /^\/practice-history(\/|$)/.test(location.pathname);
+  const courses = !learning && /^\/courses(\/|$)/.test(location.pathname);
   const hasTargetBand =
     user != null &&
     user.targetBand != null &&
-    user.roles.includes("LEARNER") &&
-    !user.roles.includes("ADMIN") &&
-    !user.roles.includes("INSTRUCTOR");
+    user.roles.includes("LEARNER");
+
   useEffect(() => {
     function outside(event: PointerEvent) {
       if (event.target instanceof Node && !root.current?.contains(event.target))
@@ -44,15 +56,22 @@ export default function StudentNavbar() {
       document.removeEventListener("keydown", escape);
     };
   }, [menu]);
+
   const link =
     "flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600";
+
   function toggle(
     value: "mobile" | "notifications" | "account",
     button: HTMLButtonElement,
   ) {
     trigger.current = button;
+    const opening = menu !== value;
     setMenu((previous) => (previous === value ? null : value));
+    if (value === "notifications" && opening && user) {
+      void loadNotifications();
+    }
   }
+
   function navigation(mobile = false) {
     const tab = (active: boolean) =>
       mobile
@@ -78,14 +97,16 @@ export default function StudentNavbar() {
         >
           Courses
         </Link>
-        <Link
-          to="/practice-history"
-          aria-current={practice ? "page" : undefined}
-          className={tab(practice)}
-          onClick={() => setMenu(null)}
-        >
-          My Practice Attempts
-        </Link>
+        {(!user || user.roles.includes("LEARNER")) && (
+          <Link
+            to="/practice-history"
+            aria-current={practice ? "page" : undefined}
+            className={tab(practice)}
+            onClick={() => setMenu(null)}
+          >
+            My Practice Attempts
+          </Link>
+        )}
         {user?.roles.includes("INSTRUCTOR") && (
           <Link
             to="/teacher/reviews"
@@ -115,9 +136,10 @@ export default function StudentNavbar() {
       </>
     );
   }
+
   return (
     <header ref={root} className="border-b border-[#e2e8f0] bg-white">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-3 gap-y-0 px-4 sm:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:items-stretch">
+      <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-3 gap-y-0 px-4 sm:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:items-stretch">
         <Link
           to="/courses"
           onClick={() => setMenu(null)}
@@ -131,15 +153,19 @@ export default function StudentNavbar() {
         >
           {navigation()}
         </nav>
-        <div className="relative ml-auto flex min-h-[56px] shrink-0 items-center gap-2 self-stretch sm:gap-2.5 xl:min-h-[66px]">
-          <div className="relative flex items-center self-stretch">
+        <div className="ml-auto flex min-h-[56px] shrink-0 items-center gap-2 self-stretch sm:gap-2.5 xl:min-h-[66px]">
+          <div className="flex items-center self-stretch sm:relative">
             <button
               type="button"
-              aria-label="Notifications"
+              aria-label={
+                user && unread.count > 0
+                  ? `Notifications (${unread.summaryText})`
+                  : "Notifications"
+              }
               aria-expanded={menu === "notifications"}
               aria-controls="notifications-panel"
               onClick={(e) => toggle("notifications", e.currentTarget)}
-              className={`flex h-9 w-9 items-center justify-center rounded-full text-[#64748b] transition-colors hover:bg-slate-100 hover:text-[#0f172a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-slate-100 text-[#2563eb]" : ""}`}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[#64748b] transition-colors hover:bg-slate-100 hover:text-[#0f172a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-slate-100 text-[#2563eb]" : ""}`}
             >
               <svg
                 aria-hidden="true"
@@ -154,67 +180,177 @@ export default function StudentNavbar() {
               >
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
               </svg>
+              {user && unread.count > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white"
+                >
+                  {unread.badgeText}
+                </span>
+              )}
             </button>
             {menu === "notifications" && (
               <div
                 id="notifications-panel"
-                className="absolute right-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg"
+                className="absolute right-4 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg sm:right-0 sm:w-96"
               >
-                <div className="border-b border-slate-100 px-4 py-3">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                   <h2 className="text-sm font-semibold text-[#0f172a]">
                     Notifications
                   </h2>
+                  {user && (
+                    <span className="text-xs font-medium text-[#64748b]">
+                      {unread.summaryText}
+                    </span>
+                  )}
                 </div>
-                <div className="px-4 py-4 text-sm text-[#64748b]">
-                  <Link
-                    to={user ? "/notifications" : "/login"}
-                    onClick={() => setMenu(null)}
-                    className="font-semibold text-[#2563eb] hover:underline"
-                  >
-                    {user
-                      ? "View your notifications"
-                      : "Sign in to view notifications"}
-                  </Link>
-                </div>
+                {!user ? (
+                  <div className="px-4 py-4 text-sm text-[#64748b]">
+                    <Link
+                      to="/login"
+                      onClick={() => setMenu(null)}
+                      className="font-semibold text-[#2563eb] hover:underline"
+                    >
+                      Sign in to view notifications
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <div className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
+                      {notificationsLoading && !recentNotifications.length && (
+                        <p role="status" className="px-4 py-4 text-xs text-[#64748b]">
+                          Loading notifications...
+                        </p>
+                      )}
+                      {notificationsError && (
+                        <div role="alert" className="space-y-1.5 px-4 py-3 text-xs text-red-700">
+                          <p>{notificationsError}</p>
+                          <button
+                            type="button"
+                            onClick={() => void loadNotifications()}
+                            className="font-semibold underline"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      )}
+                      {!notificationsLoading &&
+                        !notificationsError &&
+                        !recentNotifications.length && (
+                          <p className="px-4 py-5 text-center text-xs text-[#64748b]">
+                            No notifications yet.
+                          </p>
+                        )}
+                      {recentNotifications.map((item) => {
+                        const isUnread = !item.readAt;
+                        const marking = Boolean(markingIds[item.id]);
+                        return (
+                          <div
+                            key={item.id}
+                            className={`space-y-1.5 px-4 py-3 text-xs ${
+                              isUnread ? "bg-blue-50/40" : "bg-white"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-1.5">
+                                {isUnread && (
+                                  <span
+                                    aria-label="Unread notification"
+                                    className="h-2 w-2 shrink-0 rounded-full bg-[#2563eb]"
+                                  />
+                                )}
+                                <p
+                                  className={`truncate text-sm ${
+                                    isUnread
+                                      ? "font-semibold text-[#0f172a]"
+                                      : "font-medium text-slate-700"
+                                  }`}
+                                >
+                                  {item.title}
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-[11px] text-[#64748b]">
+                                {new Date(item.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="line-clamp-2 text-xs leading-relaxed text-[#64748b]">
+                              {item.body}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 pt-0.5">
+                              {isInternalNavigationPath(item.navigationPath) && (
+                                <Link
+                                  to={item.navigationPath}
+                                  onClick={() => {
+                                    setMenu(null);
+                                    if (isUnread) {
+                                      void markNotificationRead(item.id);
+                                    }
+                                  }}
+                                  className="font-semibold text-[#2563eb] hover:underline"
+                                >
+                                  Open
+                                </Link>
+                              )}
+                              {isUnread && (
+                                <button
+                                  type="button"
+                                  disabled={marking}
+                                  onClick={() => void markNotificationRead(item.id)}
+                                  className="font-medium text-slate-600 hover:text-[#2563eb] hover:underline disabled:opacity-50"
+                                >
+                                  {marking ? "Marking..." : "Mark as read"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="border-t border-slate-100 px-4 py-2.5">
+                      <Link
+                        to="/notifications"
+                        onClick={() => setMenu(null)}
+                        className="block text-center text-xs font-semibold text-[#2563eb] hover:underline"
+                      >
+                        View all notifications
+                      </Link>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
           {user ? (
-            <div className="relative flex min-w-0 items-center self-stretch">
+            <div className="flex min-w-0 items-center self-stretch sm:relative">
               <button
                 type="button"
                 aria-label="Open account menu"
                 aria-expanded={menu === "account"}
                 aria-controls="account-menu"
                 onClick={(e) => toggle("account", e.currentTarget)}
-                className="flex max-w-[180px] items-center gap-1.5 rounded-full border border-slate-200/80 bg-[#f8fafc] p-1 pr-2 text-left transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-2.5"
+                className="flex max-w-[140px] items-center gap-2 rounded-full border border-slate-200/90 bg-[#f8fafc] p-1 pr-2.5 text-left transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3"
               >
                 <span
                   aria-hidden="true"
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#eff6ff] text-xs font-semibold text-[#1e40af]"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#2563eb] text-xs font-bold text-white shadow-sm"
                 >
                   {user.displayName.charAt(0).toUpperCase()}
                 </span>
-                <span
-                  className={
-                    hasTargetBand
-                      ? "hidden max-w-[140px] truncate text-sm font-semibold text-[#0f172a] sm:inline"
-                      : "max-w-[84px] truncate text-sm font-semibold text-[#0f172a] sm:max-w-[140px]"
-                  }
-                >
-                  {user.displayName}
-                </span>
-                {hasTargetBand && (
-                  <span className="shrink-0 rounded-full bg-[#eff6ff] px-2 py-0.5 text-xs font-semibold leading-4 text-[#1e40af]">
-                    <span className="hidden sm:inline">Target </span>
-                    {user.targetBand}
+                <span className="flex min-w-0 flex-col items-start leading-tight">
+                  <span className="max-w-[72px] truncate text-sm font-semibold text-[#0f172a] sm:max-w-[140px]">
+                    {user.displayName}
                   </span>
-                )}
+                  {hasTargetBand && (
+                    <span className="hidden text-[11px] font-medium text-[#1e40af] sm:block">
+                      Target band {user.targetBand}
+                    </span>
+                  )}
+                </span>
               </button>
               {menu === "account" && (
                 <div
                   id="account-menu"
-                  className="absolute right-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg"
+                  className="absolute right-4 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg sm:right-0"
                 >
                   <div className="break-words border-b border-slate-100 px-4 py-3">
                     <p className="text-sm font-semibold text-[#0f172a]">
@@ -224,12 +360,18 @@ export default function StudentNavbar() {
                       {user.email}
                     </p>
                     {hasTargetBand && (
-                      <p className="mt-1.5 inline-flex rounded-full bg-[#eff6ff] px-2 py-0.5 text-xs font-semibold text-[#1e40af]">
+                      <p className="mt-1.5 inline-flex rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]">
                         Target band: {user.targetBand}
                       </p>
                     )}
                   </div>
                   <div className="p-1.5" onClick={() => setMenu(null)}>
+                    <Link
+                      className={`${link} text-slate-700 hover:bg-slate-50`}
+                      to="/profile"
+                    >
+                      Profile & learning goals
+                    </Link>
                     <Link
                       className={`${link} text-slate-700 hover:bg-slate-50`}
                       to="/dashboard"
@@ -262,12 +404,6 @@ export default function StudentNavbar() {
                         Administration
                       </Link>
                     )}
-                    <Link
-                      className={`${link} text-slate-700 hover:bg-slate-50`}
-                      to="/profile"
-                    >
-                      Profile & learning goals
-                    </Link>
                   </div>
                   <div className="border-t border-slate-100 p-1.5">
                     <button

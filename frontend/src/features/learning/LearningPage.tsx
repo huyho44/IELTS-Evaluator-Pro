@@ -44,12 +44,8 @@ const SKILL_CARD_THEMES: Record<string, { card: string; badge: string }> = {
   },
 };
 
-const DEFAULT_SKILL_THEME = {
-  card: "border-[#e2e8f0] bg-white",
-  badge: "bg-[#f1f5f9] text-[#475569]",
-};
-
 type Props = { accessToken?: string | null; onSessionExpired?: () => void };
+
 export default function LearningPage(props: Props) {
   const { requestToken, session } = useSession();
   return (
@@ -60,6 +56,7 @@ export default function LearningPage(props: Props) {
     />
   );
 }
+
 function LearningContent({
   accessToken,
   onSessionExpired,
@@ -77,12 +74,14 @@ function LearningContent({
   const [reloadKey, setReloadKey] = useState(0);
   const action = useRef(false);
   const mounted = useRef(false);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
     };
   }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
@@ -112,6 +111,7 @@ function LearningContent({
     void load();
     return () => controller.abort();
   }, [accessToken, onSessionExpired, reloadKey]);
+
   async function open(item: Recommendation) {
     if (action.current) return;
     const lesson = recommendedLessonPath(item);
@@ -139,11 +139,26 @@ function LearningContent({
       setOpening("");
     }
   }
+
+  const hasSuggestedPractice =
+    recommendations?.recommendedActivities.some(
+      (item) => item.learningItem.kind === "PRACTICE",
+    ) ?? false;
+
+  const observedSkills =
+    profile?.skills.filter(
+      (skill) => describeSkill(skill) !== "Not observed yet",
+    ) ?? [];
+  const unobservedSkills =
+    profile?.skills.filter(
+      (skill) => describeSkill(skill) === "Not observed yet",
+    ) ?? [];
+
   return (
     <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
       <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] bg-white p-3.5 sm:flex-row sm:items-start sm:gap-4 sm:p-5">
-        <div className="min-w-0 space-y-2">
-          <span className="block text-xs font-medium uppercase tracking-wide text-[#2563eb]">
+        <div className="min-w-0 space-y-1.5">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
             Your learning
           </span>
           <h1 className="text-xl font-semibold leading-tight text-[#0f172a] sm:text-[28px] sm:font-bold">
@@ -172,6 +187,7 @@ function LearningContent({
           )}
         </button>
       </header>
+
       <nav
         aria-label="Quick student links"
         className="flex flex-wrap items-center gap-2 xl:hidden"
@@ -189,6 +205,7 @@ function LearningContent({
           My Practice Attempts
         </Link>
       </nav>
+
       {error && (
         <div
           role="alert"
@@ -213,6 +230,7 @@ function LearningContent({
           </div>
         </div>
       )}
+
       {loading && (
         <p
           role="status"
@@ -221,17 +239,38 @@ function LearningContent({
           Loading your skills and suggested activities...
         </p>
       )}
+
       {recommendations && (
-        <section className="space-y-2.5 sm:space-y-3">
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-semibold text-[#0f172a]">
-              Suggested next activities
-            </h2>
-            <p className="text-sm leading-relaxed text-[#64748b]">
-              Based on your confirmed learning evidence and the activities
-              available in your courses.
-            </p>
+        <section
+          aria-labelledby="suggested-activities-heading"
+          className="space-y-3.5 rounded-2xl border border-blue-200/80 bg-gradient-to-b from-[#eff6ff]/70 to-white p-4 shadow-sm sm:p-6"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                Recommended next steps
+              </span>
+              <h2
+                id="suggested-activities-heading"
+                className="text-xl font-bold text-[#0f172a]"
+              >
+                Suggested next activities
+              </h2>
+              <p className="text-sm leading-relaxed text-[#64748b]">
+                Based on your confirmed learning evidence and available course
+                activities.
+              </p>
+            </div>
           </div>
+
+          {hasSuggestedPractice && (
+            <p className="rounded-xl border border-blue-200 bg-white/90 px-3.5 py-2.5 text-xs leading-relaxed text-[#1e40af]">
+              Starting a suggested practice uses an available attempt and begins
+              its time limit. An existing in-progress attempt for that version
+              will resume.
+            </p>
+          )}
+
           {!recommendations.recommendedActivities.length ? (
             <p className="rounded-xl border border-[#e2e8f0] bg-white p-5 text-sm text-[#64748b]">
               No suitable activity is available right now. Browse your enrolled
@@ -246,41 +285,42 @@ function LearningContent({
                 return (
                   <article
                     key={item.id}
-                    className="flex flex-col items-start gap-3 rounded-xl border border-[#e2e8f0] bg-white p-3.5 sm:p-[18px]"
+                    className="flex flex-col rounded-xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5"
                   >
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                    <h3 className="text-lg font-semibold leading-snug text-[#0f172a] sm:text-xl">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}
+                      >
+                        {badge.label}
+                      </span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">
+                        {isLesson ? "Lesson" : "Practice"}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-base font-bold leading-snug text-[#0f172a] sm:text-lg">
                       {item.learningItem.title}
                     </h3>
-                    <p className="text-sm leading-relaxed text-[#64748b]">
+                    <p className="mt-1.5 text-sm leading-relaxed text-[#64748b]">
                       {item.reasonText}
                     </p>
-                    <button
-                      type="button"
-                      disabled={!!opening || loading}
-                      onClick={() => void open(item)}
-                      className={
-                        isLesson
-                          ? "w-full rounded-[10px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50 sm:w-auto"
-                          : "w-full rounded-[10px] bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50 sm:w-auto"
-                      }
-                    >
-                      {opening === item.id
-                        ? "Opening..."
-                        : isLesson
-                          ? "Open lesson"
-                          : "Start suggested practice"}
-                    </button>
-                    {!isLesson && (
-                      <p className="text-xs leading-relaxed text-[#64748b]">
-                        Starting uses an available attempt and begins its time
-                        limit. An existing attempt for this version will resume.
-                      </p>
-                    )}
+                    <div className="mt-auto pt-4">
+                      <button
+                        type="button"
+                        disabled={!!opening || loading}
+                        onClick={() => void open(item)}
+                        className={
+                          isLesson
+                            ? "w-full rounded-[10px] border border-[#e2e8f0] bg-white px-3.5 py-2.5 text-sm font-semibold text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
+                            : "w-full rounded-[10px] bg-[#2563eb] px-3.5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
+                        }
+                      >
+                        {opening === item.id
+                          ? "Opening..."
+                          : isLesson
+                            ? "Open lesson"
+                            : "Start suggested practice"}
+                      </button>
+                    </div>
                   </article>
                 );
               })}
@@ -288,50 +328,103 @@ function LearningContent({
           )}
         </section>
       )}
+
       {profile && (
-        <section className="space-y-2.5 sm:space-y-3">
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-semibold text-[#0f172a]">
+        <section
+          aria-labelledby="skill-evidence-heading"
+          className="space-y-3.5 rounded-2xl border border-[#e2e8f0] bg-white p-4 sm:p-6"
+        >
+          <div className="space-y-1">
+            <h2
+              id="skill-evidence-heading"
+              className="text-xl font-bold text-[#0f172a]"
+            >
               Your skill evidence
             </h2>
             <p className="text-sm leading-relaxed text-[#64748b]">
-              Only accepted, published assessments update these observations. They
-              describe the evidence so far and are not an IELTS band prediction.
+              Only accepted, published assessments update these observations.
+              They describe the evidence so far and are not an IELTS band
+              prediction.
             </p>
           </div>
+
           {!profile.skills.length ? (
-            <p className="rounded-xl border border-[#e2e8f0] bg-white p-5 text-sm text-[#64748b]">
+            <p className="rounded-xl border border-[#e2e8f0] bg-slate-50 p-5 text-sm text-[#64748b]">
               Your instructor has not published any skills yet.
             </p>
           ) : (
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-              {profile.skills.map((skill) => {
-                const statusLabel = describeSkill(skill);
-                const theme =
-                  SKILL_CARD_THEMES[statusLabel] ?? DEFAULT_SKILL_THEME;
-                return (
-                  <article
-                    key={skill.skillId}
-                    className={`flex flex-col items-start gap-2 rounded-xl border p-3.5 sm:p-4 ${theme.card}`}
-                  >
-                    <h3 className="text-sm font-semibold text-[#0f172a]">
-                      {skill.name}
-                    </h3>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${theme.badge}`}
-                    >
-                      {statusLabel}
-                    </span>
-                    <p className="text-xs leading-relaxed text-[#475569]">
-                      {skill.evidenceCount
-                        ? `Based on ${skill.evidenceCount} confirmed learning ${skill.evidenceCount === 1 ? "opportunity" : "opportunities"}.`
-                        : "Complete a diagnostic activity or receive confirmed instructor feedback to build evidence."}
-                      {skill.observationStatus === "INSUFFICIENT" &&
-                        " More observations are needed before drawing a stable conclusion."}
+            <div className="space-y-4">
+              {observedSkills.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {observedSkills.map((skill) => {
+                    const statusLabel = describeSkill(skill);
+                    const theme = SKILL_CARD_THEMES[statusLabel] ?? {
+                      card: "border-[#e2e8f0] bg-white",
+                      badge: "bg-[#f1f5f9] text-[#475569]",
+                    };
+                    return (
+                      <article
+                        key={skill.skillId}
+                        className={`flex flex-col items-start gap-2 rounded-xl border p-4 ${theme.card}`}
+                      >
+                        <div className="flex w-full items-start justify-between gap-2">
+                          <h3 className="text-sm font-semibold text-[#0f172a]">
+                            {skill.name}
+                          </h3>
+                        </div>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${theme.badge}`}
+                        >
+                          {statusLabel}
+                        </span>
+                        <p className="text-xs leading-relaxed text-[#475569]">
+                          Based on {skill.evidenceCount} confirmed learning{" "}
+                          {skill.evidenceCount === 1
+                            ? "opportunity"
+                            : "opportunities"}
+                          .
+                          {skill.observationStatus === "INSUFFICIENT" &&
+                            " More observations are needed before drawing a stable conclusion."}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+
+              {unobservedSkills.length > 0 && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[#0f172a]">
+                        Not observed yet
+                      </h3>
+                      <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                        {unobservedSkills.length}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-[#64748b]">
+                      Complete a diagnostic activity or receive confirmed
+                      instructor feedback to build evidence for these skills.
                     </p>
-                  </article>
-                );
-              })}
+                  </div>
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {unobservedSkills.map((skill) => (
+                      <li
+                        key={skill.skillId}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
+                      >
+                        <span className="font-medium text-[#0f172a]">
+                          {skill.name}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-[#475569]">
+                          No evidence yet
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </section>

@@ -35,31 +35,78 @@ function MaterialContent({ material }: { material: LessonMaterial }) {
     }
 
     if (material.kind === "URL" && material.externalUrl) {
-        let safeUrl: string | null = null;
+        let safeUrl: URL | null = null;
 
         try {
-            const url = new URL(material.externalUrl);
+            const parsed = new URL(material.externalUrl);
 
-            if (url.protocol === "https:" || url.protocol === "http:") {
-                safeUrl = url.href;
+            if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+                safeUrl = parsed;
             }
         } catch {
             // Invalid links are displayed as unavailable.
         }
 
-        return safeUrl ? (
-            <a
-                href={safeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block break-all font-semibold text-blue-600 hover:underline"
-            >
-                Open learning resource ↗
-            </a>
-        ) : (
-            <p className="text-sm text-slate-500">
-                This resource link is unavailable.
-            </p>
+        if (!safeUrl) {
+            return (
+                <p className="text-sm text-slate-500">
+                    This resource link is unavailable.
+                </p>
+            );
+        }
+
+        const host = safeUrl.hostname.toLowerCase();
+        const path = safeUrl.pathname.toLowerCase();
+        const isVideo =
+            [
+                "youtube.com",
+                "www.youtube.com",
+                "m.youtube.com",
+                "youtu.be",
+                "vimeo.com",
+                "player.vimeo.com",
+                "loom.com",
+                "www.loom.com",
+            ].includes(host) ||
+            /\.(mp4|webm|mov)$/i.test(path);
+
+        return (
+            <div className="flex flex-col gap-3 rounded-xl border border-blue-200 bg-[#f8fafc] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]">
+                        {isVideo ? (
+                            <>
+                                <svg
+                                    aria-hidden="true"
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                                Video resource
+                            </>
+                        ) : (
+                            "External learning resource"
+                        )}
+                    </span>
+                    <p className="truncate text-sm font-medium text-[#0f172a]">
+                        {safeUrl.hostname}
+                    </p>
+                    <p className="truncate text-xs text-[#64748b]">
+                        {safeUrl.href}
+                    </p>
+                </div>
+                <a
+                    href={safeUrl.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                >
+                    {isVideo ? "Open video ↗" : "Open learning resource ↗"}
+                </a>
+            </div>
         );
     }
 
