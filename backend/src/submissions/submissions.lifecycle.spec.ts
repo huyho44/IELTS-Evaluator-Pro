@@ -3,11 +3,13 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { AccessService } from '../auth/access.service.js';
 import type { Actor } from '../auth/auth.service.js';
 import type { GradingService } from '../grading/grading.service.js';
 import type { PrismaService } from '../prisma.service.js';
+import { submissionPayload } from './submission-validation.js';
 import { SubmissionsService } from './submissions.service.js';
 
 const learner: Actor = {
@@ -89,8 +91,19 @@ function fixture() {
       update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
-    submissionRevision: { findFirst: vi.fn().mockResolvedValue(latest) },
+    submissionRevision: {
+      findFirst: vi.fn().mockResolvedValue(latest),
+      create: vi
+        .fn()
+        .mockImplementation(async ({ data }: { data: object }) => ({
+          id: 'revision-two',
+          ...data,
+        })),
+    },
     attemptDraft: { upsert: vi.fn() },
+    gradingRun: { findFirst: vi.fn().mockResolvedValue(null) },
+    reviewCase: { findFirst: vi.fn().mockResolvedValue({ id: 'review-one' }) },
+    outboxEvent: { findFirst: vi.fn().mockResolvedValue(null) },
     auditEvent: { create: vi.fn() },
   };
   const transaction = vi.fn(async (work: (tx: typeof db) => Promise<unknown>) =>
@@ -366,5 +379,100 @@ describe('Explicit Writing revision editing', () => {
     );
     expect(db.attemptDraft.upsert).not.toHaveBeenCalled();
     expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('Writing revision resubmission guard', () => {
+  const attemptUuid = '4b845968-4d95-43ee-918a-2d66a6b414f5';
+  const hashFor = (writingText: string) =>
+    createHash('sha256')
+      .update(
+        JSON.stringify(
+          submissionPayload({ attemptId: attemptUuid, writingText }, 'WRITING'),
+        ),
+      )
+      .digest('hex');
+
+  it('rejects an unedited WRITING revision while IN_PROGRESS instead of returning the earlier revision receipt', async () => {
+    const { service, db, attempt, latest, grading } = fixture();
+    attempt.id = attemptUuid;
+    attempt.status = 'IN_PROGRESS';
+    attempt.expiresAt = new Date('2099-01-01');
+    Object.assign(latest, { contentHash: hashFor(latest.writingText) });
+
+    await expect(
+      service.submitAssignment(
+        attempt.assignmentId,
+        { attemptId: attemptUuid, writingText: latest.writingText },
+        learner,
+      ),
+    ).rejects.toThrow(
+      'Please revise your essay before submitting a new revision.',
+    );
+    expect(db.submissionRevision.create).not.toHaveBeenCalled();
+    expect(db.attempt.update).not.toHaveBeenCalled();
+    expect(grading.queueRevision).not.toHaveBeenCalled();
+  });
+
+  it('creates Revision 2 and marks the attempt SUBMITTED after editing an IN_PROGRESS WRITING draft', async () => {
+    const { service, db, attempt, latest, grading } = fixture();
+    attempt.id = attemptUuid;
+    attempt.status = 'IN_PROGRESS';
+    attempt.expiresAt = new Date('2099-01-01');
+    Object.assign(latest, { contentHash: hashFor(latest.writingText) });
+
+    const receipt = await service.submitAssignment(
+      attempt.assignmentId,
+      {
+        attemptId: attemptUuid,
+        writingText: 'Revised essay text with concrete evidence.',
+      },
+      learner,
+    );
+
+    expect(receipt).toMatchObject({
+      statusCode: 202,
+      revisionId: 'revision-two',
+      attemptId: attemptUuid,
+      status: 'AWAITING_REVIEW',
+    });
+    expect(db.submissionRevision.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          attemptId: attemptUuid,
+          revisionNo: 2,
+          writingText: 'Revised essay text with concrete evidence.',
+        }),
+      }),
+    );
+    expect(db.attempt.update).toHaveBeenCalledWith({
+      where: { id: attemptUuid },
+      data: { status: 'SUBMITTED' },
+    });
+    expect(grading.queueRevision).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps idempotent receipt return when retrying the same text after SUBMITTED', async () => {
+    const { service, db, attempt, latest, grading } = fixture();
+    attempt.id = attemptUuid;
+    attempt.status = 'SUBMITTED';
+    attempt.expiresAt = new Date('2099-01-01');
+    Object.assign(latest, { contentHash: hashFor(latest.writingText) });
+
+    const receipt = await service.submitAssignment(
+      attempt.assignmentId,
+      { attemptId: attemptUuid, writingText: latest.writingText },
+      learner,
+    );
+
+    expect(receipt).toMatchObject({
+      statusCode: 202,
+      revisionId: 'revision-one',
+      attemptId: attemptUuid,
+      status: 'AWAITING_REVIEW',
+    });
+    expect(db.submissionRevision.create).not.toHaveBeenCalled();
+    expect(db.attempt.update).not.toHaveBeenCalled();
+    expect(grading.queueRevision).not.toHaveBeenCalled();
   });
 });

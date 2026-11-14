@@ -46,6 +46,7 @@ export default function WritingAttemptPage({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [message, setMessage] = useState("");
   const [conflict, setConflict] = useState(false);
   const [uncertain, setUncertain] = useState(false);
@@ -75,6 +76,9 @@ export default function WritingAttemptPage({
     attempt.status === "SUBMITTED" &&
     !pastDue &&
     nextRevision <= version.maxRevisions;
+  const selectedRevisionObj =
+    revisions.find((revision) => revision.id === selectedRevision) ??
+    revisions[0];
 
   const handleFeedbackStatusChange = useCallback(
     (revisionId: string, hasFeedback: boolean) => {
@@ -126,6 +130,7 @@ export default function WritingAttemptPage({
     setBusy("checking");
     setError("");
     setSaveError("");
+    setSubmitError("");
     try {
       const latest = await getStudentAttempt(attempt.id, accessToken);
       setAttempt(latest);
@@ -167,6 +172,7 @@ export default function WritingAttemptPage({
     setBusy("saving");
     setError("");
     setSaveError("");
+    setSubmitError("");
     setMessage("");
     const snapshot = text;
     try {
@@ -211,9 +217,52 @@ export default function WritingAttemptPage({
     setBusy("submitting");
     setError("");
     setSaveError("");
+    setSubmitError("");
     setMessage("");
     try {
       const receipt = await submitWriting(attempt, accessToken, text);
+      if (
+        attempt.submissionRevisions.some(
+          (item) => item.id === receipt.revisionId,
+        )
+      ) {
+        try {
+          const latestAttempt = await getStudentAttempt(attempt.id, accessToken);
+          setAttempt(latestAttempt);
+          if (latestAttempt.status !== "SUBMITTED") {
+            setSubmitError(
+              "No new revision was recorded. Please revise your essay before submitting a new revision.",
+            );
+            return;
+          }
+          const matchedNewRevision = latestAttempt.submissionRevisions.find(
+            (item) =>
+              item.id === receipt.revisionId &&
+              item.revisionNo === nextRevision,
+          );
+          if (matchedNewRevision) {
+            setSavedText(text);
+            setSelectedRevision(matchedNewRevision.id);
+            setMessage(
+              "Your essay has been submitted. Feedback will update automatically below.",
+            );
+            return;
+          }
+          setSelectedRevision(
+            selectRevisionId(latestAttempt.submissionRevisions, null),
+          );
+          setMessage(
+            "This attempt was already updated. Showing the latest submission confirmed by the server.",
+          );
+          return;
+        } catch {
+          setUncertain(true);
+          setSubmitError(
+            "Submission status could not be confirmed. Check current status before trying again.",
+          );
+          return;
+        }
+      }
       setSavedText(text);
       setSelectedRevision(receipt.revisionId);
       setAttempt((previous) => ({
@@ -243,6 +292,15 @@ export default function WritingAttemptPage({
         );
       }
     } catch (cause) {
+      if (
+        cause instanceof StudentApiError &&
+        cause.status === 409 &&
+        cause.message.toLowerCase().includes("revise your essay")
+      ) {
+        setUncertain(false);
+        setSubmitError(cause.message);
+        return;
+      }
       failed(cause);
       if (
         !(cause instanceof StudentApiError) ||
@@ -277,8 +335,9 @@ export default function WritingAttemptPage({
       setLockVersion(latest.attemptDraft?.lockVersion ?? 0);
       setConflict(false);
       setUncertain(false);
+      setSubmitError("");
       setMessage(
-        "A new draft is open using your latest essay. Earlier submissions and feedback are preserved.",
+        "A new draft is open using your latest essay. Earlier submissions remain available in revision history.",
       );
     } catch (cause) {
       failed(cause);
@@ -329,8 +388,14 @@ export default function WritingAttemptPage({
   const selectedFeedbackKnown = selectedRevision
     ? feedbackByRevision[selectedRevision]
     : undefined;
+  const hasConfirmedFeedback = revisions.some(
+    (revision) => feedbackByRevision[revision.id] === true,
+  );
 
   return (
+    <div
+      className={`${editing ? "student-surface-attempt-active" : "student-surface-attempt-review"} min-h-[calc(100vh-4rem)]`}
+    >
     <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-8 sm:py-8">
       <nav aria-label="Writing practice navigation">
         <Link
@@ -343,26 +408,81 @@ export default function WritingAttemptPage({
       </nav>
 
       <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <span className="text-xs font-bold uppercase tracking-wide text-[#2563eb]">
-          Writing practice
-        </span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+            {editing
+              ? canEdit
+                ? revisions.length > 0
+                  ? "Writing practice · Preparing new revision"
+                  : "Writing practice · Writing draft"
+                : "Writing practice · Editing window closed"
+              : revisions.length === 0
+                ? "Writing practice · Attempt closed"
+                : canRevise
+                  ? "Writing practice · Reviewing submission"
+                  : "Writing practice · Reviewing final submission"}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                editing
+                  ? canEdit
+                    ? "border border-blue-200 bg-blue-50 text-[#1e40af]"
+                    : "border border-amber-200 bg-amber-50 text-amber-800"
+                  : revisions.length > 0
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border border-amber-200 bg-amber-50 text-amber-800"
+              }`}
+            >
+              {editing
+                ? canEdit
+                  ? `Editing revision ${nextRevision} draft`
+                  : pastDue
+                    ? "Deadline passed — Read only"
+                    : "Time limit expired — Read only"
+                : revisions.length > 0
+                  ? `Viewing submitted revision ${selectedRevisionObj?.revisionNo ?? 1}`
+                  : "Attempt closed — Read only"}
+            </span>
+            {editing && revisions.length > 0 && (
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                {hasConfirmedFeedback
+                  ? "Earlier feedback available below"
+                  : "Earlier submissions below"}
+              </span>
+            )}
+            {!editing && revisions.length > 0 && !canRevise && (
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                {pastDue
+                  ? "Deadline passed"
+                  : nextRevision > version.maxRevisions
+                    ? "All revisions used"
+                    : "Attempt closed"}
+              </span>
+            )}
+          </div>
+        </div>
         <h1 className="mt-1.5 text-2xl font-bold text-[#0f172a]">
           {version.assignment.title}
         </h1>
+        <p className="mt-1.5 text-xs leading-5 text-slate-600">
+          {editing
+            ? canEdit
+              ? revisions.length > 0
+                ? hasConfirmedFeedback
+                  ? "Save your draft anytime or submit when ready. Confirmed feedback from earlier revisions is below."
+                  : "Save your draft anytime or submit when ready. Your earlier submitted revisions are available below."
+                : "Save your draft anytime or submit when ready for evaluation."
+              : "Your saved draft is preserved below in read-only mode."
+            : revisions.length === 0
+              ? "No revisions were submitted before this attempt closed."
+              : canRevise
+                ? "Review your submission and evaluation details below, or start a new revision when ready."
+                : "Review your submitted essay and evaluation details below."}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
           <span className="font-semibold text-[#0f172a]">
             Attempt {attempt.attemptNo}
-          </span>
-          <span
-            className={`rounded-full px-2.5 py-0.5 font-semibold ${
-              attempt.status === "SUBMITTED"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-blue-50 text-[#1e40af]"
-            }`}
-          >
-            {attempt.status === "IN_PROGRESS"
-              ? "In progress"
-              : attempt.status.replaceAll("_", " ")}
           </span>
           <span>
             {revisions.length} / {version.maxRevisions} revisions submitted
@@ -423,12 +543,12 @@ export default function WritingAttemptPage({
       {editing ? (
         <div className="space-y-6">
           <div className="grid items-start gap-6 lg:grid-cols-2">
-            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <section className="space-y-4 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6">
               <h2 className="text-lg font-bold text-[#0f172a]">Writing task</h2>
-              <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+              <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
                 {version.activityVersion.promptText}
               </p>
-              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-500">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">
                 {version.activityVersion.instructions}
               </p>
               {version.rubricVersion && (
@@ -439,11 +559,28 @@ export default function WritingAttemptPage({
               )}
             </section>
 
-            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <section
+              className={`space-y-4 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
+                canEdit
+                  ? "border-blue-200/90 ring-1 ring-blue-50"
+                  : "border-slate-200"
+              }`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-bold text-[#0f172a]">
-                  Revision {nextRevision} draft
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-[#0f172a]">
+                    Revision {nextRevision} draft
+                  </h2>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                      canEdit
+                        ? "bg-blue-50 text-[#1e40af]"
+                        : "bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    {canEdit ? "Active draft" : "Editing closed"}
+                  </span>
+                </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="font-medium text-slate-500">
                     {wordCount} words
@@ -467,6 +604,7 @@ export default function WritingAttemptPage({
                   onChange={(event) => {
                     setText(event.target.value);
                     setSaveError("");
+                    setSubmitError("");
                     setMessage("");
                   }}
                   className="w-full rounded-lg border border-slate-300 p-4 text-sm leading-7 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
@@ -516,6 +654,14 @@ export default function WritingAttemptPage({
                     Save failed: {saveError}
                   </p>
                 )}
+                {submitError && (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
+                  >
+                    {submitError}
+                  </p>
+                )}
               </div>
             </section>
           </div>
@@ -523,9 +669,16 @@ export default function WritingAttemptPage({
           {revisions.length > 0 && (
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-base font-bold text-[#0f172a]">
-                  Previous revision history
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-[#0f172a]">
+                    Earlier submissions
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {canEdit
+                      ? `Viewing submitted Revision ${selectedRevisionObj?.revisionNo ?? 1} while drafting Revision ${nextRevision}`
+                      : `Viewing submitted Revision ${selectedRevisionObj?.revisionNo ?? 1} (Revision ${nextRevision} draft is read-only)`}
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {revisions.map((revision) => (
                     <button
@@ -551,6 +704,7 @@ export default function WritingAttemptPage({
                   revisionId={selectedRevision}
                   attemptId={attempt.id}
                   accessToken={accessToken}
+                  compact={true}
                   onSessionExpired={onSessionExpired}
                   onFeedbackStatusChange={handleFeedbackStatusChange}
                 />
@@ -700,5 +854,6 @@ export default function WritingAttemptPage({
         </div>
       )}
     </main>
+    </div>
   );
 }

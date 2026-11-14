@@ -149,7 +149,8 @@ function Content() {
     !user.roles.includes("INSTRUCTOR");
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
+    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+      <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
           Account settings
@@ -446,6 +447,7 @@ function Content() {
           )}
         </>
       )}
-    </main>
+      </main>
+    </div>
   );
 }

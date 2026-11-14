@@ -6,8 +6,43 @@ export type PracticeAssignment = {
     assignmentVersions: {
         id: string;
         versionNo: number;
+        maxAttempts: number;
+        timeLimitSeconds: number | null;
     }[];
 };
+
+export function formatMaxAttempts(maxAttempts: number): string {
+    return maxAttempts === 1
+        ? "Up to 1 attempt"
+        : `Up to ${maxAttempts} attempts`;
+}
+
+export function formatTimeLimit(timeLimitSeconds: number | null): string {
+    if (timeLimitSeconds === null) {
+        return "No time limit";
+    }
+    if (timeLimitSeconds % 60 === 0) {
+        const minutes = timeLimitSeconds / 60;
+        return minutes === 1
+            ? "1 minute per attempt"
+            : `${minutes} minutes per attempt`;
+    }
+    if (timeLimitSeconds < 60) {
+        return timeLimitSeconds === 1
+            ? "1 second per attempt"
+            : `${timeLimitSeconds} seconds per attempt`;
+    }
+    const minutes = Math.floor(timeLimitSeconds / 60);
+    const seconds = timeLimitSeconds % 60;
+    return `${minutes}m ${seconds}s per attempt`;
+}
+
+export function formatAssignmentLimits(version: {
+    maxAttempts: number;
+    timeLimitSeconds: number | null;
+}): string {
+    return `${formatMaxAttempts(version.maxAttempts)} · ${formatTimeLimit(version.timeLimitSeconds)}`;
+}
 
 export class PracticeApiError extends Error {
     readonly status: number;
@@ -41,7 +76,14 @@ function isAssignment(value: unknown): value is PracticeAssignment {
             isObject(version) &&
             typeof version.id === "string" &&
             typeof version.versionNo === "number" &&
-            Number.isInteger(version.versionNo),
+            Number.isInteger(version.versionNo) &&
+            typeof version.maxAttempts === "number" &&
+            Number.isInteger(version.maxAttempts) &&
+            version.maxAttempts >= 1 &&
+            (version.timeLimitSeconds === null ||
+                (typeof version.timeLimitSeconds === "number" &&
+                    Number.isInteger(version.timeLimitSeconds) &&
+                    version.timeLimitSeconds > 0)),
     );
 }
 

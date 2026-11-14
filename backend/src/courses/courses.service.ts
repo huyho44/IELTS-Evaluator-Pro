@@ -94,6 +94,52 @@ export class CoursesService {
     const progressByLesson = new Map(
       progresses.map(({ lessonId, ...progress }) => [lessonId, progress]),
     );
+    const validEnrollment = Boolean(
+      enrolled && ['ACTIVE', 'COMPLETED'].includes(enrolled.status),
+    );
+    const practiceIds = learningItems
+      .filter((item) => item.kind === 'PRACTICE')
+      .map((item) => item.id);
+    const accepted =
+      actor && validEnrollment && practiceIds.length
+        ? await this.prisma.acceptedAssessment.findMany({
+            where: {
+              isCurrent: true,
+              publishedAt: { lte: new Date() },
+              result: {
+                revision: {
+                  attempt: {
+                    learnerId: actor.id,
+                    assignmentVersion: {
+                      activityId: { in: practiceIds },
+                      assignment: { courseId: id },
+                    },
+                  },
+                },
+              },
+            },
+            select: {
+              result: {
+                select: {
+                  revision: {
+                    select: {
+                      attempt: {
+                        select: {
+                          assignmentVersion: { select: { activityId: true } },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          })
+        : [];
+    const completedPractices = new Set(
+      accepted.map(
+        (a) => a.result.revision.attempt.assignmentVersion.activityId,
+      ),
+    );
     return {
       ...details,
       sections: chapters,
@@ -107,6 +153,8 @@ export class CoursesService {
                 completedAt: null,
               })
             : null,
+        practiceCompleted:
+          item.kind === 'PRACTICE' && completedPractices.has(item.id),
       })),
     };
   }

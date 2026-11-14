@@ -1,12 +1,18 @@
 import CompletionBadge from "./CompletionBadge";
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useSession } from "../auth/session";
 import {
   getCourseDetail,
   type CourseDetail,
   type CourseLearningItem,
 } from "./courseDetailApi";
 import CourseEnrollmentPanel from "./CourseEnrollmentPanel";
+import {
+  getSyllabusStorageKey,
+  readStoredOpenSectionIds,
+  writeStoredOpenSectionIds,
+} from "./syllabusStorage";
 
 const SKILL_AREA_BADGES: Record<string, string> = {
   READING: "bg-sky-50 text-sky-700 border border-sky-200",
@@ -34,33 +40,85 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
     <ul className="divide-y divide-slate-200">
       {items.map((item) => {
         const skillArea = item.practiceActivity?.skillArea;
+        const isLesson = item.kind === "LESSON";
         return (
-          <li key={item.id} className="space-y-2 px-3 py-4">
+          <li
+            key={item.id}
+            className="space-y-2 px-3.5 py-4 transition-colors hover:bg-slate-50/70"
+          >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 break-words text-sm font-medium text-slate-800">
-                {courseId &&
-                (item.kind === "LESSON" || item.kind === "PRACTICE") ? (
-                  <Link
-                    to={
-                      `/courses/${encodeURIComponent(courseId)}/` +
-                      (item.kind === "LESSON" ? "lessons" : "practices") +
-                      `/${encodeURIComponent(item.id)}`
-                    }
-                    className="text-blue-700 hover:underline"
-                  >
-                    {item.title}
-                  </Link>
-                ) : (
-                  item.title
-                )}
-                {item.progress?.status === "COMPLETED" && (
-                  <div className="mt-2">
-                    <CompletionBadge />
-                  </div>
-                )}
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span
+                  aria-hidden="true"
+                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                    isLesson
+                      ? "bg-blue-50 text-[#2563eb]"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {isLesson ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                      <path d="m9 14 2 2 4-4" />
+                    </svg>
+                  )}
+                </span>
+                <div className="min-w-0 break-words text-sm font-medium text-slate-800">
+                  {courseId && (isLesson || item.kind === "PRACTICE") ? (
+                    <Link
+                      to={
+                        `/courses/${encodeURIComponent(courseId)}/` +
+                        (isLesson ? "lessons" : "practices") +
+                        `/${encodeURIComponent(item.id)}`
+                      }
+                      className="font-semibold text-[#1d4ed8] hover:underline"
+                    >
+                      {item.title}
+                    </Link>
+                  ) : (
+                    item.title
+                  )}
+                  {isLesson
+                    ? item.progress?.status === "COMPLETED" && (
+                        <div className="mt-2">
+                          <CompletionBadge />
+                        </div>
+                      )
+                    : item.kind === "PRACTICE" &&
+                      item.practiceCompleted === true && (
+                        <div className="mt-2">
+                          <CompletionBadge />
+                        </div>
+                      )}
+                </div>
               </div>
 
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                 {skillArea && (
                   <span
                     className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
@@ -73,19 +131,19 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                 )}
                 <span
                   className={
-                    "rounded-md px-2 py-1 text-xs font-semibold " +
-                    (item.kind === "LESSON"
+                    "rounded-md px-2 py-0.5 text-[11px] font-semibold " +
+                    (isLesson
                       ? "bg-blue-50 text-blue-700"
                       : "bg-amber-50 text-amber-800")
                   }
                 >
-                  {item.kind === "LESSON" ? "Lesson" : "Practice"}
+                  {isLesson ? "Lesson" : "Practice"}
                 </span>
               </div>
             </div>
 
             {item.lesson?.summary && (
-              <p className="text-sm leading-6 text-slate-500">
+              <p className="pl-9 text-xs leading-5 text-slate-500">
                 {item.lesson.summary}
               </p>
             )}
@@ -104,10 +162,16 @@ export default function CourseDetailPage({
   accessToken = null,
 }: CourseDetailPageProps) {
   const { courseId } = useParams<{ courseId: string }>();
+  const { session } = useSession();
+  const userId = session?.user.id ?? null;
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [openSectionsByKey, setOpenSectionsByKey] = useState<{
+    key: string;
+    ids: string[];
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -154,6 +218,30 @@ export default function CourseDetailPage({
   const sections = [...(course?.sections ?? [])].sort(
     (a, b) => a.position - b.position,
   );
+  const validSectionIds = sections.map((section) => section.id);
+  const syllabusStorageKey = course
+    ? getSyllabusStorageKey(course.id, userId)
+    : null;
+  const resolvedOpenSectionIds = !syllabusStorageKey
+    ? []
+    : openSectionsByKey?.key === syllabusStorageKey
+      ? openSectionsByKey.ids.filter((id) => validSectionIds.includes(id))
+      : (readStoredOpenSectionIds(syllabusStorageKey, validSectionIds) ??
+        (validSectionIds.length > 0 ? [validSectionIds[0]] : []));
+
+  function handleToggleSection(
+    event: MouseEvent<HTMLElement>,
+    sectionId: string,
+  ) {
+    event.preventDefault();
+    if (!syllabusStorageKey) return;
+    const currentlyOpen = resolvedOpenSectionIds.includes(sectionId);
+    const nextIds = currentlyOpen
+      ? resolvedOpenSectionIds.filter((id) => id !== sectionId)
+      : [...resolvedOpenSectionIds, sectionId];
+    setOpenSectionsByKey({ key: syllabusStorageKey, ids: nextIds });
+    writeStoredOpenSectionIds(syllabusStorageKey, nextIds);
+  }
 
   const items = [...(course?.learningItems ?? [])].sort(
     (a, b) => a.position - b.position,
@@ -184,6 +272,7 @@ export default function CourseDetailPage({
     lessonCount > 0 ? Math.round((completedLessons / lessonCount) * 100) : 0;
 
   return (
+    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
       <Link
         to="/courses"
@@ -228,15 +317,15 @@ export default function CourseDetailPage({
         </div>
       ) : course ? (
         <>
-          <h1 className="break-words text-2xl font-bold text-[#0f172a]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+            Course overview
+          </p>
+
+          <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
             {course.title}
           </h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-              Course overview
-            </span>
-
             {skillAreas.map((area) => (
               <span
                 key={area}
@@ -283,15 +372,20 @@ export default function CourseDetailPage({
               </p>
 
               {hasLessonProgress && (
-                <div className="mt-5 rounded-xl border border-blue-100 bg-[#f8fafc] p-4">
+                <div className="mt-5 rounded-xl border border-blue-200/90 border-l-4 border-l-[#2563eb] bg-[#eff6ff]/65 p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="font-semibold text-[#0f172a]">
                       Lesson progress
                     </span>
-                    <span className="font-semibold text-[#1e40af]">
-                      {completedLessons} of {lessonCount}{" "}
-                      {lessonCount === 1 ? "lesson" : "lessons"} completed
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-[#1e40af]">
+                        {completedLessons} of {lessonCount}{" "}
+                        {lessonCount === 1 ? "lesson" : "lessons"} completed
+                      </span>
+                      <span className="rounded-full border border-blue-200 bg-white px-2.5 py-0.5 text-xs font-bold text-[#2563eb]">
+                        {lessonProgressPct}%
+                      </span>
+                    </div>
                   </div>
                   <div
                     role="progressbar"
@@ -299,7 +393,7 @@ export default function CourseDetailPage({
                     aria-valuenow={completedLessons}
                     aria-valuemin={0}
                     aria-valuemax={lessonCount}
-                    className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
+                    className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-blue-100"
                   >
                     <div
                       className="h-full rounded-full bg-[#2563eb] transition-all"
@@ -313,20 +407,17 @@ export default function CourseDetailPage({
                 </div>
               )}
 
-              <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+              <dl className="mt-5 grid grid-cols-3 divide-x divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 text-center sm:text-left">
                 {[
                   { label: "Chapters", value: sections.length },
                   { label: "Published lessons", value: lessonCount },
                   { label: "Practice activities", value: practiceCount },
                 ].map((fact) => (
-                  <div
-                    key={fact.label}
-                    className="rounded-lg border border-slate-200 bg-slate-50 p-3"
-                  >
-                    <dt className="text-xs font-medium leading-5 text-slate-500">
+                  <div key={fact.label} className="px-3 py-3 sm:px-4">
+                    <dt className="text-[11px] font-medium leading-4 text-slate-500 sm:text-xs">
                       {fact.label}
                     </dt>
-                    <dd className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                    <dd className="mt-1 text-xl font-bold tracking-tight text-[#0f172a]">
                       {fact.value}
                     </dd>
                   </div>
@@ -360,16 +451,21 @@ export default function CourseDetailPage({
                   return (
                     <details
                       key={section.id}
-                      open={index === 0}
-                      className="group overflow-hidden rounded-xl border border-slate-200"
+                      open={resolvedOpenSectionIds.includes(section.id)}
+                      className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors open:border-blue-200 open:shadow-sm"
                     >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50 p-4 text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden">
+                      <summary
+                        onClick={(event) =>
+                          handleToggleSection(event, section.id)
+                        }
+                        className="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50/90 p-4 text-slate-700 transition-colors hover:bg-slate-100 group-open:bg-[#eff6ff]/70 group-open:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden"
+                      >
                         <span className="min-w-0">
                           <span className="block break-words text-sm font-semibold leading-6">
                             {index + 1}. {section.title}
                           </span>
 
-                          <span className="mt-1 block text-xs text-slate-500">
+                          <span className="mt-1 block text-xs text-slate-500 group-open:text-[#1e40af]/80">
                             {sectionItems.length}{" "}
                             {sectionItems.length === 1
                               ? "learning item"
@@ -379,11 +475,11 @@ export default function CourseDetailPage({
 
                         <span
                           aria-hidden="true"
-                          className="mr-1 h-2 w-2 shrink-0 rotate-45 border-b-2 border-r-2 border-slate-400 transition-transform duration-200 group-open:rotate-[225deg] motion-reduce:transition-none"
+                          className="mr-1 h-2 w-2 shrink-0 rotate-45 border-b-2 border-r-2 border-slate-400 transition-transform duration-200 group-open:rotate-[225deg] group-open:border-[#2563eb] motion-reduce:transition-none"
                         />
                       </summary>
 
-                      <div className="border-t border-slate-200">
+                      <div className="border-t border-slate-200 group-open:border-blue-100">
                         <SyllabusItems items={sectionItems} />
                       </div>
                     </details>
@@ -420,5 +516,6 @@ export default function CourseDetailPage({
         </>
       ) : null}
     </main>
+    </div>
   );
 }

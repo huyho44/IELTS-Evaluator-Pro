@@ -75,8 +75,8 @@ export default function StudentNavbar() {
   function navigation(mobile = false) {
     const tab = (active: boolean) =>
       mobile
-        ? `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "bg-[#eff6ff] text-[#2563eb]" : "text-[#64748b] hover:bg-slate-50 hover:text-[#2563eb]"}`
-        : `flex items-center border-b-2 whitespace-nowrap px-1 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "border-[#2563eb] text-[#2563eb]" : "border-transparent text-[#64748b] hover:text-[#2563eb]"}`;
+        ? `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "bg-[#eff6ff] text-[#2563eb]" : "text-[#475569] hover:bg-white/80 hover:text-[#2563eb]"}`
+        : `flex items-center border-b-2 whitespace-nowrap px-1 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "border-[#2563eb] text-[#2563eb]" : "border-transparent text-[#475569] hover:text-[#2563eb]"}`;
     return (
       <>
         {user?.roles.includes("LEARNER") && (
@@ -97,7 +97,7 @@ export default function StudentNavbar() {
         >
           Courses
         </Link>
-        {(!user || user.roles.includes("LEARNER")) && (
+        {user?.roles.includes("LEARNER") && (
           <Link
             to="/practice-history"
             aria-current={practice ? "page" : undefined}
@@ -138,7 +138,7 @@ export default function StudentNavbar() {
   }
 
   return (
-    <header ref={root} className="border-b border-[#e2e8f0] bg-white">
+    <header ref={root} className="student-navbar-surface border-b border-[#dbeafe]">
       <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-3 gap-y-0 px-4 sm:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:items-stretch">
         <Link
           to="/courses"
@@ -165,7 +165,7 @@ export default function StudentNavbar() {
               aria-expanded={menu === "notifications"}
               aria-controls="notifications-panel"
               onClick={(e) => toggle("notifications", e.currentTarget)}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[#64748b] transition-colors hover:bg-slate-100 hover:text-[#0f172a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-slate-100 text-[#2563eb]" : ""}`}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[#475569] transition-colors hover:bg-[#eff6ff]/80 hover:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-[#eff6ff] text-[#2563eb] ring-1 ring-[#bfdbfe]" : ""}`}
             >
               <svg
                 aria-hidden="true"
@@ -328,7 +328,7 @@ export default function StudentNavbar() {
                 aria-expanded={menu === "account"}
                 aria-controls="account-menu"
                 onClick={(e) => toggle("account", e.currentTarget)}
-                className="flex max-w-[140px] items-center gap-2 rounded-full border border-slate-200/90 bg-[#f8fafc] p-1 pr-2.5 text-left transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3"
+                className={`flex max-w-[140px] items-center gap-2 rounded-full border border-[#dbeafe] bg-white/75 p-1 pr-2.5 text-left transition-colors hover:border-[#bfdbfe] hover:bg-[#eff6ff]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3 ${menu === "account" ? "border-[#bfdbfe] bg-[#eff6ff]/80" : ""}`}
               >
                 <span
                   aria-hidden="true"
@@ -423,13 +423,13 @@ export default function StudentNavbar() {
           ) : (
             <div className="flex items-center gap-2 text-sm font-semibold sm:gap-3">
               <Link
-                className="rounded-lg px-2 py-2 text-[#1e40af] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                className="rounded-lg px-3 py-2 text-[#1e40af] transition-colors hover:bg-[#eff6ff]/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 to="/login"
               >
                 Sign in
               </Link>
               <Link
-                className="rounded-lg bg-[#2563eb] px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                className="rounded-lg bg-[#2563eb] px-3.5 py-2 text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 to="/register"
               >
                 Sign up
@@ -441,7 +441,7 @@ export default function StudentNavbar() {
             aria-label="Open navigation menu"
             aria-expanded={menu === "mobile"}
             aria-controls="mobile-navigation"
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#0f172a] transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] xl:hidden ${menu === "mobile" ? "bg-slate-100 text-[#2563eb]" : ""}`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#0f172a] transition-colors hover:bg-[#eff6ff]/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] xl:hidden ${menu === "mobile" ? "bg-[#eff6ff] text-[#2563eb] ring-1 ring-[#bfdbfe]" : ""}`}
             onClick={(e) => toggle("mobile", e.currentTarget)}
           >
             <svg
@@ -463,7 +463,7 @@ export default function StudentNavbar() {
           <nav
             id="mobile-navigation"
             aria-label="Mobile student navigation"
-            className="flex w-full flex-col gap-1 border-t border-slate-100 py-2 xl:hidden"
+            className="flex w-full flex-col gap-1 border-t border-[#dbeafe]/80 bg-white/90 py-2 xl:hidden"
           >
             {navigation(true)}
           </nav>

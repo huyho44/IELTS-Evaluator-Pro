@@ -25,3 +25,55 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.student-surface-catalog {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(
+      640px circle at 8% -4%,
+      rgba(219, 234, 254, 0.72),
+      transparent 62%
+    ),
+    radial-gradient(
+      520px circle at 92% 6%,
+      rgba(239, 246, 255, 0.85),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #eff6ff 0%, #f8fafc 260px);
+}
+
+.student-surface-overview {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(
+      560px circle at 12% 0%,
+      rgba(239, 246, 255, 0.75),
+      transparent 58%
+    ),
+    linear-gradient(180deg, #eff6ff 0%, #f8fafc 220px);
+}
+
+.student-surface-lesson {
+  background-color: #f8fafc;
+  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 180px);
+}
+
+.student-surface-attempt-active {
+  background-color: #f8fafc;
+  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 140px);
+}
+
+.student-surface-attempt-review {
+  background-color: #f8fafc;
+  background-image: linear-gradient(180deg, #eff6ff 0%, #f8fafc 190px);
+}
+
+.student-navbar-surface {
+  background-color: #ffffff;
+  background-image: linear-gradient(
+    180deg,
+    #eff6ff 0%,
+    #f8fafc 52%,
+    #ffffff 100%
+  );
+}

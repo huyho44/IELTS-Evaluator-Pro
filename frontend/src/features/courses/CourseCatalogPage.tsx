@@ -9,6 +9,15 @@ import {
 } from "./enrollmentsApi";
 import { catalogPage } from "./catalogPagination";
 
+type CatalogFilter = "ALL" | "OPEN" | "MY_COURSES";
+
+type EnrollmentsSnapshot = {
+  userId: string;
+  status: "loading" | "ready" | "error";
+  statuses: Record<string, EnrollmentStatus>;
+  error: string | null;
+};
+
 export default function CourseCatalogPage({
   loadCourses = getCourses,
 }: {
@@ -22,14 +31,34 @@ export default function CourseCatalogPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [enrollmentsState, setEnrollmentsState] = useState<{
-    userId: string;
-    statuses: Record<string, EnrollmentStatus>;
-  } | null>(null);
+  const [enrollmentsReloadKey, setEnrollmentsReloadKey] = useState(0);
+  const [enrollmentsState, setEnrollmentsState] =
+    useState<EnrollmentsSnapshot | null>(null);
 
   const [search, setSearch] = useState("");
-  const [openOnly, setOpenOnly] = useState(false);
-  const [page, setPage] = useState(1);
+  const [filterState, setFilterState] = useState<{
+    userKey: string | null;
+    mode: CatalogFilter;
+  }>({ userKey: userId, mode: "ALL" });
+  const [pageState, setPageState] = useState<{
+    userKey: string | null;
+    page: number;
+  }>({ userKey: userId, page: 1 });
+
+  const filter: CatalogFilter =
+    filterState.userKey === userId &&
+    (filterState.mode !== "MY_COURSES" || (isLearner && Boolean(userId)))
+      ? filterState.mode
+      : "ALL";
+  const page = pageState.userKey === userId ? pageState.page : 1;
+
+  function setFilter(next: CatalogFilter) {
+    setFilterState({ userKey: userId, mode: next });
+  }
+
+  function setPage(next: number) {
+    setPageState({ userKey: userId, page: next });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,6 +103,13 @@ export default function CourseCatalogPage({
     const expectedUserId = userId;
 
     async function loadEnrollments() {
+      setEnrollmentsState((previous) => ({
+        userId: expectedUserId,
+        status: "loading",
+        statuses:
+          previous?.userId === expectedUserId ? previous.statuses : {},
+        error: null,
+      }));
       try {
         const mine = await getMyEnrollments(token, controller.signal);
         if (controller.signal.aborted) return;
@@ -81,34 +117,72 @@ export default function CourseCatalogPage({
         for (const item of mine) {
           statuses[item.courseId] = item.status;
         }
-        setEnrollmentsState({ userId: expectedUserId, statuses });
-      } catch {
-        // Enrollment badges are optional on the catalog; keep catalog usable on failure.
+        setEnrollmentsState({
+          userId: expectedUserId,
+          status: "ready",
+          statuses,
+          error: null,
+        });
+      } catch (caught) {
         if (!controller.signal.aborted) {
-          setEnrollmentsState(null);
+          setEnrollmentsState({
+            userId: expectedUserId,
+            status: "error",
+            statuses: {},
+            error:
+              caught instanceof Error
+                ? caught.message
+                : "Unable to load your enrolled courses.",
+          });
         }
       }
     }
 
     void loadEnrollments();
     return () => controller.abort();
-  }, [requestToken, userId, isLearner, reloadKey]);
+  }, [requestToken, userId, isLearner, reloadKey, enrollmentsReloadKey]);
 
-  const enrollmentStatuses =
+  const currentEnrollmentSnap =
     userId && isLearner && enrollmentsState?.userId === userId
-      ? enrollmentsState.statuses
+      ? enrollmentsState
+      : null;
+  const enrollmentsLoading =
+    isLearner &&
+    Boolean(userId) &&
+    Boolean(requestToken) &&
+    (currentEnrollmentSnap === null ||
+      currentEnrollmentSnap.status === "loading");
+  const enrollmentsError =
+    currentEnrollmentSnap?.status === "error"
+      ? currentEnrollmentSnap.error
+      : null;
+  const enrollmentStatuses =
+    currentEnrollmentSnap?.status === "ready"
+      ? currentEnrollmentSnap.statuses
       : {};
+  const enrolledCourseIds = new Set(
+    Object.entries(enrollmentStatuses)
+      .filter(([, status]) => status === "ACTIVE" || status === "COMPLETED")
+      .map(([courseId]) => courseId),
+  );
 
   const { filteredCourses, totalPages, currentPage, visibleCourses } =
-    catalogPage(courses, search, openOnly, page);
+    catalogPage(
+      courses,
+      search,
+      filter === "OPEN",
+      page,
+      filter === "MY_COURSES" ? enrolledCourseIds : null,
+    );
 
   function resetFilters() {
     setSearch("");
-    setOpenOnly(false);
+    setFilter("ALL");
     setPage(1);
   }
 
   return (
+    <div className="student-surface-catalog min-h-[calc(100vh-4rem)]">
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-[#0f172a] sm:text-3xl">
@@ -165,23 +239,31 @@ export default function CourseCatalogPage({
         aria-label="Filter courses"
         className="mt-4 flex flex-wrap justify-center gap-2"
       >
-        {[false, true].map((onlyOpen) => (
+        {(
+          [
+            { key: "ALL", label: "All Courses" },
+            { key: "OPEN", label: "Open for enrollment" },
+            ...(isLearner && userId
+              ? [{ key: "MY_COURSES" as const, label: "My Courses" }]
+              : []),
+          ] as const
+        ).map((option) => (
           <button
-            key={String(onlyOpen)}
+            key={option.key}
             type="button"
-            aria-pressed={openOnly === onlyOpen}
+            aria-pressed={filter === option.key}
             onClick={() => {
-              setOpenOnly(onlyOpen);
+              setFilter(option.key);
               setPage(1);
             }}
             className={
-              "rounded-full px-4 py-2 text-xs font-semibold " +
-              (openOnly === onlyOpen
+              "rounded-full px-4 py-2 text-xs font-semibold transition-colors " +
+              (filter === option.key
                 ? "bg-[#2563eb] text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200")
             }
           >
-            {onlyOpen ? "Open for enrollment" : "All Courses"}
+            {option.label}
           </button>
         ))}
       </div>
@@ -215,6 +297,56 @@ export default function CourseCatalogPage({
               className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
             >
               Try again
+            </button>
+          </div>
+        ) : filter === "MY_COURSES" && enrollmentsLoading ? (
+          <div
+            role="status"
+            className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600"
+          >
+            Loading your enrolled courses...
+          </div>
+        ) : filter === "MY_COURSES" && enrollmentsError !== null ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-white p-8 text-center"
+          >
+            <h2 className="font-semibold text-red-700">
+              Unable to load your enrolled courses
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-600">{enrollmentsError}</p>
+
+            <button
+              type="button"
+              onClick={() =>
+                setEnrollmentsReloadKey((previous) => previous + 1)
+              }
+              className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        ) : filter === "MY_COURSES" && enrolledCourseIds.size === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+            <h2 className="text-lg font-semibold text-[#0f172a]">
+              No enrolled courses yet
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-600">
+              You have not enrolled in any courses yet. Browse open courses to
+              start learning.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFilter("OPEN");
+                setPage(1);
+              }}
+              className="mt-5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+            >
+              Browse open courses
             </button>
           </div>
         ) : (
@@ -310,5 +442,6 @@ export default function CourseCatalogPage({
         )}
       </section>
     </main>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ export type CourseSection = {
 
 export type CourseLearningItem = {
     progress?: LessonProgress | null;
+    practiceCompleted?: boolean;
     id: string;
     sectionId: string | null;
     title: string;
@@ -67,7 +68,13 @@ export async function getCourseDetail(
         typeof data.title !== "string" ||
         !Array.isArray(data.sections) ||
         !Array.isArray(data.learningItems) ||
-        !data.learningItems.every(item => item && (item.progress == null || isLessonProgress(item.progress)))
+        !data.learningItems.every(
+            (item) =>
+                item &&
+                (item.progress == null || isLessonProgress(item.progress)) &&
+                (item.practiceCompleted === undefined ||
+                    typeof item.practiceCompleted === "boolean"),
+        )
     ) {
         throw new Error("The server returned an unexpected course format.");
     }

@@ -509,6 +509,9 @@ function AttemptContent({
             };
 
   return (
+    <div
+      className={`${isSubmittedView ? "student-surface-attempt-review" : "student-surface-attempt-active"} min-h-[calc(100vh-4rem)]`}
+    >
     <main className="mx-auto max-w-[1440px] space-y-5 px-4 py-6 sm:px-8 sm:py-8">
       <nav aria-label="Practice navigation">
         <Link
@@ -561,23 +564,50 @@ function AttemptContent({
       ) : attempt && version && activity ? (
         <>
           <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <span className="text-xs font-bold uppercase tracking-wide text-[#2563eb]">
-              Reading practice
-            </span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                {isSubmittedView
+                  ? "Reading practice · Reviewing submission"
+                  : attemptClosed
+                    ? "Reading practice · Attempt closed"
+                    : "Reading practice · Taking practice"}
+              </span>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  isSubmittedView
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : attemptClosed
+                      ? "border border-amber-200 bg-amber-50 text-amber-800"
+                      : "border border-blue-200 bg-blue-50 text-[#1e40af]"
+                }`}
+              >
+                {isSubmittedView
+                  ? "Submitted — Reviewing answers"
+                  : attemptClosed
+                    ? attempt.expiresAt &&
+                      new Date(attempt.expiresAt).getTime() <= now
+                      ? "Time limit expired — Read only"
+                      : "Attempt closed — Read only"
+                    : "Taking practice"}
+              </span>
+            </div>
+
             <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
               {version.assignment.title}
             </h1>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-              <span>Attempt {attempt.attemptNo}</span>
-              <AttemptStatusBadge status={attempt.status} />
-              {attempt.status === "IN_PROGRESS" &&
-                attempt.expiresAt &&
-                new Date(attempt.expiresAt).getTime() <= now && (
-                  <span className="text-xs font-medium text-amber-800">
-                    Time limit expired
-                  </span>
-                )}
+            <p className="mt-1.5 text-xs leading-5 text-slate-600">
+              {isSubmittedView
+                ? "Your answers have been submitted. Review your submission status and recorded responses below."
+                : attemptClosed
+                  ? "This attempt is closed and can no longer be edited or submitted."
+                  : "Answer the questions below and save your draft before leaving this page."}
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+              <span className="font-semibold text-[#0f172a]">
+                Attempt {attempt.attemptNo}
+              </span>
               {attempt.expiresAt && (
                 <span>
                   {attempt.status === "IN_PROGRESS"
@@ -596,7 +626,11 @@ function AttemptContent({
           )}
 
           <div className="grid items-start gap-6 lg:grid-cols-2">
-            <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section
+              className={`min-w-0 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6 ${
+                isSubmittedView ? "order-2 lg:order-1" : ""
+              }`}
+            >
               <h2 className="text-lg font-semibold text-[#0f172a]">
                 Reading passage
               </h2>
@@ -605,7 +639,13 @@ function AttemptContent({
               </div>
             </section>
 
-            <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section
+              className={`min-w-0 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
+                !isSubmittedView && !attemptClosed
+                  ? "border-blue-200/90 ring-1 ring-blue-50"
+                  : "border-slate-200"
+              } ${isSubmittedView ? "order-1 lg:order-2" : ""}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-semibold text-[#0f172a]">
                   Questions
@@ -624,6 +664,66 @@ function AttemptContent({
                   ? "This attempt has been submitted."
                   : "Save your draft before leaving or reloading this page."}
               </p>
+
+              {isSubmittedView && (
+                <div className="mt-4 space-y-3 border-b border-slate-200 pb-5">
+                  {receipt && accessToken && (
+                    <PracticeAssessmentPanel
+                      key={JSON.stringify([receipt.submissionId, accessToken])}
+                      submissionId={receipt.submissionId}
+                      accessToken={accessToken}
+                      onSessionExpired={onSessionExpired}
+                    />
+                  )}
+
+                  {receipt && (
+                    <div
+                      role="status"
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900"
+                    >
+                      <p className="font-semibold">
+                        Your submission has been received.
+                      </p>
+                      <p className="mt-2">
+                        Processing:{" "}
+                        <AttemptStatusBadge status={receipt.status} />
+                      </p>
+                      <details className="mt-2 text-xs">
+                        <summary className="cursor-pointer">
+                          Submission reference
+                        </summary>
+                        <p className="mt-2 break-all font-mono">
+                          {receipt.submissionId}
+                        </p>
+                      </details>
+
+                      <button
+                        type="button"
+                        disabled={checkingStatus}
+                        onClick={() => void handleCheckStatus()}
+                        className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                      >
+                        {checkingStatus ? "Checking..." : "Refresh status"}
+                      </button>
+
+                      {statusError && (
+                        <p role="alert" className="mt-3 text-red-700">
+                          {statusError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <Link
+                      to="/practice-history"
+                      className="text-sm font-semibold text-[#2563eb] hover:underline"
+                    >
+                      View all attempts in practice history →
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               <ol className="mt-5 space-y-6">
                 {activity.assessmentItems.map((item, index) => (
@@ -659,147 +759,88 @@ function AttemptContent({
                 ))}
               </ol>
 
-              <div className="mt-6 space-y-3 border-t border-slate-200 pt-5">
-                {!isSubmittedView && (
-                  <>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => void handleSaveDraft()}
-                        disabled={
-                          attemptClosed ||
-                          saving ||
-                          submitting ||
-                          receipt !== null ||
-                          draftConflict ||
-                          unsupportedQuestions ||
-                          !dirty
-                        }
-                        className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {saving ? "Saving..." : "Save draft"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => void handleSubmit()}
-                        disabled={
-                          attemptClosed ||
-                          saving ||
-                          submitting ||
-                          receipt !== null ||
-                          draftConflict ||
-                          unsupportedQuestions
-                        }
-                        className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {submitting ? "Submitting..." : "Submit answers"}
-                      </button>
-
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${draftBadge.className}`}
-                      >
-                        {draftBadge.label}
-                      </span>
-                    </div>
-
-                    {draftMessage && (
-                      <p
-                        role="status"
-                        className="text-sm font-medium text-emerald-700"
-                      >
-                        {draftMessage}
-                      </p>
-                    )}
-
-                    {draftError && (
-                      <p
-                        role="alert"
-                        className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
-                      >
-                        Save failed: {draftError}
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {receipt && (
-                  <div
-                    role="status"
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900"
-                  >
-                    <p className="font-semibold">
-                      Your submission has been received.
-                    </p>
-                    <p className="mt-2">
-                      Processing: <AttemptStatusBadge status={receipt.status} />
-                    </p>
-                    <details className="mt-2 text-xs">
-                      <summary className="cursor-pointer">
-                        Submission reference
-                      </summary>
-                      <p className="mt-2 break-all font-mono">
-                        {receipt.submissionId}
-                      </p>
-                    </details>
+              {!isSubmittedView && (
+                <div className="mt-6 space-y-3 border-t border-slate-200 pt-5">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveDraft()}
+                      disabled={
+                        attemptClosed ||
+                        saving ||
+                        submitting ||
+                        receipt !== null ||
+                        draftConflict ||
+                        unsupportedQuestions ||
+                        !dirty
+                      }
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save draft"}
+                    </button>
 
                     <button
                       type="button"
-                      disabled={checkingStatus}
-                      onClick={() => void handleCheckStatus()}
-                      className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                      onClick={() => void handleSubmit()}
+                      disabled={
+                        attemptClosed ||
+                        saving ||
+                        submitting ||
+                        receipt !== null ||
+                        draftConflict ||
+                        unsupportedQuestions
+                      }
+                      className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {checkingStatus ? "Checking..." : "Refresh status"}
+                      {submitting ? "Submitting..." : "Submit answers"}
                     </button>
 
-                    {statusError && (
-                      <p role="alert" className="mt-3 text-red-700">
-                        {statusError}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {receipt && accessToken && (
-                  <PracticeAssessmentPanel
-                    key={JSON.stringify([receipt.submissionId, accessToken])}
-                    submissionId={receipt.submissionId}
-                    accessToken={accessToken}
-                    onSessionExpired={onSessionExpired}
-                  />
-                )}
-
-                {submitError && (
-                  <p role="alert" className="text-sm text-red-700">
-                    {submitError}
-                  </p>
-                )}
-
-                {attemptClosed && !isSubmittedView && (
-                  <p className="text-sm text-amber-800">
-                    This attempt is closed or its time limit has expired.
-                  </p>
-                )}
-
-                {draftConflict && (
-                  <p className="text-sm leading-6 text-amber-800">
-                    Saving has been stopped. Copy any unsaved answers before
-                    reloading this page to check the latest draft and attempt
-                    status.
-                  </p>
-                )}
-
-                {isSubmittedView && (
-                  <div className="pt-2">
-                    <Link
-                      to="/practice-history"
-                      className="text-sm font-semibold text-[#2563eb] hover:underline"
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${draftBadge.className}`}
                     >
-                      View all attempts in practice history →
-                    </Link>
+                      {draftBadge.label}
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  {draftMessage && (
+                    <p
+                      role="status"
+                      className="text-sm font-medium text-emerald-700"
+                    >
+                      {draftMessage}
+                    </p>
+                  )}
+
+                  {draftError && (
+                    <p
+                      role="alert"
+                      className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
+                    >
+                      Save failed: {draftError}
+                    </p>
+                  )}
+
+                  {submitError && (
+                    <p role="alert" className="text-sm text-red-700">
+                      {submitError}
+                    </p>
+                  )}
+
+                  {attemptClosed && (
+                    <p className="text-sm text-amber-800">
+                      This attempt is closed or its time limit has expired.
+                    </p>
+                  )}
+
+                  {draftConflict && (
+                    <p className="text-sm leading-6 text-amber-800">
+                      Saving has been stopped. Copy any unsaved answers before
+                      reloading this page to check the latest draft and attempt
+                      status.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {activity.assessmentItems.length === 0 && (
                 <p className="mt-4 text-sm text-slate-500">
@@ -811,6 +852,7 @@ function AttemptContent({
         </>
       ) : null}
     </main>
+    </div>
   );
 }
 

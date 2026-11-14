@@ -31,15 +31,15 @@ const DEFAULT_REASON_BADGE = {
 
 const SKILL_CARD_THEMES: Record<string, { card: string; badge: string }> = {
   "Needs focused practice": {
-    card: "border-[#fde68a] bg-[#fffbeb]",
+    card: "border-slate-200 bg-white",
     badge: "bg-[#fef3c7] text-[#92400e]",
   },
   "Usually demonstrated": {
-    card: "border-[#a7f3d0] bg-[#ecfdf5]",
+    card: "border-slate-200 bg-white",
     badge: "bg-[#d1fae5] text-[#047857]",
   },
   Developing: {
-    card: "border-[#bfdbfe] bg-[#eff6ff]",
+    card: "border-slate-200 bg-white",
     badge: "bg-[#dbeafe] text-[#1e40af]",
   },
 };
@@ -155,8 +155,9 @@ function LearningContent({
     ) ?? [];
 
   return (
-    <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
-      <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] bg-white p-3.5 sm:flex-row sm:items-start sm:gap-4 sm:p-5">
+    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+      <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
+        <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] border-l-4 border-l-[#2563eb] bg-gradient-to-r from-[#f8fafc] to-white p-3.5 shadow-sm sm:flex-row sm:items-start sm:gap-4 sm:p-5">
         <div className="min-w-0 space-y-1.5">
           <span className="block text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
             Your learning
@@ -332,15 +333,36 @@ function LearningContent({
       {profile && (
         <section
           aria-labelledby="skill-evidence-heading"
-          className="space-y-3.5 rounded-2xl border border-[#e2e8f0] bg-white p-4 sm:p-6"
+          className="space-y-4 rounded-2xl border border-[#e2e8f0] bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm sm:p-6"
         >
           <div className="space-y-1">
-            <h2
-              id="skill-evidence-heading"
-              className="text-xl font-bold text-[#0f172a]"
-            >
-              Your skill evidence
-            </h2>
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#eff6ff] text-[#2563eb]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 3v18h18" />
+                  <path d="m19 9-5 5-4-4-3 3" />
+                </svg>
+              </span>
+              <h2
+                id="skill-evidence-heading"
+                className="text-xl font-bold text-[#0f172a]"
+              >
+                Your skill evidence
+              </h2>
+            </div>
             <p className="text-sm leading-relaxed text-[#64748b]">
               Only accepted, published assessments update these observations.
               They describe the evidence so far and are not an IELTS band
@@ -429,6 +451,7 @@ function LearningContent({
           )}
         </section>
       )}
-    </main>
+      </main>
+    </div>
   );
 }

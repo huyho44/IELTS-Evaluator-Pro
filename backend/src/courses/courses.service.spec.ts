@@ -181,6 +181,15 @@ function fixture() {
         },
       ),
     },
+    acceptedAssessment: {
+      findMany: vi.fn(async () => [] as Array<{
+        result: {
+          revision: {
+            attempt: { assignmentVersion: { activityId: string } };
+          };
+        };
+      }>),
+    },
   };
   const db = prisma as unknown as PrismaService;
   const reload = () => new CoursesService(db, new AccessService(db));
@@ -266,23 +275,34 @@ describe('course lesson progress', () => {
   ])('returns no personal progress for an $name', async ({ actor }) => {
     await f.service.completeLesson(courseId, lessonId, an);
     f.prisma.lessonProgress.findMany.mockClear();
+    f.prisma.acceptedAssessment.findMany.mockClear();
     const course = await f.service.findOne(courseId, actor);
     expect(course.learningItems.every((item) => item.progress === null)).toBe(
       true,
     );
+    expect(
+      course.learningItems.every((item) => item.practiceCompleted === false),
+    ).toBe(true);
     expect(f.prisma.lessonProgress.findMany).not.toHaveBeenCalled();
+    expect(f.prisma.acceptedAssessment.findMany).not.toHaveBeenCalled();
     expect(course.sections).toHaveLength(1);
   });
 
   it('batches outline progress reads and leaves practice items without lesson progress', async () => {
     await f.service.completeLesson(courseId, lessonId, an);
     f.prisma.lessonProgress.findUnique.mockClear();
+    f.prisma.acceptedAssessment.findMany.mockClear();
     const course = await f.service.findOne(courseId, an);
     expect(f.prisma.lessonProgress.findMany).toHaveBeenCalledTimes(1);
+    expect(f.prisma.acceptedAssessment.findMany).toHaveBeenCalledTimes(1);
     expect(f.prisma.lessonProgress.findUnique).not.toHaveBeenCalled();
     expect(
       course.learningItems.find((item) => item.id === practiceId)?.progress,
     ).toBeNull();
+    expect(
+      course.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(false);
   });
 
   it('still denies lesson access and completion without an active enrollment', async () => {
@@ -338,5 +358,62 @@ describe('course lesson progress', () => {
     await expect(
       f.service.completeLesson(courseId, lessonId, an),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('marks practiceCompleted true only for enrolled learners with a current published accepted assessment', async () => {
+    f.prisma.acceptedAssessment.findMany.mockResolvedValue([
+      {
+        result: {
+          revision: {
+            attempt: { assignmentVersion: { activityId: practiceId } },
+          },
+        },
+      },
+    ]);
+
+    const activeCourse = await f.service.findOne(courseId, an);
+    expect(f.prisma.acceptedAssessment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isCurrent: true,
+          publishedAt: { lte: expect.any(Date) },
+          result: {
+            revision: {
+              attempt: {
+                learnerId: an.id,
+                assignmentVersion: {
+                  activityId: { in: [practiceId] },
+                  assignment: { courseId },
+                },
+              },
+            },
+          },
+        }),
+      }),
+    );
+    expect(
+      activeCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(true);
+    expect(
+      activeCourse.learningItems.find((item) => item.id === lessonId)
+        ?.practiceCompleted,
+    ).toBe(false);
+
+    f.enrollments[0].status = 'COMPLETED';
+    const completedCourse = await f.service.findOne(courseId, an);
+    expect(
+      completedCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(true);
+
+    f.enrollments[0].status = 'LEFT';
+    f.prisma.acceptedAssessment.findMany.mockClear();
+    const leftCourse = await f.service.findOne(courseId, an);
+    expect(f.prisma.acceptedAssessment.findMany).not.toHaveBeenCalled();
+    expect(
+      leftCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(false);
   });
 });

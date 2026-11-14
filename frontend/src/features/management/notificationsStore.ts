@@ -95,9 +95,18 @@ export async function loadNotifications() {
     ) {
       return;
     }
+    // A refresh started before a successful mark may still return unread rows.
+    const confirmedReadTimes = new Map(
+      state.items.map((item) => [item.id, item.readAt]),
+    );
     emit({
       ...state,
-      items: data,
+      items: data.map((item) => {
+        const confirmedReadAt = confirmedReadTimes.get(item.id);
+        return item.readAt || !confirmedReadAt
+          ? item
+          : { ...item, readAt: confirmedReadAt };
+      }),
       loading: false,
       error: "",
     });

@@ -17,7 +17,8 @@ export default function Dashboard() {
   const isAdmin = user.roles.includes("ADMIN");
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-8">
+    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+      <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-8">
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
           <div className="flex items-center gap-3.5">
@@ -135,6 +136,7 @@ export default function Dashboard() {
           </div>
         </section>
       )}
-    </main>
+      </main>
+    </div>
   );
 }

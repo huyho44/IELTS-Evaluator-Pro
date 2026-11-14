@@ -252,6 +252,7 @@ function LessonContent({
         currentIndex >= 0 ? lessons[currentIndex + 1] : null;
 
     return (
+        <div className="student-surface-lesson min-h-[calc(100vh-4rem)]">
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
             <Link
                 to={`/courses/${courseId}`}
@@ -290,32 +291,29 @@ function LessonContent({
                 </section>
             ) : lesson && course ? (
                 <>
-                    <h1 className="mt-5 break-words text-2xl font-bold">
-                        {course.title}
-                    </h1>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                            Lesson workspace
-                        </span>
-                        <span className="text-sm leading-6 text-slate-500">
-                            By {course.creator.displayName}
-                        </span>
-                    </div>
+                    <header className="mt-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                            Lesson
+                        </p>
+                        <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
+                            {lesson.learningItem.title}
+                        </h1>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">
+                            {course.title} · By {course.creator.displayName}
+                        </p>
+                    </header>
 
                     <div className="mt-6 grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
                         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                            <h2 className="break-words text-xl font-bold">
-                                {lesson.learningItem.title}
-                            </h2>
-
                             {lesson.summary && (
-                                <p className="mt-3 text-sm leading-7 text-slate-500">
+                                <div className="rounded-lg border border-blue-100 bg-[#eff6ff]/70 px-4 py-3 text-sm leading-6 text-slate-700">
                                     {lesson.summary}
-                                </p>
+                                </div>
                             )}
 
-                            <div className="mt-6 space-y-6 border-t border-slate-100 pt-6">
+                            <div
+                                className={`${lesson.summary ? "mt-5" : ""} space-y-6 rounded-xl border border-slate-200/80 bg-[#f8fafc] p-5 sm:p-6`}
+                            >
                                 {lesson.lessonMaterials.length === 0 ? (
                                     <p className="text-sm text-slate-500">
                                         No learning materials available yet.
@@ -332,7 +330,7 @@ function LessonContent({
                                 )}
                             </div>
 
-                            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-[#f8fafc] p-4">
                                 {completionSaved ? <CompletionBadge /> : <button
                                     type="button"
                                     disabled={saving}
@@ -411,6 +409,7 @@ function LessonContent({
                 </>
             ) : null}
         </main>
+        </div>
     );
 }
 

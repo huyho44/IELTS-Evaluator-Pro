@@ -13,6 +13,7 @@ type Props = {
   revisionId: string;
   attemptId: string;
   accessToken: string;
+  compact?: boolean;
   onSessionExpired?: () => void;
   onFeedbackStatusChange?: (revisionId: string, hasFeedback: boolean) => void;
 };
@@ -24,6 +25,7 @@ export default function WritingFeedbackPanel({
   revisionId,
   attemptId,
   accessToken,
+  compact = false,
   onSessionExpired,
   onFeedbackStatusChange,
 }: Props) {
@@ -444,7 +446,10 @@ export default function WritingFeedbackPanel({
               </form>
             )}
 
-            {((official && pendingAppeal) || (!official && reviewPending)) && (
+            {((official && pendingAppeal) ||
+              (!official &&
+                reviewPending &&
+                (assessments.length > 0 || !awaitingInstructorReview))) && (
               <p className="rounded-lg bg-blue-50/70 px-3.5 py-2.5 text-sm text-[#1e40af]">
                 Your instructor review is pending. Return here later to check its
                 outcome.
@@ -467,19 +472,19 @@ export default function WritingFeedbackPanel({
 
       {revision && (
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <details open={!assessments.length} className="group">
+          <details open={!compact && !assessments.length} className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-bold text-[#0f172a] [&::-webkit-details-marker]:hidden">
               <span>
                 Submitted essay — Revision {revision.revisionNo}
               </span>
               <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 group-open:hidden">
-                Read essay
+                Read submitted essay
               </span>
               <span className="hidden rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 group-open:inline">
-                Hide essay
+                Hide submitted essay
               </span>
             </summary>
-            <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+            <div className="mt-4 space-y-4 rounded-xl border border-slate-200/80 bg-[#f8fafc] p-4">
               {revision.paragraphs.map((paragraph) => (
                 <p
                   key={paragraph.id}

@@ -52,6 +52,7 @@ function HistoryContent({ accessToken, onSessionExpired }: Props) {
     }, [accessToken, onSessionExpired, reloadKey]);
 
     return (
+        <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
             <Link
                 to="/courses"
@@ -60,68 +61,90 @@ function HistoryContent({ accessToken, onSessionExpired }: Props) {
                 ← Back to courses
             </Link>
 
-            <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
-                <h1 className="text-2xl font-bold">My practice attempts</h1>
+            <header className="mt-4 flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/80 pb-5">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                        Practice history
+                    </p>
+                    <h1 className="mt-1.5 text-2xl font-bold text-[#0f172a]">
+                        My practice attempts
+                    </h1>
+                    <p className="mt-1 text-sm text-[#64748b]">
+                        Up to 100 recent attempts for your signed-in account.
+                    </p>
+                </div>
+                {accessToken && !loading && !error && entries.length > 0 && (
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-xs">
+                        {entries.length} {entries.length === 1 ? "attempt" : "attempts"}
+                    </span>
+                )}
+            </header>
 
-                {!accessToken ? (
-                    <p className="mt-4 text-sm text-slate-600">
+            {!accessToken ? (
+                <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p className="text-sm text-slate-600">
                         Sign in to view your practice history.
                     </p>
-                ) : loading ? (
-                    <p role="status" className="mt-4 text-sm text-slate-500">
-                        Loading history...
+                </section>
+            ) : loading ? (
+                <p
+                    role="status"
+                    className="mt-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+                >
+                    Loading history...
+                </p>
+            ) : error ? (
+                <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p role="alert" className="text-sm text-red-700">
+                        {error}
                     </p>
-                ) : error ? (
-                    <div className="mt-4">
-                        <p role="alert" className="text-sm text-red-700">
-                            {error}
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => setReloadKey((value) => value + 1)}
-                            className="mt-3 font-semibold text-blue-600 hover:underline"
+                    <button
+                        type="button"
+                        onClick={() => setReloadKey((value) => value + 1)}
+                        className="mt-3 font-semibold text-blue-600 hover:underline"
+                    >
+                        Try again
+                    </button>
+                </section>
+            ) : entries.length === 0 ? (
+                <p className="mt-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+                    No practice attempts yet.
+                </p>
+            ) : (
+                <ul className="mt-6 space-y-4">
+                    {entries.map((entry) => (
+                        <li
+                            key={entry.id}
+                            className={`flex flex-col gap-4 rounded-xl border border-slate-200 border-l-4 ${
+                                entry.status === "IN_PROGRESS"
+                                    ? "border-l-[#2563eb]"
+                                    : "border-l-emerald-500"
+                            } bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between`}
                         >
-                            Try again
-                        </button>
-                    </div>
-                ) : entries.length === 0 ? (
-                    <p className="mt-4 text-sm text-slate-500">
-                        No practice attempts yet.
-                    </p>
-                ) : (
-                    <>
-                        <p className="mt-3 text-sm text-slate-500">
-                            Up to 100 recent attempts for your signed-in account.
-                        </p>
-
-                        <ul className="mt-5 space-y-4">
-                            {entries.map((entry) => (
-                                <li
-                                    key={entry.id}
-                                    className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
-                                >
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2.5">
-                                            <h2 className="font-semibold">Attempt {entry.attemptNo}</h2>
-                                            <AttemptStatusBadge status={entry.status} />
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                                            <span>Started: {new Date(entry.startedAt).toLocaleString()}</span>
-                                            <span>Submissions: {entry.submissionRevisions.length}</span>
-                                        </div>
-                                    </div><Link
-                                        to={`/attempts/${encodeURIComponent(entry.id)}`}
-                                        className="inline-flex shrink-0 justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-600 hover:text-blue-600"
-                                    >
-                                        Open attempt →
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </>
-                )}
-            </section>
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2.5">
+                                    <h2 className="text-base font-bold text-[#0f172a]">
+                                        Attempt {entry.attemptNo}
+                                    </h2>
+                                    <AttemptStatusBadge status={entry.status} />
+                                </div>
+                                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                    <span>Started: {new Date(entry.startedAt).toLocaleString()}</span>
+                                    <span>Submissions: {entry.submissionRevisions.length}</span>
+                                </div>
+                            </div>
+                            <Link
+                                to={`/attempts/${encodeURIComponent(entry.id)}`}
+                                className="inline-flex w-full shrink-0 justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:border-[#2563eb] hover:bg-[#eff6ff]/50 hover:text-[#2563eb] sm:w-auto"
+                            >
+                                Open attempt →
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </main>
+        </div>
     );
 }
 
