@@ -15,11 +15,11 @@ type Template = {
   schema: unknown;
   criteria: { code: string; name: string; definition: string }[];
 };
-export default function AuthoringPage() {
+export default function AuthoringPage({ mode = "instructor" }: { mode?: "admin" | "instructor" }) {
   const { session } = useSession();
-  return <Content key={session?.user.id} />;
+  return <Content key={session?.user.id} mode={mode} />;
 }
-function Content() {
+function Content({ mode }: { mode: "admin" | "instructor" }) {
   const { session } = useSession();
   const [catalog, setCatalog] = useState<Catalog | null>(null),
     [template, setTemplate] = useState<Template | null>(null),
@@ -71,7 +71,7 @@ function Content() {
     }
   }
   const selected = catalog?.courses.find((c) => c.id === courseId);
-  const instructor = session?.user.roles.includes("INSTRUCTOR");
+  const instructor = mode === "instructor" && session?.user.roles.includes("INSTRUCTOR");
   const canEditCourse =
     !!instructor &&
     !!selected?.courseInstructors.some(
@@ -84,18 +84,18 @@ function Content() {
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
       <header className="space-y-3">
-        <h1 className="text-2xl font-bold">Course authoring</h1>
+        <h1 className="text-2xl font-bold">{mode === "admin" ? "Grading setup" : "Course authoring"}</h1>
         <p className="text-sm text-slate-600">
-          Create Writing lessons and activities, pin assessment versions and
-          configure publication. Editing a published assignment creates a new
-          version for future attempts.
+          {mode === "admin"
+            ? "Inspect course content and configure automated assessment."
+            : "Create lessons and activities, set assessment versions and configure publication."}
         </p>
-        <Link
+        {instructor && <Link
           to="/teacher/reviews"
           className="text-sm font-semibold text-blue-600"
         >
           Open review queue
-        </Link>
+        </Link>}
       </header>
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">
@@ -615,7 +615,7 @@ function Content() {
             ))}
           </ActionForm>
         )}
-        {session?.user.roles.includes("ADMIN") && template && (
+        {mode === "admin" && session?.user.roles.includes("ADMIN") && template && (
           <ActionForm
             title="Configure AI assessment"
             busy={busy}

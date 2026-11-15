@@ -24,7 +24,7 @@ export default function RegisterForm() {
     try {
       await authApi.register({ displayName, email, password });
       setPassword('');
-      navigate('/login', { replace: true, state: { from: safeReturn(location.state?.from), registered: true } });
+      navigate('/login', { replace: true, state: { from: safeReturn(location.state?.from, '/'), registered: true } });
     } catch (err: unknown) {
       setError(isAxiosError(err) && typeof err.response?.data?.message === 'string' ? err.response.data.message : err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {

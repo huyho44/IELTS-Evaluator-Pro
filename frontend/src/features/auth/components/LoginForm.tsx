@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { signIn, safeReturn } from '../session';
+import { useLocation } from 'react-router-dom';
+import { signIn } from '../session';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -8,7 +8,6 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const pending = useRef(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,7 +20,6 @@ export default function LoginForm() {
     try {
       await signIn({ email, password });
       setPassword('');
-      navigate(safeReturn(location.state?.from), { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Please try again.');
     } finally {

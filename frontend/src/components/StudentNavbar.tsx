@@ -317,7 +317,7 @@ export default function StudentNavbar() {
                     </div>
                     <div className="border-t border-slate-100 px-4 py-2.5">
                       <Link
-                        to="/notifications"
+                        to="/student/notifications"
                         onClick={() => setMenu(null)}
                         className="block text-center text-xs font-semibold text-[#2563eb] hover:underline"
                       >
@@ -377,13 +377,13 @@ export default function StudentNavbar() {
                   <div className="p-1.5" onClick={() => setMenu(null)}>
                     <Link
                       className={`${link} text-slate-700 hover:bg-slate-50`}
-                      to="/profile"
+                      to="/student/profile"
                     >
                       Profile & learning goals
                     </Link>
                     <Link
                       className={`${link} text-slate-700 hover:bg-slate-50`}
-                      to="/dashboard"
+                      to="/student/dashboard"
                     >
                       Account overview
                     </Link>
@@ -393,16 +393,6 @@ export default function StudentNavbar() {
                         to="/teacher/reviews"
                       >
                         Instructor reviews
-                      </Link>
-                    )}
-                    {user.roles.some((role) =>
-                      ["INSTRUCTOR", "ADMIN"].includes(role),
-                    ) && (
-                      <Link
-                        className={`${link} text-slate-700 hover:bg-slate-50`}
-                        to="/teacher/authoring"
-                      >
-                        Course authoring
                       </Link>
                     )}
                     {user.roles.includes("ADMIN") && (

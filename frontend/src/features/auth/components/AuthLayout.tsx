@@ -2,6 +2,7 @@ import { courseBackDestination } from "../returnDestination";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { safeReturn, useSession } from "../session";
+import { signedInDestination } from "../workspaceAccess";
 export default function AuthLayout({
   title,
   description,
@@ -15,9 +16,9 @@ export default function AuthLayout({
 }) {
   const { session } = useSession();
   const location = useLocation();
-  const from = safeReturn(location.state?.from);
+  const from = safeReturn(location.state?.from, "/");
   const backTo = courseBackDestination(from);
-  if (session) return <Navigate to={from} replace />;
+  if (session) return <Navigate to={signedInDestination(from, session.user.roles)} replace />;
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-[440px]">

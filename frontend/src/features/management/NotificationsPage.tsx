@@ -60,7 +60,7 @@ function NotificationTypeIcon({
   );
 }
 
-export default function NotificationsPage() {
+export default function NotificationsPage({ student = true }: { student?: boolean }) {
   const { session } = useSession();
   const { items, loading, error, markingIds } = useNotifications(
     session?.user.id,
@@ -69,7 +69,7 @@ export default function NotificationsPage() {
   const isMarkingAny = Object.keys(markingIds).length > 0;
 
   return (
-    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+    <div className={student ? "student-surface-overview min-h-[calc(100vh-4rem)]" : undefined}>
       <main className="mx-auto max-w-4xl space-y-5 p-4 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/80 pb-4">
           <div>

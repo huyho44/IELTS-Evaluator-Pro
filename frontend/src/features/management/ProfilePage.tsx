@@ -27,12 +27,12 @@ const APPLICATION_STATUS_STYLES: Record<
   },
 };
 
-export default function ProfilePage() {
+export default function ProfilePage({ student = true }: { student?: boolean }) {
   const { session } = useSession();
-  return <Content key={session?.user.id} />;
+  return <Content key={session?.user.id} student={student} />;
 }
 
-function Content() {
+function Content({ student }: { student: boolean }) {
   const [user, setUser] = useState<UserRow | null>(null);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -55,7 +55,7 @@ function Content() {
       try {
         const [profile, ownApplications] = await Promise.all([
           request<UserRow>("GET", "/auth/me"),
-          request<ApplicationRow[]>("GET", "/me/instructor-applications"),
+          student ? request<ApplicationRow[]>("GET", "/me/instructor-applications") : [],
         ]);
         if (active) {
           setUser(profile);
@@ -71,7 +71,7 @@ function Content() {
     return () => {
       active = false;
     };
-  }, [refresh]);
+  }, [refresh, student]);
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,10 +86,10 @@ function Content() {
     try {
       const updated = await request<UserRow>("PATCH", "/me/profile", {
         displayName: data.get("displayName"),
-        targetBand: data.get("targetBand")
-          ? Number(data.get("targetBand"))
-          : null,
-        targetExamDate: data.get("examDate") || null,
+        ...(student && {
+          targetBand: data.get("targetBand") ? Number(data.get("targetBand")) : null,
+          targetExamDate: data.get("examDate") || null,
+        }),
       });
       setUser(updated);
       let sessionUpdated = true;
@@ -101,7 +101,7 @@ function Content() {
       setRefresh((value) => value + 1);
       setProfileMessage(
         sessionUpdated
-          ? "Your profile and learning goals have been saved."
+          ? "Your profile has been saved."
           : "Your profile was saved. Your account menu could not refresh yet; reload later if needed.",
       );
     } catch (cause) {
@@ -144,23 +144,22 @@ function Content() {
     (application) => application.status === "PENDING",
   );
   const canApplyAsInstructor =
-    user != null &&
+    student && user != null &&
     user.roles.includes("LEARNER") &&
     !user.roles.includes("INSTRUCTOR");
 
   return (
-    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+    <div className={student ? "student-surface-overview min-h-[calc(100vh-4rem)]" : undefined}>
       <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
           Account settings
         </span>
         <h1 className="text-2xl font-bold text-[#0f172a]">
-          Profile and learning goals
+          {student ? "Profile and learning goals" : "Profile"}
         </h1>
         <p className="text-sm text-[#64748b]">
-          Manage how your name appears across courses and set your IELTS target
-          reference.
+          {student ? "Manage your display name and IELTS learning goals." : "Manage how your name appears across the workspace."}
         </p>
       </header>
 
@@ -231,7 +230,7 @@ function Content() {
                 </div>
               </section>
 
-              <section className="space-y-4 border-t border-slate-100 pt-5">
+              {student && <section className="space-y-4 border-t border-slate-100 pt-5">
                 <div>
                   <h2 className="text-base font-bold text-[#0f172a]">
                     Learning goals
@@ -276,7 +275,7 @@ function Content() {
                     </p>
                   </div>
                 </div>
-              </section>
+              </section>}
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
                 <div className="flex flex-wrap items-center gap-3">
@@ -286,7 +285,7 @@ function Content() {
                   >
                     {busySection === "profile"
                       ? "Saving..."
-                      : "Save profile and goals"}
+                      : student ? "Save profile and goals" : "Save profile"}
                   </button>
                 </div>
                 {profileMessage && (
@@ -309,7 +308,7 @@ function Content() {
             </fieldset>
           </form>
 
-          {(canApplyAsInstructor || applications.length > 0) && (
+          {student && (canApplyAsInstructor || applications.length > 0) && (
             <section className={`${panel} shadow-sm`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>

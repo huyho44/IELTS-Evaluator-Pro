@@ -56,8 +56,8 @@ export default function GradingReportPage() {
           Refresh report
         </button>
       </div>
-      <Link to="/dashboard" className="text-blue-700">
-        Dashboard
+      <Link to="../dashboard" className="text-blue-700">
+        Account overview
       </Link>
       {error && (
         <p role="alert" className="text-red-700">

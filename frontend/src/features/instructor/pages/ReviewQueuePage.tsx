@@ -99,7 +99,7 @@ export default function ReviewQueuePage() {
             <h1 className="text-2xl font-bold text-gray-900">
               Central Grading Queue
             </h1>
-            <Link to="/grading-report" className="text-sm text-blue-700">
+            <Link to="/teacher/reports" className="text-sm text-blue-700">
               Grading operations report
             </Link>
             <p className="text-sm text-gray-500 mt-1">
