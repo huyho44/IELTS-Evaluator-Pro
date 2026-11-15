@@ -210,3 +210,159 @@ assert.equal(readStoredOpenSectionIds(keyA, ["sec-1"]), null);
 console.log(
   "Course detail checks passed: practiceCompleted validation and per-course/per-user syllabus storage.",
 );
+
+// Verify Practice Preparation remaining-attempt resolution across all 3 cases.
+let assignmentsPayload = [];
+const practiceCtx = {
+  exports: {},
+  Date,
+  require: (id) => {
+    if (id === "../auth/session") {
+      return {
+        sessionFetch: async () => ({
+          ok: true,
+          status: 200,
+          json: async () => assignmentsPayload,
+        }),
+      };
+    }
+    throw new Error(`Unexpected require: ${id}`);
+  },
+};
+vm.runInNewContext(
+  ts.transpileModule(
+    readFileSync(
+      new URL("../src/features/courses/practiceApi.ts", import.meta.url),
+      "utf8",
+    ),
+    {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
+    },
+  ).outputText,
+  practiceCtx,
+);
+const { getPracticeAssignments, resolveAssignmentAttemptStatus } =
+  practiceCtx.exports;
+assignmentsPayload = [
+  {
+    id: "assign-available",
+    title: "Case 1",
+    activityId: "act-1",
+    assignmentVersions: [
+      { id: "v1", versionNo: 1, maxAttempts: 3, timeLimitSeconds: 2400 },
+    ],
+    attemptsUsed: 1,
+    attemptsRemaining: 2,
+    activeAttempt: null,
+  },
+  {
+    id: "assign-resume-only",
+    title: "Case 2",
+    activityId: "act-1",
+    assignmentVersions: [
+      { id: "v2", versionNo: 1, maxAttempts: 2, timeLimitSeconds: 2400 },
+    ],
+    attemptsUsed: 2,
+    attemptsRemaining: 0,
+    activeAttempt: { id: "att-2", attemptNo: 2, expiresAt: null },
+  },
+  {
+    id: "assign-exhausted",
+    title: "Case 3",
+    activityId: "act-1",
+    assignmentVersions: [
+      { id: "v3", versionNo: 1, maxAttempts: 2, timeLimitSeconds: 2400 },
+    ],
+    attemptsUsed: 2,
+    attemptsRemaining: 0,
+    activeAttempt: null,
+  },
+];
+const parsedAssignments = await getPracticeAssignments(
+  "course-1",
+  "act-1",
+  "tok",
+);
+assert.equal(parsedAssignments.length, 3);
+const s1 = resolveAssignmentAttemptStatus(parsedAssignments[0]);
+assert.equal(s1.statusKind, "available");
+assert.equal(s1.canStartOrResume, true);
+assert.equal(s1.attemptsRemaining, 2);
+
+const s2 = resolveAssignmentAttemptStatus(parsedAssignments[1]);
+assert.equal(s2.statusKind, "resume_only");
+assert.equal(s2.canStartOrResume, true);
+assert.equal(s2.attemptsRemaining, 0);
+assert.equal(s2.ctaLabel, "Resume attempt 2");
+
+const s3 = resolveAssignmentAttemptStatus(parsedAssignments[2]);
+assert.equal(s3.statusKind, "exhausted");
+assert.equal(s3.canStartOrResume, false);
+assert.equal(s3.attemptsRemaining, 0);
+assert.equal(s3.ctaLabel, "No attempts remaining");
+
+const legacyStatus = resolveAssignmentAttemptStatus({
+  ...parsedAssignments[0],
+  attemptsUsed: undefined,
+  attemptsRemaining: undefined,
+  activeAttempt: undefined,
+});
+assert.equal(legacyStatus.statusKind, "unknown");
+assert.equal(legacyStatus.attemptsRemaining, null);
+assert.equal(legacyStatus.ctaLabel, "Start / resume");
+
+console.log(
+  "Practice preparation checks passed: remaining new attempts, 0-remaining resumable attempt, exhausted state, and older responses without attempt counts.",
+);
+
+// Verify attempt countdown helper formatting and expiry states.
+const timerCtx = { exports: {}, Date };
+vm.runInNewContext(
+  ts.transpileModule(
+    readFileSync(
+      new URL("../src/components/attemptTimer.ts", import.meta.url),
+      "utf8",
+    ),
+    {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
+    },
+  ).outputText,
+  timerCtx,
+);
+const { resolveAttemptTimer } = timerCtx.exports;
+const baseNow = Date.parse("2026-11-15T15:00:00.000Z");
+const timedRunning = resolveAttemptTimer(
+  new Date(baseNow + 299_000).toISOString(),
+  baseNow,
+);
+assert.equal(timedRunning.kind, "running");
+assert.equal(timedRunning.label, "Time remaining · 04:59");
+
+const timedUrgent = resolveAttemptTimer(
+  new Date(baseNow + 45_000).toISOString(),
+  baseNow,
+);
+assert.equal(timedUrgent.kind, "urgent");
+assert.equal(timedUrgent.label, "Time remaining · 00:45");
+
+const timedExpired = resolveAttemptTimer(
+  new Date(baseNow).toISOString(),
+  baseNow,
+);
+assert.equal(timedExpired.kind, "expired");
+assert.equal(timedExpired.formatted, "00:00");
+assert.equal(timedExpired.label, "Time limit expired");
+
+const untimed = resolveAttemptTimer(null, baseNow);
+assert.equal(untimed.kind, "untimed");
+assert.equal(untimed.label, "No time limit");
+
+console.log(
+  "Countdown checks passed: running (04:59), urgent (00:45), expired (00:00), and untimed (No time limit).",
+);

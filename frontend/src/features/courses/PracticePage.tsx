@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-    formatAssignmentLimits,
     formatMaxAttempts,
     formatTimeLimit,
     getPracticeAssignments,
     PracticeApiError,
+    type ActivePracticeAttempt,
     type PracticeAssignment,
+    resolveAssignmentAttemptStatus,
     startPracticeAttempt,
 } from "./practiceApi";
 
@@ -34,22 +35,26 @@ function PracticeClipboardIcon() {
 type StartResumeButtonProps = {
     assignmentId: string;
     startingId: string | null;
+    disabled?: boolean;
+    label: string;
     onStart: (assignmentId: string) => void;
 };
 
 function StartResumeButton({
     assignmentId,
     startingId,
+    disabled = false,
+    label,
     onStart,
 }: StartResumeButtonProps) {
     return (
         <button
             type="button"
-            disabled={startingId !== null}
+            disabled={disabled || startingId !== null}
             onClick={() => onStart(assignmentId)}
-            className="inline-flex w-full shrink-0 items-center justify-center rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="inline-flex w-full shrink-0 items-center justify-center rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto"
         >
-            {startingId === assignmentId ? "Opening..." : "Start / resume"}
+            {startingId === assignmentId ? "Opening..." : label}
         </button>
     );
 }
@@ -137,12 +142,19 @@ function PracticeContent({
         reloadKey,
     ]);
 
-    async function handleStart(assignmentId: string) {
+    async function handleStart(
+        assignmentId: string,
+        activeAttempt: ActivePracticeAttempt | null,
+    ) {
         if (!accessToken || startingId) return;
 
-        setStartingId(assignmentId);
         setStartError("");
+        if (activeAttempt) {
+            navigate(`/attempts/${encodeURIComponent(activeAttempt.id)}`);
+            return;
+        }
 
+        setStartingId(assignmentId);
         try {
             const attempt = await startPracticeAttempt(assignmentId, accessToken);
             navigate(`/attempts/${encodeURIComponent(attempt.id)}`);
@@ -161,6 +173,25 @@ function PracticeContent({
 
     const singleAssignment = assignments.length === 1 ? assignments[0] : null;
     const singleVersion = singleAssignment?.assignmentVersions[0] ?? null;
+    const singleStatus = singleAssignment
+        ? resolveAssignmentAttemptStatus(singleAssignment)
+        : null;
+
+    function statusPillClass(
+        kind: ReturnType<typeof resolveAssignmentAttemptStatus>["statusKind"],
+    ) {
+        switch (kind) {
+            case "active_and_remaining":
+            case "resume_only":
+                return "border-blue-200 bg-[#eff6ff] text-[#1e40af]";
+            case "exhausted":
+                return "border-amber-200 bg-amber-50 text-amber-800";
+            case "unknown":
+                return "border-slate-200 bg-slate-50 text-slate-700";
+            default:
+                return "border-emerald-200 bg-emerald-50 text-emerald-700";
+        }
+    }
 
     return (
         <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
@@ -235,7 +266,7 @@ function PracticeContent({
                 <p className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-500 shadow-sm">
                     No published assignments are available for this practice.
                 </p>
-            ) : singleAssignment && singleVersion ? (
+            ) : singleAssignment && singleVersion && singleStatus ? (
                 <section
                     aria-labelledby="assignment-heading"
                     className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
@@ -244,9 +275,16 @@ function PracticeContent({
                         <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
                             Practice preparation
                         </p>
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                            Published version {singleVersion.versionNo}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span
+                                className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusPillClass(singleStatus.statusKind)}`}
+                            >
+                                {singleStatus.statusBadge}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                                Published version {singleVersion.versionNo}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="mt-4 flex items-start gap-3.5">
@@ -261,21 +299,41 @@ function PracticeContent({
                                 {singleAssignment.title}
                             </h1>
                             <p className="mt-1.5 text-sm leading-6 text-slate-600">
-                                Review the configured attempt allowance and timing below before you open an attempt.
+                                Review your remaining attempts and timing limits below before opening this activity.
                             </p>
                         </div>
                     </div>
 
-                    <dl className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+                        <div
+                            className={`rounded-xl border p-4 ${
+                                singleStatus.statusKind === "exhausted"
+                                    ? "border-amber-200 bg-amber-50/45"
+                                    : singleStatus.activeAttempt
+                                      ? "border-blue-200 bg-[#eff6ff]/65"
+                                      : "border-blue-200/80 bg-[#eff6ff]/40"
+                            }`}
+                        >
+                            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Remaining new attempts
+                            </dt>
+                            <dd className="mt-1.5 text-base font-bold text-[#0f172a]">
+                                {singleStatus.remainingValue}
+                            </dd>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">
+                                {singleStatus.remainingSubtext}
+                            </p>
+                        </div>
+
                         <div className="rounded-xl border border-slate-200/90 bg-[#f8fafc] p-4">
                             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                Attempt allowance
+                                Attempt limit
                             </dt>
                             <dd className="mt-1.5 text-base font-bold text-[#0f172a]">
                                 {formatMaxAttempts(singleVersion.maxAttempts)}
                             </dd>
-                            <p className="mt-1 text-xs text-slate-500">
-                                Total attempts allowed for this assignment.
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                                Maximum new attempts allowed per learner.
                             </p>
                         </div>
 
@@ -286,7 +344,7 @@ function PracticeContent({
                             <dd className="mt-1.5 text-base font-bold text-[#0f172a]">
                                 {formatTimeLimit(singleVersion.timeLimitSeconds)}
                             </dd>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
                                 {singleVersion.timeLimitSeconds === null
                                     ? "No countdown applies once an attempt starts."
                                     : "Timer runs once you begin an attempt."}
@@ -303,20 +361,38 @@ function PracticeContent({
                         </p>
                     )}
 
-                    <div className="mt-6 rounded-xl border border-blue-100 bg-[#eff6ff]/45 p-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-5">
+                    <div
+                        className={`mt-6 rounded-xl border p-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-5 ${
+                            singleStatus.statusKind === "exhausted"
+                                ? "border-amber-200 bg-amber-50/55"
+                                : "border-blue-100 bg-[#eff6ff]/50"
+                        }`}
+                    >
                         <div className="min-w-0">
                             <p className="text-sm font-semibold text-[#0f172a]">
-                                {formatAssignmentLimits(singleVersion)}
+                                {singleStatus.actionHeadline}
                             </p>
                             <p className="mt-1 text-xs leading-5 text-slate-600">
-                                Opening this page only shows assignment details. Click Start / resume to begin a new attempt or reopen an in-progress attempt with its remaining time.
+                                {singleStatus.actionDescription}
                             </p>
+                            {singleStatus.statusKind === "exhausted" && (
+                                <Link
+                                    to="/practice-history"
+                                    className="mt-2 inline-flex text-xs font-semibold text-[#2563eb] hover:underline"
+                                >
+                                    View my practice attempts →
+                                </Link>
+                            )}
                         </div>
                         <div className="mt-4 shrink-0 sm:mt-0">
                             <StartResumeButton
                                 assignmentId={singleAssignment.id}
                                 startingId={startingId}
-                                onStart={(id) => void handleStart(id)}
+                                disabled={!singleStatus.canStartOrResume}
+                                label={singleStatus.ctaLabel}
+                                onStart={(id) =>
+                                    void handleStart(id, singleStatus.activeAttempt)
+                                }
                             />
                         </div>
                     </div>
@@ -335,15 +411,28 @@ function PracticeContent({
                     <ul className="space-y-4">
                         {assignments.map((assignment) => {
                             const version = assignment.assignmentVersions[0];
+                            const status =
+                                resolveAssignmentAttemptStatus(assignment);
 
                             return (
                                 <li
                                     key={assignment.id}
-                                    className="rounded-xl border border-slate-200 border-l-4 border-l-[#2563eb] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                                    className={`rounded-xl border border-slate-200 border-l-4 bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${
+                                        status.statusKind === "exhausted"
+                                            ? "border-l-amber-400"
+                                            : "border-l-[#2563eb]"
+                                    }`}
                                 >
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="flex min-w-0 items-start gap-3.5">
-                                            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eff6ff] text-[#2563eb]">
+                                            <span
+                                                className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                                    status.statusKind ===
+                                                    "exhausted"
+                                                        ? "bg-amber-50 text-amber-700"
+                                                        : "bg-[#eff6ff] text-[#2563eb]"
+                                                }`}
+                                            >
                                                 <PracticeClipboardIcon />
                                             </span>
                                             <div className="min-w-0">
@@ -351,15 +440,28 @@ function PracticeContent({
                                                     <h2 className="break-words text-lg font-bold text-[#0f172a]">
                                                         {assignment.title}
                                                     </h2>
+                                                    <span
+                                                        className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusPillClass(status.statusKind)}`}
+                                                    >
+                                                        {status.statusBadge}
+                                                    </span>
                                                     <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                                                        Published version {version.versionNo}
+                                                        Published version{" "}
+                                                        {version.versionNo}
                                                     </span>
                                                 </div>
                                                 <p className="mt-2 text-sm font-semibold text-[#1e40af]">
-                                                    {formatAssignmentLimits(version)}
+                                                    {status.remainingValue} ·{" "}
+                                                    {formatMaxAttempts(
+                                                        version.maxAttempts,
+                                                    )}{" "}
+                                                    ·{" "}
+                                                    {formatTimeLimit(
+                                                        version.timeLimitSeconds,
+                                                    )}
                                                 </p>
                                                 <p className="mt-1 text-xs leading-5 text-slate-500">
-                                                    Opening this page only shows limits. Click Start / resume to begin a new attempt or reopen an in-progress attempt with its remaining time.
+                                                    {status.actionDescription}
                                                 </p>
                                             </div>
                                         </div>
@@ -367,7 +469,11 @@ function PracticeContent({
                                         <StartResumeButton
                                             assignmentId={assignment.id}
                                             startingId={startingId}
-                                            onStart={(id) => void handleStart(id)}
+                                            disabled={!status.canStartOrResume}
+                                            label={status.ctaLabel}
+                                            onStart={(id) =>
+                                                void handleStart(id, status.activeAttempt)
+                                            }
                                         />
                                     </div>
                                 </li>

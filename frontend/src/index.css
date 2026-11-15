@@ -30,50 +30,56 @@ body {
   background-color: #f8fafc;
   background-image:
     radial-gradient(
-      640px circle at 8% -4%,
-      rgba(219, 234, 254, 0.72),
-      transparent 62%
+      960px 320px at 14% -6%,
+      rgba(191, 219, 254, 0.72),
+      transparent 65%
     ),
     radial-gradient(
-      520px circle at 92% 6%,
-      rgba(239, 246, 255, 0.85),
-      transparent 60%
+      760px 280px at 90% 2%,
+      rgba(219, 234, 254, 0.78),
+      transparent 62%
     ),
-    linear-gradient(180deg, #eff6ff 0%, #f8fafc 260px);
+    linear-gradient(180deg, #e0ecff 0%, #eff6ff 170px, #f8fafc 360px, #f8fafc 100%);
 }
 
 .student-surface-overview {
   background-color: #f8fafc;
   background-image:
     radial-gradient(
-      560px circle at 12% 0%,
-      rgba(239, 246, 255, 0.75),
-      transparent 58%
+      680px circle at 12% 0%,
+      rgba(219, 234, 254, 0.55),
+      transparent 60%
     ),
-    linear-gradient(180deg, #eff6ff 0%, #f8fafc 220px);
+    linear-gradient(180deg, #eaf2ff 0%, #f3f7fc 160px, #f8fafc 320px, #f8fafc 100%);
 }
 
 .student-surface-lesson {
   background-color: #f8fafc;
-  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 180px);
+  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 150px, #f8fafc 100%);
 }
 
 .student-surface-attempt-active {
   background-color: #f8fafc;
-  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 140px);
+  background-image: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 140px, #f8fafc 100%);
 }
 
 .student-surface-attempt-review {
   background-color: #f8fafc;
-  background-image: linear-gradient(180deg, #eff6ff 0%, #f8fafc 190px);
+  background-image:
+    radial-gradient(
+      880px 260px at 50% -40px,
+      rgba(186, 230, 253, 0.45),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #e0f2fe 0%, #eff6ff 150px, #f8fafc 320px, #f8fafc 100%);
 }
 
 .student-navbar-surface {
-  background-color: #ffffff;
+  background-color: #eff6ff;
   background-image: linear-gradient(
     180deg,
-    #eff6ff 0%,
-    #f8fafc 52%,
-    #ffffff 100%
+    #dbeafe 0%,
+    #eff6ff 58%,
+    #f8fafc 100%
   );
 }

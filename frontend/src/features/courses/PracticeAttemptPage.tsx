@@ -1,4 +1,5 @@
 import AttemptStatusBadge from "./AttemptStatusBadge";
+import AttemptTimerBadge from "../../components/AttemptTimerBadge";
 import PracticeAssessmentPanel from "./PracticeAssessmentPanel";
 import { useEffect, useState, type MouseEvent } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -563,61 +564,76 @@ function AttemptContent({
         </section>
       ) : attempt && version && activity ? (
         <>
-          <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
-                {isSubmittedView
-                  ? "Reading practice · Reviewing submission"
-                  : attemptClosed
-                    ? "Reading practice · Attempt closed"
-                    : "Reading practice · Taking practice"}
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  isSubmittedView
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : attemptClosed
-                      ? "border border-amber-200 bg-amber-50 text-amber-800"
-                      : "border border-blue-200 bg-blue-50 text-[#1e40af]"
-                }`}
-              >
-                {isSubmittedView
-                  ? "Submitted — Reviewing answers"
-                  : attemptClosed
-                    ? attempt.expiresAt &&
-                      new Date(attempt.expiresAt).getTime() <= now
-                      ? "Time limit expired — Read only"
-                      : "Attempt closed — Read only"
-                    : "Taking practice"}
-              </span>
-            </div>
-
-            <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
-              {version.assignment.title}
-            </h1>
-
-            <p className="mt-1.5 text-xs leading-5 text-slate-600">
-              {isSubmittedView
-                ? "Your answers have been submitted. Review your submission status and recorded responses below."
-                : attemptClosed
-                  ? "This attempt is closed and can no longer be edited or submitted."
-                  : "Answer the questions below and save your draft before leaving this page."}
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-              <span className="font-semibold text-[#0f172a]">
-                Attempt {attempt.attemptNo}
-              </span>
-              {attempt.expiresAt && (
-                <span>
-                  {attempt.status === "IN_PROGRESS"
-                    ? "Time limit ends"
-                    : "Time limit ended"}
-                  : {new Date(attempt.expiresAt).toLocaleString()}
+          {isSubmittedView ? (
+            <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                  Reading practice · Reviewing submission
                 </span>
-              )}
-            </div>
-          </header>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                  Submitted — Reviewing answers
+                </span>
+              </div>
+
+              <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
+                {version.assignment.title}
+              </h1>
+
+              <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                Your answers have been submitted. Review your submission status and recorded responses below.
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                <span className="font-semibold text-[#0f172a]">
+                  Attempt {attempt.attemptNo}
+                </span>
+              </div>
+            </header>
+          ) : (
+            <header className="sticky top-2 z-20 rounded-xl border border-slate-200/95 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-md sm:px-5 sm:py-3.5">
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+                    <span className="font-semibold uppercase tracking-wide text-[#2563eb]">
+                      {attemptClosed
+                        ? "Reading practice · Attempt closed"
+                        : "Reading practice"}
+                    </span>
+                    <span className="text-slate-300" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="font-semibold text-[#0f172a]">
+                      Attempt {attempt.attemptNo}
+                    </span>
+                  </div>
+                  <h1 className="mt-0.5 truncate text-base font-bold text-[#0f172a] sm:text-lg">
+                    {version.assignment.title}
+                  </h1>
+                </div>
+
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <AttemptTimerBadge
+                    expiresAt={attempt.expiresAt}
+                    now={now}
+                  />
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      attemptClosed
+                        ? "border border-amber-200 bg-amber-50 text-amber-800"
+                        : "border border-slate-200 bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    {attemptClosed
+                      ? attempt.expiresAt &&
+                        new Date(attempt.expiresAt).getTime() <= now
+                        ? "Time limit expired — Read only"
+                        : "Attempt closed — Read only"
+                      : "In progress"}
+                  </span>
+                </div>
+              </div>
+            </header>
+          )}
 
           {activity.instructions && (
             <div className="whitespace-pre-wrap rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900">

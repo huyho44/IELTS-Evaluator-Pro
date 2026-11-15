@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "../features/auth/session";
 import {
+  formatNotificationContext,
   formatUnreadBadge,
+  getNotificationActionLabel,
   isInternalNavigationPath,
   loadNotifications,
   markNotificationRead,
@@ -75,7 +77,7 @@ export default function StudentNavbar() {
   function navigation(mobile = false) {
     const tab = (active: boolean) =>
       mobile
-        ? `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "bg-[#eff6ff] text-[#2563eb]" : "text-[#475569] hover:bg-white/80 hover:text-[#2563eb]"}`
+        ? `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "bg-[#eff6ff] text-[#2563eb]" : "text-[#475569] hover:bg-white/90 hover:text-[#2563eb]"}`
         : `flex items-center border-b-2 whitespace-nowrap px-1 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "border-[#2563eb] text-[#2563eb]" : "border-transparent text-[#475569] hover:text-[#2563eb]"}`;
     return (
       <>
@@ -138,12 +140,12 @@ export default function StudentNavbar() {
   }
 
   return (
-    <header ref={root} className="student-navbar-surface border-b border-[#dbeafe]">
+    <header ref={root} className="student-navbar-surface border-b border-[#bfdbfe]">
       <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-3 gap-y-0 px-4 sm:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:items-stretch">
         <Link
           to="/courses"
           onClick={() => setMenu(null)}
-          className="shrink-0 whitespace-nowrap py-3.5 text-sm font-semibold text-[#2563eb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:text-lg xl:py-4 xl:text-[20px]"
+          className="shrink-0 whitespace-nowrap py-3.5 text-sm font-semibold text-[#2563eb] transition-colors hover:text-[#1d4ed8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:text-lg xl:py-4 xl:text-[20px]"
         >
           IELTS Evaluator Pro
         </Link>
@@ -165,7 +167,7 @@ export default function StudentNavbar() {
               aria-expanded={menu === "notifications"}
               aria-controls="notifications-panel"
               onClick={(e) => toggle("notifications", e.currentTarget)}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[#475569] transition-colors hover:bg-[#eff6ff]/80 hover:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-[#eff6ff] text-[#2563eb] ring-1 ring-[#bfdbfe]" : ""}`}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[#bfdbfe]/70 bg-white/75 text-[#334155] transition-colors hover:bg-white hover:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-white text-[#2563eb] ring-1 ring-[#93c5fd]" : ""}`}
             >
               <svg
                 aria-hidden="true"
@@ -244,11 +246,13 @@ export default function StudentNavbar() {
                       {recentNotifications.map((item) => {
                         const isUnread = !item.readAt;
                         const marking = Boolean(markingIds[item.id]);
+                        const contextLabel = formatNotificationContext(item);
+                        const actionLabel = getNotificationActionLabel(item);
                         return (
                           <div
                             key={item.id}
                             className={`space-y-1.5 px-4 py-3 text-xs ${
-                              isUnread ? "bg-blue-50/40" : "bg-white"
+                              isUnread ? "bg-[#eff6ff]/50" : "bg-white"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -273,6 +277,11 @@ export default function StudentNavbar() {
                                 {new Date(item.createdAt).toLocaleDateString()}
                               </span>
                             </div>
+                            {contextLabel && (
+                              <p className="truncate text-[11px] font-semibold text-[#1e40af]">
+                                {contextLabel}
+                              </p>
+                            )}
                             <p className="line-clamp-2 text-xs leading-relaxed text-[#64748b]">
                               {item.body}
                             </p>
@@ -288,7 +297,7 @@ export default function StudentNavbar() {
                                   }}
                                   className="font-semibold text-[#2563eb] hover:underline"
                                 >
-                                  Open
+                                  {actionLabel} →
                                 </Link>
                               )}
                               {isUnread && (
@@ -328,7 +337,7 @@ export default function StudentNavbar() {
                 aria-expanded={menu === "account"}
                 aria-controls="account-menu"
                 onClick={(e) => toggle("account", e.currentTarget)}
-                className={`flex max-w-[140px] items-center gap-2 rounded-full border border-[#dbeafe] bg-white/75 p-1 pr-2.5 text-left transition-colors hover:border-[#bfdbfe] hover:bg-[#eff6ff]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3 ${menu === "account" ? "border-[#bfdbfe] bg-[#eff6ff]/80" : ""}`}
+                className={`flex max-w-[140px] items-center gap-2 rounded-full border border-[#bfdbfe] bg-white/85 p-1 pr-2.5 text-left shadow-2xs transition-colors hover:border-[#93c5fd] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3 ${menu === "account" ? "border-[#93c5fd] bg-white ring-1 ring-[#bfdbfe]" : ""}`}
               >
                 <span
                   aria-hidden="true"
@@ -441,7 +450,7 @@ export default function StudentNavbar() {
             aria-label="Open navigation menu"
             aria-expanded={menu === "mobile"}
             aria-controls="mobile-navigation"
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#0f172a] transition-colors hover:bg-[#eff6ff]/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] xl:hidden ${menu === "mobile" ? "bg-[#eff6ff] text-[#2563eb] ring-1 ring-[#bfdbfe]" : ""}`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#bfdbfe]/70 bg-white/75 text-[#0f172a] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] xl:hidden ${menu === "mobile" ? "bg-white text-[#2563eb] ring-1 ring-[#93c5fd]" : ""}`}
             onClick={(e) => toggle("mobile", e.currentTarget)}
           >
             <svg
@@ -463,7 +472,7 @@ export default function StudentNavbar() {
           <nav
             id="mobile-navigation"
             aria-label="Mobile student navigation"
-            className="flex w-full flex-col gap-1 border-t border-[#dbeafe]/80 bg-white/90 py-2 xl:hidden"
+            className="flex w-full flex-col gap-1 border-t border-[#bfdbfe]/80 bg-white/95 px-2 py-2.5 shadow-sm xl:hidden"
           >
             {navigation(true)}
           </nav>

@@ -155,7 +155,7 @@ function LearningContent({
     ) ?? [];
 
   return (
-    <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
+    <div className="student-surface-catalog min-h-[calc(100vh-4rem)]">
       <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
         <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] border-l-4 border-l-[#2563eb] bg-gradient-to-r from-[#f8fafc] to-white p-3.5 shadow-sm sm:flex-row sm:items-start sm:gap-4 sm:p-5">
         <div className="min-w-0 space-y-1.5">

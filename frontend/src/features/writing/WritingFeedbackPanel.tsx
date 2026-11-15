@@ -134,6 +134,57 @@ export default function WritingFeedbackPanel({
     !!revision && ["QUEUED", "RUNNING"].includes(revision.processing.status);
   const processingFailed = revision?.processing.status === "FAILED";
   const awaitingInstructorReview = !official && reviewPending;
+  const topAccentClass = official
+    ? "border-t-4 border-t-emerald-500"
+    : hasProvisionalAi
+      ? "border-t-4 border-t-amber-500"
+      : processingFailed
+        ? "border-t-4 border-t-rose-500"
+        : "border-t-4 border-t-[#2563eb]";
+  const primaryStatus = official
+    ? {
+        label: "Official instructor assessment",
+        className:
+          "border border-emerald-200 bg-emerald-50 text-emerald-800",
+      }
+    : hasProvisionalAi
+      ? {
+          label: "Provisional AI feedback",
+          className: "border border-amber-200 bg-amber-50 text-amber-900",
+        }
+      : processingFailed
+        ? {
+            label: "Automated assessment failed",
+            className: "border border-rose-200 bg-rose-50 text-rose-800",
+          }
+        : awaitingInstructorReview
+          ? {
+              label: "Awaiting instructor review",
+              className:
+                "border border-indigo-200 bg-indigo-50 text-indigo-800",
+            }
+          : isProcessing
+            ? {
+                label: "Evaluating essay automatically",
+                className: "border border-blue-200 bg-blue-50 text-[#1e40af]",
+              }
+            : {
+                label: "Awaiting evaluation",
+                className: "border border-slate-200 bg-slate-100 text-slate-700",
+              };
+  const essayText = revision
+    ? revision.writingText ||
+      revision.paragraphs.map((item) => item.text).join("\n\n")
+    : "";
+  const essayWordCount = essayText.trim()
+    ? essayText.trim().split(/\s+/).length
+    : 0;
+  const essayParagraphCount = revision
+    ? revision.paragraphs.length ||
+      (essayText.trim()
+        ? essayText.trim().split(/\n\s*\n/).filter(Boolean).length
+        : 0)
+    : 0;
 
   async function handleRequest() {
     if (action.current || !revision || !reason.trim()) return;
@@ -177,67 +228,47 @@ export default function WritingFeedbackPanel({
 
   return (
     <div className="space-y-5">
-      <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section
+        aria-labelledby="feedback-panel-heading"
+        className={`space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 ${topAccentClass}`}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-[#0f172a]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2
+                id="feedback-panel-heading"
+                className="text-lg font-bold text-[#0f172a]"
+              >
                 {revision
-                  ? `Revision ${revision.revisionNo} — Feedback`
+                  ? `Feedback · Revision ${revision.revisionNo}`
                   : "Feedback"}
               </h2>
               {revision && (
-                <span className="text-xs text-[#64748b]">
-                  Submitted {new Date(revision.submittedAt).toLocaleString()}
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${primaryStatus.className}`}
+                >
+                  {primaryStatus.label}
+                </span>
+              )}
+              {official && pendingAppeal && (
+                <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                  Appeal in review
                 </span>
               )}
             </div>
-
             {revision && (
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                  Submitted
-                </span>
-                {isProcessing && (
-                  <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]">
-                    Processing assessment
-                  </span>
-                )}
-                {processingFailed && (
-                  <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-                    Automated assessment failed
-                  </span>
-                )}
-                {hasProvisionalAi && (
-                  <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
-                    Provisional AI feedback
-                  </span>
-                )}
-                {awaitingInstructorReview && (
-                  <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-800">
-                    Awaiting instructor review
-                  </span>
-                )}
-                {official && (
-                  <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                    Official instructor assessment
-                  </span>
-                )}
-                {official && pendingAppeal && (
-                  <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
-                    Appeal in review
-                  </span>
-                )}
-              </div>
+              <p className="text-xs text-[#64748b]">
+                Submitted {new Date(revision.submittedAt).toLocaleString()}
+              </p>
             )}
           </div>
 
           <button
             type="button"
             onClick={() => setReloadKey((value) => value + 1)}
-            className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#2563eb] hover:bg-slate-50"
+            className="shrink-0 rounded-lg border border-blue-200 bg-[#eff6ff]/70 px-3 py-1.5 text-xs font-semibold text-[#1e40af] transition-colors hover:bg-[#eff6ff]"
           >
-            Refresh feedback
+            {assessments.length > 0 ? "Refresh feedback" : "Check for feedback"}
           </button>
         </div>
 
@@ -262,15 +293,32 @@ export default function WritingFeedbackPanel({
             {!assessments.length && (
               <div
                 role="status"
-                className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-sm leading-6 text-blue-900"
-              >
-                {isProcessing
-                  ? "Your essay is being assessed automatically. Feedback will appear here once processing completes."
-                  : processingFailed
-                    ? "Automated assessment could not complete. You can ask your instructor to review this essay below."
+                className={`rounded-xl border p-4 sm:p-5 ${
+                  processingFailed
+                    ? "border-rose-200 bg-rose-50/70 text-rose-900"
                     : awaitingInstructorReview
-                      ? "Your essay has been received and is awaiting instructor review."
-                      : "Your essay has been received. No feedback has been released for this revision yet."}
+                      ? "border-indigo-200 bg-indigo-50/70 text-indigo-950"
+                      : "border-blue-200 bg-[#eff6ff]/80 text-[#0f172a]"
+                }`}
+              >
+                <p className="text-sm font-semibold">
+                  {isProcessing
+                    ? "Automated assessment is running"
+                    : processingFailed
+                      ? "Automated assessment could not complete"
+                      : awaitingInstructorReview
+                        ? "Instructor review requested"
+                        : "Evaluation pending"}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  {isProcessing
+                    ? "Your essay is being assessed automatically. Feedback will appear here once processing completes."
+                    : processingFailed
+                      ? "The automated check could not complete for this revision. You can request an instructor review below."
+                      : awaitingInstructorReview
+                        ? "Your essay has been received and is awaiting instructor review."
+                        : "Your essay has been received. No feedback has been released for this revision yet."}
+                </p>
               </div>
             )}
 
@@ -471,20 +519,30 @@ export default function WritingFeedbackPanel({
       </section>
 
       {revision && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-[#fcfdff] shadow-xs">
           <details open={!compact && !assessments.length} className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-bold text-[#0f172a] [&::-webkit-details-marker]:hidden">
-              <span>
-                Submitted essay — Revision {revision.revisionNo}
-              </span>
-              <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 group-open:hidden">
+            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-[#f8fafc] px-5 py-3.5 transition-colors hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Document
+                </span>
+                <span className="text-sm font-bold text-[#0f172a]">
+                  Submitted essay · Revision {revision.revisionNo}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  {essayWordCount} {essayWordCount === 1 ? "word" : "words"} ·{" "}
+                  {essayParagraphCount}{" "}
+                  {essayParagraphCount === 1 ? "paragraph" : "paragraphs"}
+                </span>
+              </div>
+              <span className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-[#1e40af] shadow-2xs group-open:hidden">
                 Read submitted essay
               </span>
-              <span className="hidden rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 group-open:inline">
-                Hide submitted essay
+              <span className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs group-open:inline">
+                Hide essay
               </span>
             </summary>
-            <div className="mt-4 space-y-4 rounded-xl border border-slate-200/80 bg-[#f8fafc] p-4">
+            <div className="space-y-4 p-5 sm:p-6">
               {revision.paragraphs.map((paragraph) => (
                 <p
                   key={paragraph.id}

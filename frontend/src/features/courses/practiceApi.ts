@@ -1,4 +1,10 @@
 import { sessionFetch as fetch } from "../auth/session";
+export type ActivePracticeAttempt = {
+    id: string;
+    attemptNo: number;
+    expiresAt: string | null;
+};
+
 export type PracticeAssignment = {
     id: string;
     title: string;
@@ -9,6 +15,24 @@ export type PracticeAssignment = {
         maxAttempts: number;
         timeLimitSeconds: number | null;
     }[];
+    attemptsUsed?: number;
+    attemptsRemaining?: number;
+    activeAttempt?: ActivePracticeAttempt | null;
+};
+
+export type AssignmentAttemptStatus = {
+    maxAttempts: number;
+    attemptsUsed: number | null;
+    attemptsRemaining: number | null;
+    activeAttempt: ActivePracticeAttempt | null;
+    canStartOrResume: boolean;
+    statusKind: "available" | "active_and_remaining" | "resume_only" | "exhausted" | "unknown";
+    statusBadge: string;
+    remainingValue: string;
+    remainingSubtext: string;
+    actionHeadline: string;
+    actionDescription: string;
+    ctaLabel: string;
 };
 
 export function formatMaxAttempts(maxAttempts: number): string {
@@ -44,6 +68,108 @@ export function formatAssignmentLimits(version: {
     return `${formatMaxAttempts(version.maxAttempts)} · ${formatTimeLimit(version.timeLimitSeconds)}`;
 }
 
+export function resolveAssignmentAttemptStatus(
+    assignment: PracticeAssignment,
+): AssignmentAttemptStatus {
+    const version = assignment.assignmentVersions[0];
+    const maxAttempts = version?.maxAttempts ?? 1;
+    const { attemptsUsed, attemptsRemaining } = assignment;
+    if (
+        attemptsUsed === undefined ||
+        attemptsRemaining === undefined ||
+        assignment.activeAttempt === undefined
+    ) {
+        return {
+            maxAttempts,
+            attemptsUsed: attemptsUsed ?? null,
+            attemptsRemaining: null,
+            activeAttempt: null,
+            canStartOrResume: true,
+            statusKind: "unknown",
+            statusBadge: "Attempt status unavailable",
+            remainingValue: "Unavailable",
+            remainingSubtext: "Your remaining attempts could not be confirmed.",
+            actionHeadline: formatMaxAttempts(maxAttempts),
+            actionDescription: "The server checks availability when you start or resume.",
+            ctaLabel: "Start / resume",
+        };
+    }
+    const activeAttempt = assignment.activeAttempt ?? null;
+    const expiryNote = activeAttempt?.expiresAt
+        ? ` Active attempt expires ${new Date(activeAttempt.expiresAt).toLocaleString()}.`
+        : "";
+
+    if (activeAttempt && attemptsRemaining > 0) {
+        return {
+            maxAttempts,
+            attemptsUsed,
+            attemptsRemaining,
+            activeAttempt,
+            canStartOrResume: true,
+            statusKind: "active_and_remaining",
+            statusBadge: `Attempt ${activeAttempt.attemptNo} in progress`,
+            remainingValue: `${attemptsRemaining} new ${attemptsRemaining === 1 ? "attempt" : "attempts"} left`,
+            remainingSubtext: `${attemptsUsed} of ${maxAttempts} started · Attempt ${activeAttempt.attemptNo} active.`,
+            actionHeadline: `${formatMaxAttempts(maxAttempts)} · ${attemptsRemaining} new ${attemptsRemaining === 1 ? "attempt" : "attempts"} remaining (Attempt ${activeAttempt.attemptNo} in progress)`,
+            actionDescription: `Opening this button resumes your in-progress Attempt ${activeAttempt.attemptNo} without consuming a new attempt.${expiryNote}`,
+            ctaLabel: `Resume attempt ${activeAttempt.attemptNo}`,
+        };
+    }
+
+    if (activeAttempt && attemptsRemaining === 0) {
+        return {
+            maxAttempts,
+            attemptsUsed,
+            attemptsRemaining: 0,
+            activeAttempt,
+            canStartOrResume: true,
+            statusKind: "resume_only",
+            statusBadge: `Attempt ${activeAttempt.attemptNo} in progress`,
+            remainingValue: "0 new attempts remaining",
+            remainingSubtext: `All ${maxAttempts} allowed ${maxAttempts === 1 ? "attempt" : "attempts"} started, but Attempt ${activeAttempt.attemptNo} is still active.`,
+            actionHeadline: `${formatMaxAttempts(maxAttempts)} · 0 new attempts remaining · Attempt ${activeAttempt.attemptNo} in progress`,
+            actionDescription: `You cannot start another new attempt, but Attempt ${activeAttempt.attemptNo} is still in progress. Resuming it uses no new attempt.${expiryNote}`,
+            ctaLabel: `Resume attempt ${activeAttempt.attemptNo}`,
+        };
+    }
+
+    if (attemptsRemaining > 0) {
+        return {
+            maxAttempts,
+            attemptsUsed,
+            attemptsRemaining,
+            activeAttempt: null,
+            canStartOrResume: true,
+            statusKind: "available",
+            statusBadge: `${attemptsRemaining} ${attemptsRemaining === 1 ? "attempt" : "attempts"} left`,
+            remainingValue: `${attemptsRemaining} of ${maxAttempts} remaining`,
+            remainingSubtext:
+                attemptsUsed === 0
+                    ? "No attempts started yet."
+                    : `${attemptsUsed} of ${maxAttempts} ${maxAttempts === 1 ? "attempt" : "attempts"} used.`,
+            actionHeadline: `${formatMaxAttempts(maxAttempts)} · ${attemptsRemaining} new ${attemptsRemaining === 1 ? "attempt" : "attempts"} remaining · ${formatTimeLimit(version?.timeLimitSeconds ?? null)}`,
+            actionDescription:
+                "Opening this preparation page never consumes an attempt. Starting a new attempt begins the timer immediately if one is configured.",
+            ctaLabel: "Start new attempt",
+        };
+    }
+
+    return {
+        maxAttempts,
+        attemptsUsed,
+        attemptsRemaining: 0,
+        activeAttempt: null,
+        canStartOrResume: false,
+        statusKind: "exhausted",
+        statusBadge: "No attempts remaining",
+        remainingValue: "0 new attempts remaining",
+        remainingSubtext: `All ${maxAttempts} allowed ${maxAttempts === 1 ? "attempt" : "attempts"} used · No attempt in progress.`,
+        actionHeadline: `${formatMaxAttempts(maxAttempts)} · 0 new attempts remaining`,
+        actionDescription: "You have used all available attempts and have no active attempt to resume.",
+        ctaLabel: "No attempts remaining",
+    };
+}
+
 export class PracticeApiError extends Error {
     readonly status: number;
 
@@ -60,6 +186,19 @@ function isObject(
     return typeof value === "object" && value !== null;
 }
 
+function isActivePracticeAttempt(
+    value: unknown,
+): value is ActivePracticeAttempt {
+    return (
+        isObject(value) &&
+        typeof value.id === "string" &&
+        typeof value.attemptNo === "number" &&
+        Number.isInteger(value.attemptNo) &&
+        value.attemptNo >= 1 &&
+        (value.expiresAt === null || typeof value.expiresAt === "string")
+    );
+}
+
 function isAssignment(value: unknown): value is PracticeAssignment {
     if (
         !isObject(value) ||
@@ -68,6 +207,23 @@ function isAssignment(value: unknown): value is PracticeAssignment {
         typeof value.activityId !== "string" ||
         !Array.isArray(value.assignmentVersions)
     ) {
+        return false;
+    }
+
+    const validOptionalCounts =
+        (value.attemptsUsed === undefined ||
+            (typeof value.attemptsUsed === "number" &&
+                Number.isInteger(value.attemptsUsed) &&
+                value.attemptsUsed >= 0)) &&
+        (value.attemptsRemaining === undefined ||
+            (typeof value.attemptsRemaining === "number" &&
+                Number.isInteger(value.attemptsRemaining) &&
+                value.attemptsRemaining >= 0)) &&
+        (value.activeAttempt === undefined ||
+            value.activeAttempt === null ||
+            isActivePracticeAttempt(value.activeAttempt));
+
+    if (!validOptionalCounts) {
         return false;
     }
 

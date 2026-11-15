@@ -417,3 +417,130 @@ describe('course lesson progress', () => {
     ).toBe(false);
   });
 });
+
+describe('course assignment attempt availability', () => {
+  const assignmentFixture = (
+    attempts: Array<{
+      id: string;
+      assignmentId: string;
+      attemptNo: number;
+      status: string;
+      expiresAt: Date | null;
+    }>,
+    maxAttempts = 2,
+  ) => {
+    const db = {
+      enrollment: {
+        findUnique: vi.fn(async () => ({
+          id: 'an-enrollment',
+          learnerId: an.id,
+          courseId,
+          status: 'ACTIVE',
+        })),
+      },
+      assignment: {
+        findMany: vi.fn(async () => [
+          {
+            id: 'assign-1',
+            title: 'Diagnostic Writing',
+            activityId: practiceId,
+            assignmentVersions: [
+              {
+                id: 'ver-1',
+                versionNo: 1,
+                maxAttempts,
+                timeLimitSeconds: 2400,
+              },
+            ],
+          },
+        ]),
+      },
+      attempt: {
+        findMany: vi.fn(async () => attempts),
+      },
+    } as unknown as PrismaService;
+    return {
+      db,
+      service: new CoursesService(db, new AccessService(db)),
+    };
+  };
+
+  it('reports remaining new attempts when the learner still has quota left', async () => {
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-1',
+          assignmentId: 'assign-1',
+          attemptNo: 1,
+          status: 'SUBMITTED',
+          expiresAt: null,
+        },
+      ],
+      3,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 1,
+      attemptsRemaining: 2,
+      activeAttempt: null,
+    });
+  });
+
+  it('keeps an active non-expired in-progress attempt resumable even when 0 new attempts remain', async () => {
+    const futureExpiry = new Date(Date.now() + 600_000);
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-2',
+          assignmentId: 'assign-1',
+          attemptNo: 2,
+          status: 'IN_PROGRESS',
+          expiresAt: futureExpiry,
+        },
+        {
+          id: 'att-1',
+          assignmentId: 'assign-1',
+          attemptNo: 1,
+          status: 'SUBMITTED',
+          expiresAt: null,
+        },
+      ],
+      2,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 2,
+      attemptsRemaining: 0,
+      activeAttempt: {
+        id: 'att-2',
+        attemptNo: 2,
+        expiresAt: futureExpiry,
+      },
+    });
+  });
+
+  it('reports 0 remaining attempts and no active attempt when max attempts are used or expired', async () => {
+    const pastExpiry = new Date(Date.now() - 60_000);
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-2',
+          assignmentId: 'assign-1',
+          attemptNo: 2,
+          status: 'IN_PROGRESS',
+          expiresAt: pastExpiry,
+        },
+      ],
+      2,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 2,
+      attemptsRemaining: 0,
+      activeAttempt: null,
+    });
+  });
+});

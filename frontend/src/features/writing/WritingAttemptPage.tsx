@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import AttemptTimerBadge from "../../components/AttemptTimerBadge";
 import { StudentApiError } from "../../lib/api/studentRequest";
 import {
   getStudentAttempt,
@@ -407,96 +408,174 @@ export default function WritingAttemptPage({
         </Link>
       </nav>
 
-      <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
-            {editing
-              ? canEdit
-                ? revisions.length > 0
-                  ? "Writing practice · Preparing new revision"
-                  : "Writing practice · Writing draft"
-                : "Writing practice · Editing window closed"
-              : revisions.length === 0
-                ? "Writing practice · Attempt closed"
-                : canRevise
-                  ? "Writing practice · Reviewing submission"
-                  : "Writing practice · Reviewing final submission"}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                editing
-                  ? canEdit
-                    ? "border border-blue-200 bg-blue-50 text-[#1e40af]"
+      {editing ? (
+        <header className="sticky top-2 z-20 rounded-xl border border-slate-200/95 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-md sm:px-5 sm:py-3.5">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+                <span className="font-semibold uppercase tracking-wide text-[#2563eb]">
+                  {canEdit
+                    ? revisions.length > 0
+                      ? "Writing practice · Preparing new revision"
+                      : "Writing practice"
+                    : "Writing practice · Editing window closed"}
+                </span>
+                <span className="text-slate-300" aria-hidden="true">
+                  ·
+                </span>
+                <span className="font-semibold text-[#0f172a]">
+                  Attempt {attempt.attemptNo}
+                </span>
+                <span className="text-slate-500">
+                  Revision {nextRevision} of {version.maxRevisions}
+                </span>
+                {version.dueAt && (
+                  <span className="text-slate-500">
+                    Due {new Date(version.dueAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <h1 className="mt-0.5 truncate text-base font-bold text-[#0f172a] sm:text-lg">
+                {version.assignment.title}
+              </h1>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <AttemptTimerBadge expiresAt={attempt.expiresAt} now={now} />
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  canEdit
+                    ? "border border-slate-200 bg-slate-50 text-slate-700"
                     : "border border-amber-200 bg-amber-50 text-amber-800"
-                  : revisions.length > 0
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border border-amber-200 bg-amber-50 text-amber-800"
-              }`}
-            >
-              {editing
-                ? canEdit
+                }`}
+              >
+                {canEdit
                   ? `Editing revision ${nextRevision} draft`
                   : pastDue
                     ? "Deadline passed — Read only"
-                    : "Time limit expired — Read only"
-                : revisions.length > 0
-                  ? `Viewing submitted revision ${selectedRevisionObj?.revisionNo ?? 1}`
-                  : "Attempt closed — Read only"}
-            </span>
-            {editing && revisions.length > 0 && (
-              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                {hasConfirmedFeedback
-                  ? "Earlier feedback available below"
-                  : "Earlier submissions below"}
+                    : "Time limit expired — Read only"}
               </span>
-            )}
-            {!editing && revisions.length > 0 && !canRevise && (
-              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                {pastDue
-                  ? "Deadline passed"
-                  : nextRevision > version.maxRevisions
-                    ? "All revisions used"
-                    : "Attempt closed"}
+              {revisions.length > 0 && (
+                <span className="hidden rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 md:inline-flex">
+                  {hasConfirmedFeedback
+                    ? "Earlier feedback below"
+                    : "Earlier submissions below"}
+                </span>
+              )}
+            </div>
+          </div>
+        </header>
+      ) : (
+        <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                {revisions.length === 0
+                  ? "Writing practice · Attempt closed"
+                  : canRevise
+                    ? "Writing practice · Reviewing submission"
+                    : "Writing practice · Reviewing final submission"}
               </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    revisions.length > 0
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-amber-200 bg-amber-50 text-amber-800"
+                  }`}
+                >
+                  {revisions.length > 0
+                    ? `Viewing revision ${selectedRevisionObj?.revisionNo ?? 1} of ${revisions.length}`
+                    : "Attempt closed — Read only"}
+                </span>
+                {revisions.length > 0 && !canRevise && (
+                  <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                    {pastDue
+                      ? "Deadline passed"
+                      : nextRevision > version.maxRevisions
+                        ? "All revisions used"
+                        : "Attempt closed"}
+                  </span>
+                )}
+              </div>
+            </div>
+            <h1 className="mt-1.5 text-2xl font-bold text-[#0f172a]">
+              {version.assignment.title}
+            </h1>
+            <p className="mt-1.5 text-xs leading-5 text-slate-600">
+              {revisions.length === 0
+                ? "No revisions were submitted before this attempt closed."
+                : canRevise
+                  ? "Review your selected submission and evaluation status below, or open a new revision when ready."
+                  : "Review your selected submission and evaluation details below."}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
+              <span className="font-semibold text-[#0f172a]">
+                Attempt {attempt.attemptNo}
+              </span>
+              <span>
+                {revisions.length} of {version.maxRevisions} revisions submitted
+              </span>
+              {version.dueAt && (
+                <span>Due: {new Date(version.dueAt).toLocaleString()}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 bg-[#f8fafc] px-5 py-3 sm:px-6">
+            {revisions.length > 0 ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Revisions
+                  </span>
+                  {revisions.map((revision, index) => {
+                    const active = selectedRevision === revision.id;
+                    return (
+                      <button
+                        key={revision.id}
+                        type="button"
+                        onClick={() => setSelectedRevision(revision.id)}
+                        aria-pressed={active}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                          active
+                            ? "border-[#2563eb] bg-[#2563eb] text-white shadow-xs"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-[#1e40af]"
+                        }`}
+                      >
+                        <span>Revision {revision.revisionNo}</span>
+                        {index === 0 && (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                              active
+                                ? "bg-white/20 text-white"
+                                : "bg-blue-50 text-[#1e40af]"
+                            }`}
+                          >
+                            Latest
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedRevisionObj && (
+                  <span className="text-xs text-slate-500">
+                    Submitted{" "}
+                    {new Date(
+                      selectedRevisionObj.submittedAt,
+                    ).toLocaleString()}
+                  </span>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-500">
+                No submitted revisions were recorded for this attempt.
+              </p>
             )}
           </div>
-        </div>
-        <h1 className="mt-1.5 text-2xl font-bold text-[#0f172a]">
-          {version.assignment.title}
-        </h1>
-        <p className="mt-1.5 text-xs leading-5 text-slate-600">
-          {editing
-            ? canEdit
-              ? revisions.length > 0
-                ? hasConfirmedFeedback
-                  ? "Save your draft anytime or submit when ready. Confirmed feedback from earlier revisions is below."
-                  : "Save your draft anytime or submit when ready. Your earlier submitted revisions are available below."
-                : "Save your draft anytime or submit when ready for evaluation."
-              : "Your saved draft is preserved below in read-only mode."
-            : revisions.length === 0
-              ? "No revisions were submitted before this attempt closed."
-              : canRevise
-                ? "Review your submission and evaluation details below, or start a new revision when ready."
-                : "Review your submitted essay and evaluation details below."}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
-          <span className="font-semibold text-[#0f172a]">
-            Attempt {attempt.attemptNo}
-          </span>
-          <span>
-            {revisions.length} / {version.maxRevisions} revisions submitted
-          </span>
-          {attempt.expiresAt && editing && (
-            <span>
-              Editing ends: {new Date(attempt.expiresAt).toLocaleString()}
-            </span>
-          )}
-          {version.dueAt && (
-            <span>Due: {new Date(version.dueAt).toLocaleString()}</span>
-          )}
-        </div>
-      </header>
+        </header>
+      )}
 
       {error && (
         <p
@@ -713,144 +792,140 @@ export default function WritingAttemptPage({
           )}
         </div>
       ) : (
-        <div className="space-y-5">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-bold uppercase tracking-wide text-[#0f172a]">
-                  Revision history
-                </h2>
-                <p className="mt-0.5 text-xs text-[#64748b]">
-                  Select a submitted revision to view its status, feedback, and
-                  submitted essay.
-                </p>
-              </div>
-              {revisions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {revisions.map((revision, index) => (
-                    <button
-                      key={revision.id}
-                      type="button"
-                      onClick={() => setSelectedRevision(revision.id)}
-                      aria-pressed={selectedRevision === revision.id}
-                      className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors ${
-                        selectedRevision === revision.id
-                          ? "border-[#2563eb] bg-[#eff6ff] text-[#1e40af]"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Revision {revision.revisionNo}
-                      {index === 0 ? " (Latest)" : ""}
-                      <span className="mt-0.5 block font-normal text-slate-500">
-                        {new Date(revision.submittedAt).toLocaleDateString()}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {!revisions.length && (
-              <p className="mt-3 text-sm text-slate-500">
-                Submit your first essay to receive feedback.
-              </p>
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+          <div className="min-w-0">
+            {selectedRevision ? (
+              <WritingFeedbackPanel
+                key={selectedRevision}
+                revisionId={selectedRevision}
+                attemptId={attempt.id}
+                accessToken={accessToken}
+                onSessionExpired={onSessionExpired}
+                onFeedbackStatusChange={handleFeedbackStatusChange}
+              />
+            ) : (
+              <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+                Submit your essay to receive evaluation and feedback.
+              </section>
             )}
-          </section>
-
-          <div className="grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
-            <div className="min-w-0">
-              {selectedRevision && (
-                <WritingFeedbackPanel
-                  key={selectedRevision}
-                  revisionId={selectedRevision}
-                  attemptId={attempt.id}
-                  accessToken={accessToken}
-                  onSessionExpired={onSessionExpired}
-                  onFeedbackStatusChange={handleFeedbackStatusChange}
-                />
-              )}
-            </div>
-
-            <aside className="space-y-5">
-              <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-bold text-[#0f172a]">
-                  Continue improving your essay
-                </h2>
-                {canRevise ? (
-                  <>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {selectedFeedbackKnown === true
-                        ? `Use your feedback to prepare revision ${nextRevision}. Earlier text and assessments remain available in the revision history.`
-                        : selectedFeedbackKnown === false
-                          ? `Feedback is not ready yet. You can still start revision ${nextRevision} from your latest submitted essay, or wait for feedback first.`
-                          : `Prepare revision ${nextRevision} from your latest submitted essay. Earlier submissions remain in your revision history.`}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!!busy || uncertain}
-                      onClick={() => void revise()}
-                      className="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {busy === "revising"
-                        ? "Opening draft..."
-                        : "Write a new revision"}
-                    </button>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    {pastDue
-                      ? "The submission deadline has passed."
-                      : nextRevision > version.maxRevisions
-                        ? "You have used all revisions allowed for this attempt."
-                        : "This attempt is closed."}
-                  </p>
-                )}
-                <div className="space-y-2 border-t border-slate-100 pt-3">
-                  <Link
-                    onClick={protectNavigation}
-                    to="/learning"
-                    className="block text-sm font-semibold text-[#2563eb] hover:underline"
-                  >
-                    Explore skills & suggested practice →
-                  </Link>
-                  <Link
-                    onClick={protectNavigation}
-                    to="/practice-history"
-                    className="block text-sm font-semibold text-slate-600 hover:text-[#2563eb] hover:underline"
-                  >
-                    View all attempts in practice history →
-                  </Link>
-                </div>
-              </section>
-
-              <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <details className="group">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-bold text-[#0f172a] [&::-webkit-details-marker]:hidden">
-                    <span>Writing task prompt</span>
-                    <span className="text-xs font-semibold text-[#2563eb] group-open:hidden">
-                      Show prompt
-                    </span>
-                    <span className="hidden text-xs font-semibold text-slate-500 group-open:inline">
-                      Hide prompt
-                    </span>
-                  </summary>
-                  <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
-                    <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                      {version.activityVersion.promptText}
-                    </p>
-                    <p className="whitespace-pre-wrap text-xs leading-6 text-slate-500">
-                      {version.activityVersion.instructions}
-                    </p>
-                    {version.rubricVersion && (
-                      <p className="text-xs text-slate-500">
-                        {version.rubricVersion.rubricCode} · version{" "}
-                        {version.rubricVersion.versionNo}
-                      </p>
-                    )}
-                  </div>
-                </details>
-              </section>
-            </aside>
           </div>
+
+          <aside className="space-y-4 lg:sticky lg:top-6">
+            <section
+              className={`space-y-3.5 rounded-xl border p-5 shadow-sm ${
+                canRevise
+                  ? "border-blue-200 bg-gradient-to-b from-[#eff6ff] to-white"
+                  : "border-slate-200 bg-[#f8fafc]"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                    canRevise
+                      ? "bg-[#dbeafe] text-[#1e40af]"
+                      : "bg-slate-200/80 text-slate-700"
+                  }`}
+                >
+                  {canRevise
+                    ? `Next step · ${version.maxRevisions - revisions.length} ${
+                        version.maxRevisions - revisions.length === 1
+                          ? "revision"
+                          : "revisions"
+                      } left`
+                    : pastDue
+                      ? "Deadline passed"
+                      : nextRevision > version.maxRevisions
+                        ? "All revisions used"
+                        : "Attempt closed"}
+                </span>
+              </div>
+              <h2 className="text-lg font-bold text-[#0f172a]">
+                {canRevise
+                  ? `Write revision ${nextRevision}`
+                  : "Revision status"}
+              </h2>
+              {canRevise ? (
+                <>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {selectedFeedbackKnown === true
+                      ? `Use your feedback to prepare revision ${nextRevision}. Earlier text and assessments remain in revision history.`
+                      : selectedFeedbackKnown === false
+                        ? `Feedback is not ready yet. You can still start revision ${nextRevision} from your latest essay, or wait for feedback first.`
+                        : `Prepare revision ${nextRevision} from your latest submitted essay. Earlier revisions remain preserved.`}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={!!busy || uncertain}
+                    onClick={() => void revise()}
+                    className="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {busy === "revising"
+                      ? "Opening draft..."
+                      : "Write a new revision"}
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm leading-6 text-slate-600">
+                  {pastDue
+                    ? "The submission deadline has passed, so no further revisions can be started."
+                    : nextRevision > version.maxRevisions
+                      ? `You have used all ${version.maxRevisions} revisions allowed for this attempt.`
+                      : "This attempt is closed to new revisions."}
+                </p>
+              )}
+              <div className="space-y-2 border-t border-slate-200/70 pt-3">
+                <Link
+                  onClick={protectNavigation}
+                  to="/learning"
+                  className="block text-sm font-semibold text-[#2563eb] hover:underline"
+                >
+                  Explore skills & suggested practice →
+                </Link>
+                <Link
+                  onClick={protectNavigation}
+                  to="/practice-history"
+                  className="block text-sm font-semibold text-slate-600 hover:text-[#2563eb] hover:underline"
+                >
+                  View all attempts in practice history →
+                </Link>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-4 sm:p-5">
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                  <div>
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Reference
+                    </span>
+                    <span className="text-sm font-bold text-[#0f172a]">
+                      Writing task prompt
+                    </span>
+                  </div>
+                  <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#1e40af] group-open:hidden">
+                    Show prompt
+                  </span>
+                  <span className="hidden rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 group-open:inline">
+                    Hide prompt
+                  </span>
+                </summary>
+                <div className="mt-4 space-y-3 border-t border-slate-200/80 pt-4">
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                    {version.activityVersion.promptText}
+                  </p>
+                  <p className="whitespace-pre-wrap text-xs leading-6 text-slate-500">
+                    {version.activityVersion.instructions}
+                  </p>
+                  {version.rubricVersion && (
+                    <p className="text-xs text-slate-500">
+                      {version.rubricVersion.rubricCode} · version{" "}
+                      {version.rubricVersion.versionNo}
+                    </p>
+                  )}
+                </div>
+              </details>
+            </section>
+          </aside>
         </div>
       )}
     </main>

@@ -3,12 +3,57 @@ import { managementError, managementRequest } from "./managementApi";
 
 export type NotificationItem = {
   id: string;
+  notificationType?: string;
   title: string;
   body: string;
   navigationPath: string | null;
   readAt: string | null;
   createdAt: string;
+  assignmentTitle?: string | null;
+  courseTitle?: string | null;
+  attemptNo?: number | null;
+  revisionNo?: number | null;
 };
+
+export function getNotificationActionLabel(
+  notification: Pick<NotificationItem, "notificationType" | "navigationPath">,
+): string {
+  if (
+    notification.notificationType === "ASSESSMENT_PUBLISHED" ||
+    notification.navigationPath?.startsWith("/submissions/")
+  ) {
+    return "View assessment";
+  }
+  if (notification.navigationPath?.startsWith("/courses/")) {
+    return "Open course";
+  }
+  return "View details";
+}
+
+export function formatNotificationContext(
+  notification: Pick<
+    NotificationItem,
+    "assignmentTitle" | "courseTitle" | "attemptNo" | "revisionNo"
+  >,
+): string | null {
+  const parts: string[] = [];
+  if (notification.assignmentTitle) {
+    parts.push(notification.assignmentTitle);
+  }
+  if (notification.attemptNo != null && notification.revisionNo != null) {
+    parts.push(
+      `Attempt ${notification.attemptNo} · Revision ${notification.revisionNo}`,
+    );
+  } else if (notification.attemptNo != null) {
+    parts.push(`Attempt ${notification.attemptNo}`);
+  } else if (notification.revisionNo != null) {
+    parts.push(`Revision ${notification.revisionNo}`);
+  }
+  if (notification.courseTitle && !notification.assignmentTitle) {
+    parts.push(notification.courseTitle);
+  }
+  return parts.length > 0 ? parts.join(" — ") : null;
+}
 
 type NotificationState = {
   userId: string | null;
@@ -154,7 +199,7 @@ export async function markNotificationRead(id: string): Promise<boolean> {
     emit({
       ...state,
       items: state.items.map((notification) =>
-        notification.id === id ? updated : notification,
+        notification.id === id ? { ...notification, ...updated } : notification,
       ),
       markingIds: restMarking,
     });
