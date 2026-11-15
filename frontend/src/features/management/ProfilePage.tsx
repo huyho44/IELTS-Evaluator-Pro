@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useLocation } from "react-router-dom";
 import { refreshSession, useSession } from "../auth/session";
 import {
   managementRequest as request,
@@ -8,6 +9,7 @@ import {
   type UserRow,
   type ApplicationRow,
 } from "./managementApi";
+import { getWorkspaceTheme } from "./workspaceTheme";
 
 const APPLICATION_STATUS_STYLES: Record<
   string,
@@ -33,6 +35,8 @@ export default function ProfilePage({ student = true }: { student?: boolean }) {
 }
 
 function Content({ student }: { student: boolean }) {
+  const { pathname } = useLocation();
+  const theme = getWorkspaceTheme(pathname, student);
   const [user, setUser] = useState<UserRow | null>(null);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -152,7 +156,9 @@ function Content({ student }: { student: boolean }) {
     <div className={student ? "student-surface-overview min-h-[calc(100vh-4rem)]" : undefined}>
       <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+        <span
+          className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowText}`}
+        >
           Account settings
         </span>
         <h1 className="text-2xl font-bold text-[#0f172a]">
@@ -281,7 +287,7 @@ function Content({ student }: { student: boolean }) {
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
+                    className={`w-full rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 sm:w-auto ${theme.primaryButton}`}
                   >
                     {busySection === "profile"
                       ? "Saving..."

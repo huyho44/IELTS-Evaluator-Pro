@@ -72,6 +72,9 @@ function LearningContent({
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [skillEvidenceTab, setSkillEvidenceTab] = useState<
+    "observed" | "unobserved" | null
+  >(null);
   const action = useRef(false);
   const mounted = useRef(false);
 
@@ -375,79 +378,129 @@ function LearningContent({
               Your instructor has not published any skills yet.
             </p>
           ) : (
-            <div className="space-y-4">
-              {observedSkills.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {observedSkills.map((skill) => {
-                    const statusLabel = describeSkill(skill);
-                    const theme = SKILL_CARD_THEMES[statusLabel] ?? {
-                      card: "border-[#e2e8f0] bg-white",
-                      badge: "bg-[#f1f5f9] text-[#475569]",
-                    };
-                    return (
-                      <article
-                        key={skill.skillId}
-                        className={`flex flex-col items-start gap-2 rounded-xl border p-4 ${theme.card}`}
+            (() => {
+              const activeSkillTab =
+                skillEvidenceTab ??
+                (observedSkills.length > 0 ? "observed" : "unobserved");
+              return (
+                <div className="space-y-4">
+                  <div
+                    className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xs"
+                    role="tablist"
+                    aria-label="Skill evidence filter"
+                  >
+                    {(
+                      [
+                        {
+                          id: "observed",
+                          label: `Observed skills (${observedSkills.length})`,
+                        },
+                        {
+                          id: "unobserved",
+                          label: `Not observed yet (${unobservedSkills.length})`,
+                        },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeSkillTab === tab.id}
+                        onClick={() => setSkillEvidenceTab(tab.id)}
+                        className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                          activeSkillTab === tab.id
+                            ? "bg-[#2563eb] text-white shadow-2xs"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-[#0f172a]"
+                        }`}
                       >
-                        <div className="flex w-full items-start justify-between gap-2">
-                          <h3 className="text-sm font-semibold text-[#0f172a]">
-                            {skill.name}
-                          </h3>
-                        </div>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${theme.badge}`}
-                        >
-                          {statusLabel}
-                        </span>
-                        <p className="text-xs leading-relaxed text-[#475569]">
-                          Based on {skill.evidenceCount} confirmed learning{" "}
-                          {skill.evidenceCount === 1
-                            ? "opportunity"
-                            : "opportunities"}
-                          .
-                          {skill.observationStatus === "INSUFFICIENT" &&
-                            " More observations are needed before drawing a stable conclusion."}
-                        </p>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-
-              {unobservedSkills.length > 0 && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#0f172a]">
-                        Not observed yet
-                      </h3>
-                      <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                        {unobservedSkills.length}
-                      </span>
-                    </div>
-                    <p className="text-xs leading-relaxed text-[#64748b]">
-                      Complete a diagnostic activity or receive confirmed
-                      instructor feedback to build evidence for these skills.
-                    </p>
-                  </div>
-                  <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {unobservedSkills.map((skill) => (
-                      <li
-                        key={skill.skillId}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                      >
-                        <span className="font-medium text-[#0f172a]">
-                          {skill.name}
-                        </span>
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-[#475569]">
-                          No evidence yet
-                        </span>
-                      </li>
+                        {tab.label}
+                      </button>
                     ))}
-                  </ul>
+                  </div>
+
+                  {activeSkillTab === "observed" ? (
+                    observedSkills.length > 0 ? (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {observedSkills.map((skill) => {
+                          const statusLabel = describeSkill(skill);
+                          const theme = SKILL_CARD_THEMES[statusLabel] ?? {
+                            card: "border-[#e2e8f0] bg-white",
+                            badge: "bg-[#f1f5f9] text-[#475569]",
+                          };
+                          return (
+                            <article
+                              key={skill.skillId}
+                              className={`flex flex-col items-start gap-2 rounded-xl border p-4 ${theme.card}`}
+                            >
+                              <div className="flex w-full items-start justify-between gap-2">
+                                <h3 className="text-sm font-semibold text-[#0f172a]">
+                                  {skill.name}
+                                </h3>
+                              </div>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${theme.badge}`}
+                              >
+                                {statusLabel}
+                              </span>
+                              <p className="text-xs leading-relaxed text-[#475569]">
+                                Based on {skill.evidenceCount} confirmed
+                                learning{" "}
+                                {skill.evidenceCount === 1
+                                  ? "opportunity"
+                                  : "opportunities"}
+                                .
+                                {skill.observationStatus === "INSUFFICIENT" &&
+                                  " More observations are needed before drawing a stable conclusion."}
+                              </p>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="rounded-xl border border-[#e2e8f0] bg-slate-50 p-5 text-sm text-[#64748b]">
+                        No confirmed observations recorded yet. Complete a practice or graded activity to start building skill evidence.
+                      </p>
+                    )
+                  ) : unobservedSkills.length > 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold text-[#0f172a]">
+                            Not observed yet
+                          </h3>
+                          <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                            {unobservedSkills.length}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-[#64748b]">
+                          Complete a diagnostic activity or receive confirmed
+                          instructor feedback to build evidence for these skills.
+                        </p>
+                      </div>
+                      <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {unobservedSkills.map((skill) => (
+                          <li
+                            key={skill.skillId}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
+                          >
+                            <span className="font-medium text-[#0f172a]">
+                              {skill.name}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-[#475569]">
+                              No evidence yet
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 text-sm text-emerald-900">
+                      Every published skill has at least one recorded observation.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()
           )}
         </section>
       )}

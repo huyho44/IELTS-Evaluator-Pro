@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSession } from "../auth/session";
 import {
   formatNotificationContext,
@@ -9,23 +9,22 @@ import {
   markNotificationRead,
   useNotifications,
 } from "./notificationsStore";
+import { getWorkspaceTheme, type WorkspaceTheme } from "./workspaceTheme";
 
 function NotificationTypeIcon({
   isAssessment,
   unread,
+  theme,
 }: {
   isAssessment: boolean;
   unread: boolean;
+  theme: WorkspaceTheme;
 }) {
   return (
     <span
       aria-hidden="true"
       className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-        unread
-          ? isAssessment
-            ? "bg-[#dbeafe] text-[#1e40af]"
-            : "bg-[#eff6ff] text-[#2563eb]"
-          : "bg-slate-100 text-slate-500"
+        unread ? theme.chipBadge : "bg-slate-100 text-slate-500"
       }`}
     >
       {isAssessment ? (
@@ -62,6 +61,8 @@ function NotificationTypeIcon({
 
 export default function NotificationsPage({ student = true }: { student?: boolean }) {
   const { session } = useSession();
+  const { pathname } = useLocation();
+  const theme = getWorkspaceTheme(pathname, student);
   const { items, loading, error, markingIds } = useNotifications(
     session?.user.id,
   );
@@ -71,9 +72,13 @@ export default function NotificationsPage({ student = true }: { student?: boolea
   return (
     <div className={student ? "student-surface-overview min-h-[calc(100vh-4rem)]" : undefined}>
       <main className="mx-auto max-w-4xl space-y-5 p-4 sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/80 pb-4">
+        <div
+          className={`flex flex-wrap items-end justify-between gap-3 border-b pb-4 ${theme.sectionBorder}`}
+        >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+            <p
+              className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowText}`}
+            >
               Inbox
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2.5">
@@ -84,7 +89,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                 <span
                   className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                     unread.count > 0
-                      ? "border-blue-200 bg-[#eff6ff] text-[#1e40af]"
+                      ? theme.unreadBadge
                       : "border-slate-200 bg-white text-slate-600"
                   }`}
                 >
@@ -97,7 +102,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
             type="button"
             disabled={loading || isMarkingAny}
             onClick={() => void loadNotifications()}
-            className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-[#1e40af] shadow-2xs transition-colors hover:bg-slate-50 disabled:opacity-50"
+            className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold shadow-2xs transition-colors disabled:opacity-50 ${theme.outlineButton}`}
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
@@ -135,7 +140,9 @@ export default function NotificationsPage({ student = true }: { student?: boolea
               No notifications yet
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Updates on your published assessments and practice activities will appear here.
+              {student
+                ? "Updates on your published assessments and practice activities will appear here."
+                : "Workspace notifications and activity updates will appear here."}
             </p>
           </div>
         )}
@@ -156,7 +163,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                   key={notification.id}
                   className={`border-l-4 px-4 py-4 transition-colors sm:px-6 ${
                     unreadItem
-                      ? "border-l-[#2563eb] bg-[#eff6ff]/35 hover:bg-[#eff6ff]/55"
+                      ? theme.unreadCardBorder
                       : "border-l-transparent bg-white hover:bg-slate-50/75"
                   }`}
                 >
@@ -165,11 +172,14 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                       <NotificationTypeIcon
                         isAssessment={isAssessment}
                         unread={unreadItem}
+                        theme={theme}
                       />
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {unreadItem && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#2563eb] px-2 py-0.5 text-[11px] font-semibold text-white">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${theme.avatarBadge}`}
+                            >
                               New
                             </span>
                           )}
@@ -187,7 +197,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                         {contextLabel && (
                           <p
                             className={`text-xs font-semibold ${
-                              unreadItem ? "text-[#1e40af]" : "text-slate-600"
+                              unreadItem ? theme.accentSummary : "text-slate-600"
                             }`}
                           >
                             {contextLabel}
@@ -216,8 +226,8 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                         <Link
                           className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                             unreadItem
-                              ? "bg-[#2563eb] text-white shadow-2xs hover:bg-blue-700"
-                              : "border border-slate-200 bg-white text-[#1e40af] hover:border-blue-200 hover:bg-[#eff6ff]/60"
+                              ? `${theme.primaryButton} shadow-2xs`
+                              : `border ${theme.outlineButton}`
                           }`}
                           to={notification.navigationPath}
                           onClick={() => {
@@ -234,7 +244,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                         <button
                           type="button"
                           disabled={marking}
-                          className="text-xs font-medium text-slate-600 hover:text-[#2563eb] hover:underline disabled:opacity-50"
+                          className={`text-xs font-medium text-slate-600 hover:underline disabled:opacity-50 ${theme.accentLink}`}
                           onClick={() =>
                             void markNotificationRead(notification.id)
                           }

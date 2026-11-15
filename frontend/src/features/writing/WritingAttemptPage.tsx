@@ -620,9 +620,30 @@ export default function WritingAttemptPage({
       )}
 
       {editing ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          <div
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            aria-label="Quick section jump"
+          >
+            <a
+              href="#writing-prompt-panel"
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-center text-xs font-semibold text-slate-800 hover:bg-slate-100"
+            >
+              Task prompt
+            </a>
+            <a
+              href="#writing-editor-panel"
+              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-center text-xs font-semibold text-[#1e40af] hover:bg-blue-100"
+            >
+              Essay editor &amp; submit
+            </a>
+          </div>
+
           <div className="grid items-start gap-6 lg:grid-cols-2">
-            <section className="space-y-4 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6">
+            <section
+              id="writing-prompt-panel"
+              className="scroll-mt-24 space-y-4 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6"
+            >
               <h2 className="text-lg font-bold text-[#0f172a]">Writing task</h2>
               <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
                 {version.activityVersion.promptText}
@@ -639,7 +660,8 @@ export default function WritingAttemptPage({
             </section>
 
             <section
-              className={`space-y-4 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
+              id="writing-editor-panel"
+              className={`scroll-mt-24 space-y-4 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
                 canEdit
                   ? "border-blue-200/90 ring-1 ring-blue-50"
                   : "border-slate-200"
@@ -792,27 +814,59 @@ export default function WritingAttemptPage({
           )}
         </div>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
-          <div className="min-w-0">
-            {selectedRevision ? (
-              <WritingFeedbackPanel
-                key={selectedRevision}
-                revisionId={selectedRevision}
-                attemptId={attempt.id}
-                accessToken={accessToken}
-                onSessionExpired={onSessionExpired}
-                onFeedbackStatusChange={handleFeedbackStatusChange}
-              />
-            ) : (
-              <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-                Submit your essay to receive evaluation and feedback.
-              </section>
-            )}
+        <div className="space-y-4">
+          <div
+            className="flex flex-wrap gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            aria-label="Review quick jump"
+          >
+            <a
+              href="#writing-feedback-panel"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-[#1e40af]"
+            >
+              Feedback
+            </a>
+            <a
+              href="#writing-next-step"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800"
+            >
+              Next step
+            </a>
+            <a
+              href="#writing-submitted-essay"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800"
+            >
+              Submitted essay
+            </a>
+            <a
+              href="#writing-task-reference"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800"
+            >
+              Task prompt
+            </a>
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-6">
-            <section
-              className={`space-y-3.5 rounded-xl border p-5 shadow-sm ${
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+            <div id="writing-feedback-panel" className="min-w-0 scroll-mt-20">
+              {selectedRevision ? (
+                <WritingFeedbackPanel
+                  key={selectedRevision}
+                  revisionId={selectedRevision}
+                  attemptId={attempt.id}
+                  accessToken={accessToken}
+                  onSessionExpired={onSessionExpired}
+                  onFeedbackStatusChange={handleFeedbackStatusChange}
+                />
+              ) : (
+                <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+                  Submit your essay to receive evaluation and feedback.
+                </section>
+              )}
+            </div>
+
+            <aside className="space-y-4 lg:sticky lg:top-6">
+              <section
+                id="writing-next-step"
+                className={`scroll-mt-20 space-y-3.5 rounded-xl border p-5 shadow-sm ${
                 canRevise
                   ? "border-blue-200 bg-gradient-to-b from-[#eff6ff] to-white"
                   : "border-slate-200 bg-[#f8fafc]"
@@ -891,7 +945,10 @@ export default function WritingAttemptPage({
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-4 sm:p-5">
+            <section
+              id="writing-task-reference"
+              className="scroll-mt-20 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-4 sm:p-5"
+            >
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
                   <div>
@@ -926,6 +983,7 @@ export default function WritingAttemptPage({
               </details>
             </section>
           </aside>
+          </div>
         </div>
       )}
     </main>

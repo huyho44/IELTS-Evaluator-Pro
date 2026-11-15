@@ -464,34 +464,52 @@ export default function WritingFeedbackPanel({
                 !["QUEUED", "RUNNING"].includes(
                   revision.processing.status,
                 ))) && (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void handleRequest();
-                }}
-                className="space-y-3 border-t border-slate-100 pt-4"
+              <details
+                open={Boolean(reason || error || message)}
+                className="group border-t border-slate-100 pt-4"
               >
-                <label className="block text-sm font-semibold text-[#0f172a]">
-                  {official
-                    ? "Request a review of this published assessment"
-                    : "Ask your instructor to review this essay"}
-                  <textarea
-                    required
-                    maxLength={10000}
-                    rows={3}
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    className={inputClass}
-                    placeholder="Explain the feedback or score you would like your instructor to review."
-                  />
-                </label>
-                <button
-                  disabled={busy || !reason.trim()}
-                  className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e40af] hover:bg-blue-50 disabled:opacity-50"
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-[#0f172a] hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    {official
+                      ? "Need a second look? Request an appeal review"
+                      : "Want an instructor to check this essay?"}
+                  </span>
+                  <span className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-[#1e40af] group-open:hidden">
+                    Open form
+                  </span>
+                  <span className="hidden rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 group-open:inline">
+                    Close
+                  </span>
+                </summary>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleRequest();
+                  }}
+                  className="mt-3 space-y-3 rounded-lg border border-slate-200/80 bg-white p-4"
                 >
-                  {busy ? "Sending..." : "Send review request"}
-                </button>
-              </form>
+                  <label className="block text-sm font-semibold text-[#0f172a]">
+                    {official
+                      ? "Request a review of this published assessment"
+                      : "Ask your instructor to review this essay"}
+                    <textarea
+                      required
+                      maxLength={10000}
+                      rows={3}
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      className={inputClass}
+                      placeholder="Explain the feedback or score you would like your instructor to review."
+                    />
+                  </label>
+                  <button
+                    disabled={busy || !reason.trim()}
+                    className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e40af] hover:bg-blue-50 disabled:opacity-50"
+                  >
+                    {busy ? "Sending..." : "Send review request"}
+                  </button>
+                </form>
+              </details>
             )}
 
             {((official && pendingAppeal) ||
@@ -519,7 +537,10 @@ export default function WritingFeedbackPanel({
       </section>
 
       {revision && (
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-[#fcfdff] shadow-xs">
+        <section
+          id="writing-submitted-essay"
+          className="scroll-mt-20 overflow-hidden rounded-xl border border-slate-200 bg-[#fcfdff] shadow-xs"
+        >
           <details open={!compact && !assessments.length} className="group">
             <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-[#f8fafc] px-5 py-3.5 transition-colors hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
               <div className="flex flex-wrap items-center gap-2.5">

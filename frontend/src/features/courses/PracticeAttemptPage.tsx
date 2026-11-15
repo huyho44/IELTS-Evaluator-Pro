@@ -641,9 +641,28 @@ function AttemptContent({
             </div>
           )}
 
+          <div
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            aria-label="Quick section jump"
+          >
+            <a
+              href="#reading-passage-panel"
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-center text-xs font-semibold text-slate-800 hover:bg-slate-100"
+            >
+              Reading passage
+            </a>
+            <a
+              href="#reading-questions-panel"
+              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-center text-xs font-semibold text-[#1e40af] hover:bg-blue-100"
+            >
+              Questions {isSubmittedView ? "& result" : "& submit"}
+            </a>
+          </div>
+
           <div className="grid items-start gap-6 lg:grid-cols-2">
             <section
-              className={`min-w-0 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6 ${
+              id="reading-passage-panel"
+              className={`min-w-0 scroll-mt-24 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6 ${
                 isSubmittedView ? "order-2 lg:order-1" : ""
               }`}
             >
@@ -656,7 +675,8 @@ function AttemptContent({
             </section>
 
             <section
-              className={`min-w-0 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
+              id="reading-questions-panel"
+              className={`min-w-0 scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
                 !isSubmittedView && !attemptClosed
                   ? "border-blue-200/90 ring-1 ring-blue-50"
                   : "border-slate-200"

@@ -355,7 +355,16 @@ export default function CourseDetailPage({
             </span>
           </div>
 
-          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+            <a
+              href="#course-syllabus-heading"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1e40af]"
+            >
+              Course syllabus ({items.length}) &darr;
+            </a>
+          </div>
+
+          <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-[2fr_1fr]">
             <section
               aria-labelledby="course-overview-heading"
               className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -437,7 +446,7 @@ export default function CourseDetailPage({
             >
               <h2
                 id="course-syllabus-heading"
-                className="text-lg font-semibold text-[#0f172a]"
+                className="scroll-mt-20 text-lg font-semibold text-[#0f172a]"
               >
                 Course syllabus
               </h2>

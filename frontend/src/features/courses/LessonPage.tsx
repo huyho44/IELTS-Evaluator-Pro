@@ -303,7 +303,16 @@ function LessonContent({
                         </p>
                     </header>
 
-                    <div className="mt-6 grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
+                    <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+                        <a
+                            href="#course-lessons-sidebar"
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1e40af]"
+                        >
+                            Course lessons ({lessons.length}) &darr;
+                        </a>
+                    </div>
+
+                    <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-[2fr_1fr]">
                         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             {lesson.summary && (
                                 <div className="rounded-lg border border-blue-100 bg-[#eff6ff]/70 px-4 py-3 text-sm leading-6 text-slate-700">
@@ -377,7 +386,10 @@ function LessonContent({
                             </div>
                         </section>
 
-                        <aside className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <aside
+                            id="course-lessons-sidebar"
+                            className="min-w-0 scroll-mt-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                        >
                             <h2 className="text-lg font-semibold">Course lessons</h2>
 
                             <p className="mt-2 text-sm text-slate-500">

@@ -1,5 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSession } from "../features/auth/session";
+import {
+  getRoleBadgeClass,
+  getWorkspaceTheme,
+} from "../features/management/workspaceTheme";
 
 const ROLE_LABELS: Record<string, string> = {
   LEARNER: "Learner",
@@ -9,10 +13,12 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function Dashboard({ student = true }: { student?: boolean }) {
   const { session } = useSession();
+  const { pathname } = useLocation();
   const user = session?.user;
   if (!user) return null;
 
   const isLearner = student && user.roles.includes("LEARNER");
+  const theme = getWorkspaceTheme(pathname, student);
 
   return (
     <div
@@ -28,12 +34,14 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
             <div className="flex items-center gap-3.5">
               <span
                 aria-hidden="true"
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#2563eb] text-base font-bold text-white"
+                className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-base font-bold ${theme.avatarBadge}`}
               >
                 {user.displayName.charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                <p
+                  className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowText}`}
+                >
                   Account overview
                 </p>
                 <h1 className="truncate text-2xl font-bold text-[#0f172a]">
@@ -42,7 +50,7 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
               </div>
             </div>
             <Link
-              className="inline-flex w-full items-center justify-center rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:w-auto"
+              className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 sm:w-auto ${theme.primaryButton}`}
               to="../profile"
             >
               {student ? "Edit profile & learning goals" : "Edit profile"}
@@ -75,7 +83,7 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
                   user.roles.map((role) => (
                     <span
                       key={role}
-                      className="rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]"
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getRoleBadgeClass(role)}`}
                     >
                       {ROLE_LABELS[role] ?? role}
                     </span>
