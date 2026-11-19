@@ -1,0 +1,178 @@
+% Insert after Section 1; no document environment is included.
+% Preamble:
+% \usepackage{booktabs,tabularx,tikz,hyperref}
+% \usetikzlibrary{arrows.meta}
+% Both diagrams are native LaTeX; no external image files are required.
+% Checkpoint: main, dbbe536 (30 October 2026).
+% Sources: supplied Section 2 draft; current controllers, services, Prisma
+% schema and frontend; compose.mvp.yml; frontend proxy configuration.
+% Acceptance criteria below describe intended/testable behaviour, not claims
+% that every UI scenario has passed. Evidence is distinguished in Sections 3/5.
+
+\section{Updated Requirements and System Design}
+\label{sec:design}
+
+The design below reflects implementation checkpoint \texttt{dbbe536}.
+Acceptance criteria describe expected behaviour; implementation coverage
+and recorded verification are distinguished in Sections~\ref{sec:core}
+and~\ref{sec:quality}.
+
+\subsection{Main User Stories and Acceptance Criteria}
+
+\paragraph{Learner.}
+As a learner, I want to submit a Writing Task~2 essay and receive feedback.
+An eligible learner can save a version-controlled draft and submit
+non-empty text within the permitted attempt window and revision quota.
+Submission returns HTTP~202 and preserves an immutable revision linked to
+the pinned assignment version. Word count is displayed; a 250-word
+submission gate is not implemented. Traceability links the Writing editor
+to \texttt{Attempt}, \texttt{AttemptDraft} and \texttt{SubmissionRevision}.
+
+\paragraph{Instructor.}
+As an assigned instructor, I want to review a submission and confirm an
+assessment. The instructor can claim a case, inspect available AI feedback,
+enter separate criterion bands and evidence, and confirm a teacher decision
+without modifying the AI result. Publication follows the release policy;
+stale updates and self-review are rejected. Traceability links the review
+page to \texttt{ReviewCase}, \texttt{ReviewDecision},
+\texttt{AssessmentResult} and \texttt{AcceptedAssessment}.
+
+\paragraph{Administrator.}
+As an administrator, I want to manage account roles and status with
+accountability. An authorised change requires a reason, updates the account,
+revokes its existing sessions and records an \texttt{AuditEvent}.
+Unauthorised changes are rejected and the last active administrator is
+protected. Traceability links the administration page to \texttt{User},
+\texttt{UserRole} and the audit record.
+
+\subsection{UI/UX Design and Main User Flows}
+Role-specific prototypes illustrate governance, learner monitoring and
+instructor review; their example totals and scores are illustrative data.
+They are design references rather than deployment evidence. The current
+learner interface uses top navigation and a collapsible mobile menu;
+loading messages, inline alerts and disabled controls communicate state.
+Backend checks enforce permissions independently of button visibility.
+
+The learner flow connects catalogue, enrolment, lessons, saved progress,
+attempts and feedback. Ordered content display does not imply enforced
+sequential completion. The instructor flow connects queue, claim, review,
+confirmation and policy-controlled publication. Processing status,
+provisional feedback and official results are displayed separately.
+Section~\ref{sec:core} identifies the demonstrated flows and remaining gaps.
+
+\subsection{Architecture and Technology Decisions}
+The application uses React/TypeScript for role-based interfaces, NestJS for
+modular backend services and PostgreSQL/Prisma for relational persistence.
+A modular monolith keeps business transactions together; asynchronous
+grading can run in a separate worker using the same service code.
+PostgreSQL-backed jobs and a transactional outbox provide durable work
+tracking without requiring Redis/BullMQ. Provider adapters isolate external
+AI services and keep credentials server-side.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  archbox/.style={draw,rounded corners,align=center,text width=2.6cm,
+    minimum height=0.85cm,font=\small},
+  >={Stealth[length=2mm]}
+]
+\node[archbox] (client) at (0,1.5) {React client\\API proxy};
+\node[archbox] (api) at (3.6,1.5) {NestJS API\\Business modules};
+\node[archbox] (db) at (7.2,1.5) {PostgreSQL\\Data, jobs, outbox};
+\node[archbox] (worker) at (3.6,-0.2) {Grading worker\\Provider adapter};
+\node[archbox] (provider) at (7.2,-0.2) {External AI provider};
+\draw[<->] (client) -- node[above,font=\footnotesize] {HTTP} (api);
+\draw[<->] (api) -- (db);
+\draw[<->] (worker) -- (db);
+\draw[<->] (worker) -- node[below,font=\footnotesize] {HTTPS} (provider);
+\end{tikzpicture}
+\caption{Configured MVP architecture. Public deployment remains unverified.}
+\label{fig:system-architecture}
+\end{figure}
+
+\subsection{Data Model and Important Invariants}
+Figure~\ref{fig:core-data-model} shows the main assessment chain and
+enrolment relationships. Additional entities connect review cases and
+decisions to teacher results, findings to revision paragraphs, and accepted
+skill observations to versioned learner profiles and recommendation runs.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  entity/.style={draw,align=center,text width=2.45cm,minimum height=0.65cm,
+    font=\footnotesize},
+  >={Stealth[length=1.7mm]}
+]
+\node[entity] (course) at (0,2.8) {Course};
+\node[entity] (assignment) at (3.1,2.8) {Assignment};
+\node[entity] (version) at (6.2,2.8) {AssignmentVersion};
+\node[entity] (attempt) at (9.3,2.8) {Attempt};
+\node[entity] (user) at (0,1.35) {User};
+\node[entity] (enrolment) at (3.1,1.35) {Enrollment};
+\node[entity] (revision) at (9.3,1.35) {SubmissionRevision};
+\node[entity] (evidence) at (3.1,-0.1) {SkillEvidence};
+\node[entity] (accepted) at (6.2,-0.1) {AcceptedAssessment};
+\node[entity] (result) at (9.3,-0.1) {AssessmentResult};
+\draw[->] (course) -- node[above,font=\scriptsize] {1:N} (assignment);
+\draw[->] (assignment) -- node[above,font=\scriptsize] {1:N} (version);
+\draw[->] (version) -- node[above,font=\scriptsize] {1:N} (attempt);
+\draw[->] (attempt) -- node[right,font=\scriptsize] {1:N} (revision);
+\draw[->] (revision) -- node[right,font=\scriptsize] {1:N} (result);
+\draw[->] (result) -- node[above,font=\scriptsize] {1:0..1} (accepted);
+\draw[->] (accepted) -- node[above,font=\scriptsize] {1:N} (evidence);
+\draw[->] (user) -- node[above,font=\scriptsize] {1:N} (enrolment);
+\draw[->] (course) -- node[above,sloped,font=\scriptsize] {1:N} (enrolment);
+\end{tikzpicture}
+\caption{Simplified relationship map; arrows run from parent to child.
+Other entities and foreign keys are omitted for readability.}
+\label{fig:core-data-model}
+\end{figure}
+
+Key invariants are immutable submitted revisions, pinned assignment and
+grading configurations, and separate AI/teacher assessments. An accepted
+assessment is not automatically published. Only current, released evidence
+affects the official skill profile, and revisions of one attempt do not
+count as independent learning opportunities. Draft/review version checks
+and transactional job persistence protect against stale or repeated work.
+
+\subsection{Main APIs and End-to-End Data Flow}
+Table~\ref{tab:main-apis} lists direct backend routes. The frontend proxy
+adds \path{/api} and removes that prefix before forwarding to NestJS.
+IDs are UUIDs; protected requests derive identity from the authenticated
+session rather than client-supplied role or learner identifiers.
+
+\begin{table}[htbp]
+\centering
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{@{}l p{0.43\linewidth}X@{}}
+\toprule
+\textbf{Method} & \textbf{Backend path} & \textbf{Purpose and access} \\
+\midrule
+POST & \path{/auth/login} & Authenticate valid account credentials. \\
+GET & \path{/courses} & Public course catalogue. \\
+POST & \path{/courses/:id/enroll} & Learner enrolment; course must accept enrolments. \\
+PUT & \path{/attempts/:id/draft} & Owner saves draft with \texttt{lockVersion}. \\
+POST & \path{/assignments/:id/submissions} & Owner submits using \texttt{attemptId}; returns HTTP~202. \\
+GET & \path{/teacher/reviews} & Instructor queue scoped to assigned courses. \\
+POST & \path{/reviews/:id/claim}, \path{/reviews/:id/confirm} & Assigned instructor claims/confirms a review case. \\
+POST & \path{/assessments/:id/publish} & Instructor publishes an accepted assessment. \\
+PATCH & \path{/admin/users/:id} & Administrator updates roles/status with a reason. \\
+GET & \path{/me/skills}, \path{/me/recommendations} & Learner profile and eligible activity suggestions. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\caption{Selected API contracts at the interim checkpoint.}
+\label{tab:main-apis}
+\end{table}
+
+The main data flow is draft/attempt validation, atomic revision and grading
+request persistence, worker execution and output validation, teacher
+confirmation, publication, then evidence projection and recommendation.
+When AI is unavailable or unconfigured, review can proceed manually.
+Publication uses \texttt{AcceptedAssessment.id}; confirmation uses
+\texttt{ReviewCase.id}. Validation, authentication, permission and
+concurrency failures return explicit error responses rather than silently
+changing the requested result.

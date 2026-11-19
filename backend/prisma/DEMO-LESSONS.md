@@ -26,16 +26,15 @@ không reset database. Không chạy đồng thời nhiều tiến trình seed.
 Fixture mới: chapter 100/101, lesson 110/111, material 120/121 trong hàm `fixtureId`.
 Không hardcode các ID này vào frontend: database đã có bài qua API giữ ID cũ.
 
-Wrapper đăng nhập thử đã được bỏ. Route hiện chưa nối auth nên trang lesson hiện
-thông báo cần đăng nhập. Nhóm auth cần truyền `accessToken` và `onSessionExpired`
-cho `LessonPage` từ session thật; callback xử lý xóa session khi API trả 401.
-Ví dụ: `<LessonPage accessToken={session.accessToken} onSessionExpired={clearSession} />`.
+Route lesson đã nối session thật: `App.tsx` truyền `accessToken` và
+`onSessionExpired` cho `LessonPage`; trang xử lý phản hồi 401 qua callback này.
+Đăng nhập bằng tài khoản learner trước khi mở bài học.
 Learner cần enrollment ACTIVE/COMPLETED; seed chỉ tạo enrollment khi chưa có,
 không kích hoạt lại enrollment đã LEFT.
 
-GET lesson hiện chưa trả progress của learner. POST complete lưu database,
-nhưng nhãn hoàn thành chỉ tồn tại trong lần mở bài hiện tại; tải lại/chuyển bài
-sẽ mất nhãn cho đến khi backend trả progress và frontend đọc trường đó.
+GET lesson trả `progress` theo enrollment, mặc định `NOT_STARTED` khi chưa có.
+POST complete lưu `COMPLETED` và `completedAt` trong database; frontend đọc lại
+trạng thái này nên nhãn hoàn thành được giữ khi tải lại hoặc chuyển bài.
 Không dùng localStorage để giả lập tiến độ.
 
 Kiểm tra seed: `npx.cmd vitest run prisma/seed-lessons.spec.ts`.

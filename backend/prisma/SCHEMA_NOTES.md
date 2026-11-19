@@ -1,8 +1,8 @@
 # Ghi chú triển khai schema IELTS Evaluator Pro
 
-Schema mục tiêu chuyển mô hình EERD trong `docs/eerd/model.json` sang Prisma/PostgreSQL. Đây là thay đổi cấu trúc lớn so với schema CRUD ban đầu, gồm tài khoản và LMS, đề và bài giao, lượt làm và bản nộp, chấm điểm, review, bằng chứng kỹ năng, hồ sơ, gợi ý và phần mở rộng RAG.
+Schema hiện tại biểu diễn mô hình EERD bằng Prisma/PostgreSQL. Đây là thay đổi cấu trúc lớn so với schema CRUD ban đầu, gồm tài khoản và LMS, đề và bài giao, lượt làm và bản nộp, chấm điểm, review, bằng chứng kỹ năng, hồ sơ, gợi ý và phần mở rộng RAG.
 
-`schema.prisma` mô tả cấu trúc mục tiêu; việc sửa file hoặc generate Prisma Client không chuyển dữ liệu trong database. Các migration cũ vẫn được giữ. File `constraints.sql` là SQL bổ sung **chưa được thực thi**, đặt ngoài thư mục migrations để tránh tự áp dụng. Chưa thể coi database đang chạy đã có các ràng buộc mới.
+`schema.prisma` mô tả cấu trúc hiện tại; việc sửa file hoặc generate Prisma Client không chuyển dữ liệu trong database. Lịch sử migration gồm bước tạo schema UUID và [migration ràng buộc nghiệp vụ](migrations/20261025000000_enforce_domain_constraints/migration.sql). Áp dụng bằng `npx prisma migrate deploy`; không chạy lại SQL thủ công. Việc có migration trong repository không xác nhận database đang chạy đã áp dụng nó.
 
 ## 1. Quy ước và cách đọc
 
@@ -20,14 +20,14 @@ Các khóa unique tổng hợp như `(id, kind, revisionId)` có vẻ lặp ID n
 | Lớp | Có thể bảo vệ | Giới hạn |
 |---|---|---|
 | Prisma scalar, enum, PK, unique, FK | Kiểu, bắt buộc/null, định danh, quan hệ và các composite context được khai báo | Chỉ có hiệu lực ở database khi migration tương ứng đã áp dụng |
-| `constraints.sql`: 17 CHECK theo EERD | Payload theo loại bài/học liệu, discriminator subtype, loại nguồn được chấp nhận, giới hạn điểm thô, offset cơ bản, thứ hạng, một target báo cáo | Không kiểm tra quan hệ xuyên nhiều bảng hoặc chất lượng nội dung |
-| `constraints.sql`: ba partial unique index | Một hồ sơ giáo viên PENDING/người; một review PENDING hoặc CLAIMED/revision; một accepted hiện hành/revision | Không thay thế kiểm tra quyền, workflow và transaction |
-| `constraints.sql`: hai nhóm deferred constraint trigger | Mỗi LearningItem có đúng một Lesson hoặc PracticeActivity đúng kind; mỗi AssessmentResult có đúng một AIResult, TeacherResult hoặc AnswerKeyResult đúng kind | Parent và subtype phải được ghi trong cùng transaction; không tự xác minh điểm hay nguồn bằng chứng |
+| Migration ràng buộc: 17 CHECK theo EERD | Payload theo loại bài/học liệu, discriminator subtype, loại nguồn được chấp nhận, giới hạn điểm thô, offset cơ bản, thứ hạng, một target báo cáo | Không kiểm tra quan hệ xuyên nhiều bảng hoặc chất lượng nội dung |
+| Migration ràng buộc: ba partial unique index | Một hồ sơ giáo viên PENDING/người; một review PENDING hoặc CLAIMED/revision; một accepted hiện hành/revision | Không thay thế kiểm tra quyền, workflow và transaction |
+| Migration ràng buộc: hai nhóm deferred constraint trigger | Mỗi LearningItem có đúng một Lesson hoặc PracticeActivity đúng kind; mỗi AssessmentResult có đúng một AIResult, TeacherResult hoặc AnswerKeyResult đúng kind | Parent và subtype phải được ghi trong cùng transaction; không tự xác minh điểm hay nguồn bằng chứng |
 | Service và worker | Quyền, điều kiện công bố, nội dung đáp án, quota, chọn evidence, tính hồ sơ và recommendation | Các quy tắc phải được implement và kiểm chứng trong luồng nghiệp vụ |
 
-Prisma v7 có hỗ trợ partial index tùy phiên bản/tính năng. Bản schema này giữ cách biểu diễn ổn định và đặt ba index trên vào SQL bổ sung. Một comment `CHECK` trong schema không tạo constraint trong PostgreSQL. Với phần ngoài khả năng biểu diễn đã chọn, cần đưa SQL vào migration được review. [Prisma v7 — features](https://www.prisma.io/docs/orm/v7/prisma-schema/data-model/unsupported-database-features), [custom migrations](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/customizing-migrations)
+Prisma v7 có hỗ trợ partial index tùy phiên bản/tính năng. Bản schema này giữ cách biểu diễn ổn định và đặt ba index trên vào migration SQL. Một comment `CHECK` trong schema không tạo constraint trong PostgreSQL. Các thay đổi SQL bổ sung cần migration mới được review. [Prisma v7 — features](https://www.prisma.io/docs/orm/v7/prisma-schema/data-model/unsupported-database-features), [custom migrations](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/customizing-migrations)
 
-File SQL bổ sung cũng kiểm tra dữ liệu parent/subtype đã có tại thời điểm cài trigger. SQL được thiết kế áp dụng một lần trong migration; không phải script cài đặt lặp an toàn. Không chạy lại nguyên file trên một database đã có constraint/index/function cùng tên.
+Migration ràng buộc cũng kiểm tra dữ liệu parent/subtype đã có tại thời điểm cài trigger. SQL được thiết kế áp dụng một lần qua Prisma Migrate; không phải script cài đặt lặp an toàn. Không chạy lại nguyên file trên một database đã có constraint/index/function cùng tên.
 
 ## 3. Các quy tắc service/transaction vẫn phải thực hiện
 
@@ -74,13 +74,13 @@ File SQL bổ sung cũng kiểm tra dữ liệu parent/subtype đã có tại th
 
 Schema cũ có `User.id` kiểu Int, một chuỗi role, Lesson/QuizQuestion/TestSession/Submissions/Evaluation/RubricDescriptor. Schema mới dùng UUID, bảng vai trò và nhiều version/source riêng. Vì vậy **không chạy `db push`, reset hoặc migration sinh tự động chưa review lên database có dữ liệu cần giữ**.
 
-Quy trình cần thực hiện khi bắt đầu triển khai database:
+Migration `20261023031857_newdatabase` đã tạo schema mới nhưng xóa các bảng legacy, không backfill dữ liệu cũ. Với database có dữ liệu cần giữ, cần kế hoạch chuyển đổi được kiểm chứng trước khi áp dụng lịch sử migration này. Các bước dưới đây là hướng dẫn bảo toàn dữ liệu legacy, không phải bảo đảm của `prisma migrate deploy`:
 
 1. Sao lưu, thống kê dữ liệu và xác định cách chuyển từng bảng. Giữ nguyên migration đã áp dụng; tạo migration kế tiếp, không sửa lịch sử để giả lập schema mới đã tồn tại.
 2. Tạo bảng/cột đích và bảng ánh xạ ID cũ–UUID mới theo từng loại thực thể. Chuyển User, Role/UserRole, Course, Enrollment và các parent trước bảng con.
 3. Phân loại Lesson cũ thành Lesson học liệu hoặc PracticeActivity; chuyển câu hỏi thành QuestionVersion/options/đáp án có kiểm chứng. Không suy ra đầy đủ cấu trúc đáp án chỉ từ một chuỗi `correctAnswer` nếu dữ liệu cũ thiếu thông tin.
 4. Chuyển TestSession/Submissions thành Attempt và SubmissionRevision theo ngữ cảnh thật. Chỉ chuyển Evaluation thành loại nguồn AI/TEACHER khi xác định được provenance; không tự công bố hoặc tạo SkillEvidence cho đánh giá cũ thiếu nguồn xác nhận.
-5. Kiểm tra số lượng và FK, backfill phiên bản và subtype; chạy dữ liệu thử cho Reading/Listening và Writing. Đưa `constraints.sql` đã review vào phần migration sau khi target table/backfill đã có.
+5. Kiểm tra số lượng và FK, backfill phiên bản và subtype; chạy dữ liệu thử cho Reading/Listening và Writing. Dùng [migration ràng buộc nghiệp vụ](migrations/20261025000000_enforce_domain_constraints/migration.sql) làm nguồn đối chiếu; chỉ cài ràng buộc khi bảng đích và dữ liệu backfill đã hợp lệ.
 6. Chuyển service/seed sang Prisma Client mới, xác minh ứng dụng trên database thử nghiệm, sau đó mới lên lịch áp dụng cho database dùng thật. Chỉ loại bỏ bảng legacy sau khi hoàn tất đối chiếu và kế hoạch rollback.
 
 Nếu chỉ có dữ liệu demo, có thể chọn cách khởi tạo database phát triển riêng. Đó vẫn là quyết định triển khai riêng, không được suy ra rằng thay file schema đã cho phép xóa database hiện tại.

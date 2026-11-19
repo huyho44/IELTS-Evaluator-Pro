@@ -1,17 +1,16 @@
 # Core backend modules: integration notes
 
-Phạm vi thay đổi: `auth`, `courses`, `submissions`, `grading`, `reviews`, `recommendations`.
-Các module dùng Prisma schema UUID hiện tại; không sửa frontend, schema, migrations, package.json hoặc lockfile.
+Tài liệu mô tả các module `auth`, `courses`, `submissions`, `grading`, `reviews`, `recommendations` với Prisma schema UUID hiện tại. Xem [hướng dẫn MVP](../../../docs/MVP.md) cho luồng giao diện và vận hành toàn hệ thống.
 
 ## Điều kiện chạy
 
-- **Migration hiện tại chưa khớp schema.prisma.** Migration `20260926132013_init` vẫn tạo model cũ dùng ID số. Nhóm database cần bổ sung migration/backfill được kiểm tra và các ràng buộc trong `prisma/constraints.sql`. Không chạy reset/db push lên database có dữ liệu.
+- Lịch sử migration đã có bước tạo schema UUID và [ràng buộc nghiệp vụ](../../prisma/migrations/20261025000000_enforce_domain_constraints/migration.sql). Chạy `npx prisma migrate deploy` từ `backend/` trên database phù hợp; bước chuyển schema xóa bảng legacy nên cần backup và kế hoạch chuyển dữ liệu trước khi dùng với dữ liệu cần giữ. Không chạy reset/db push lên database có dữ liệu.
 - Schema hiện tại cần extension PostgreSQL `vector`. Đây là phụ thuộc có sẵn của schema, không do các module này thêm vào.
 - Sinh lại Prisma Client sau khi cài dependencies hiện có.
 - Đặt `AUTH_TOKEN_SECRET` phía server: bí mật ngẫu nhiên tối thiểu 32 byte. Không đưa vào frontend. Token Base64 cũ không được chấp nhận; đăng nhập lại để lấy JWT có chữ ký.
 - Seed phải có role LEARNER/INSTRUCTOR/ADMIN. Không tự cấp quyền giáo viên/admin khi đăng ký.
-- Để gọi AI, đặt `GRADING_PROVIDER_URL` (HTTPS; HTTP chỉ cho localhost) và tùy chọn `GRADING_PROVIDER_KEY`. Tạo rubric đã công bố, prompt version và grading config. Adapter hiện hỗ trợ gateway `JSON_HTTP`; không giả lập điểm khi thiếu gateway.
-- `GRADING_WORKER_ENABLED=false` tắt poller; mặc định bật trong ứng dụng, tắt khi NODE_ENV=test. Poller dùng PostgreSQL/outbox và lease, không yêu cầu thêm BullMQ hay sửa bootstrap. Khi tách worker/BullMQ sau này, có thể gọi lại các service trong module.
+- Adapter hỗ trợ `OPENAI` qua Responses API với `OPENAI_API_KEY`, hoặc gateway `JSON_HTTP` với `GRADING_PROVIDER_URL` (HTTPS; HTTP chỉ cho localhost) và tùy chọn `GRADING_PROVIDER_KEY`. Tạo rubric đã công bố, prompt version và grading config phù hợp; giữ khóa ở server. Khi chưa cấu hình AI, bài chuyển giảng viên chấm, không tạo điểm giả.
+- `GRADING_WORKER_ENABLED=false` tắt poller; mặc định bật trong ứng dụng, tắt khi `NODE_ENV=test`. Poller dùng PostgreSQL/outbox và lease, không yêu cầu BullMQ. Worker riêng đã có: build rồi chạy `npm run start:worker`, đồng thời tắt worker trong tiến trình API và cấp cùng cấu hình server cho hai tiến trình.
 - Tệp Speaking phải được hệ thống lưu trữ tạo thành FileAsset thuộc người nộp; module chỉ nhận ID, không nhận URL hay đường dẫn tùy ý.
 
 ## Hợp đồng HTTP
@@ -83,6 +82,8 @@ Speaking:
 
 ## AI gateway và giáo viên
 
+Provider `OPENAI` gọi Responses API với Structured Outputs theo schema đã ghim. Hợp đồng gateway `JSON_HTTP` được mô tả bên dưới.
+
 Gateway nhận JSON gồm model, instructions, schema, settings, context. Context có đề, rubric, danh mục kỹ năng, paragraph IDs và untrustedSubmission. Gateway phải tách nội dung học viên khỏi system instructions khi gọi mô hình.
 Gateway trả JSON trực tiếp theo hợp đồng:
 ```json
@@ -127,7 +128,7 @@ Recommendation lưu profile, policy, ứng viên, điểm thành phần và lý 
 ## Kiểm thử
 
 - `npm run build`, `npm run lint`, `npm test`.
-- Integration spec nằm trong grading để giữ phạm vi sửa. Mặc định bỏ qua khi thiếu CORE_TEST_DATABASE_URL.
-- Muốn chạy integration: chuẩn bị **database tạm riêng** trên localhost, tên kết thúc bằng _test, áp dụng schema hiện tại + constraints + seed; đặt CORE_TEST_DATABASE_URL rồi chạy npm test. Test tạo fixtures riêng, không dùng DATABASE_URL thường.
+- Integration spec nằm trong grading; `npm test` bỏ qua spec này khi thiếu `CORE_TEST_DATABASE_URL`.
+- Chạy `npm run test:integration` từ `backend/` với `DATABASE_URL` trỏ PostgreSQL local và quyền tạo database. Script tạo database ngẫu nhiên kết thúc `_test`, áp dụng migrations, seed, chạy spec rồi xóa đúng database tạm; không reset database dự án.
 - Không chạy integration lên dữ liệu thật. AI provider được mock; PostgreSQL, FK, constraints, transactions, các service và cạnh tranh cập nhật dùng thật.
-- Chưa bao gồm UI, gửi email/reset mật khẩu, object storage, RAG, benchmark chấm AI, BullMQ hoặc migration/backfill. Các phần này không được giả là đã triển khai bởi 6 module.
+- Giao diện MVP và migration đã có trong repository; [evaluation](../../../docs/evaluation.md) cung cấp runner và baseline, chưa chứng minh chất lượng chấm AI trên dữ liệu chuyên gia. Gửi email/reset mật khẩu, object storage và RAG chưa thuộc luồng MVP; BullMQ không được dùng. Migration chuyển schema không tự backfill dữ liệu legacy.

@@ -1,0 +1,165 @@
+% Paste after Section 4 of the interim report; do not add a document environment.
+% Required packages in the main document: booktabs, tabularx, array, hyperref.
+% Compile with XeLaTeX or LuaLaTeX and use a Vietnamese-capable font for names.
+% If previewing these sections alone, set the section counter to 4 in the wrapper.
+% Evidence checkpoint: main, dbbe536, 30 October 2026. Tests are historical records,
+% not new executions performed when drafting this text on 1 November 2026.
+% Sources: docs/validation/MVP-checks-2026-10-30.md; docs/deployment.md;
+% frontend/docs/interim-student-checks.md; Git history; weekly progress Google Doc,
+% tabs Weeks 39--40 and Weeks 41--43, read on 1 November 2026.
+% The remaining plan is a proposed allocation based on recorded responsibilities.
+% Confirm owners before submission. Add a prototype URL only after verifying it.
+
+\section{Software Engineering, Quality and Trial Deployment}
+\label{sec:quality}
+
+\subsection{Source Control and Build Workflow}
+Development is maintained in the
+\href{https://github.com/huyho44/IELTS-Evaluator-Pro}{project repository}.
+The interim implementation checkpoint is \texttt{main}, commit
+\texttt{dbbe536}, dated 30 October 2026. Its history records database,
+backend, learner-interface and instructor-review changes, including branch
+integration. Package scripts provide repeatable lint, build and test commands.
+These checks currently run locally; no repository CI workflow is present at
+this checkpoint. Automated CI and more consistent issue-to-commit traceability
+remain improvement tasks.
+
+\subsection{Testing Strategy, Results and Known Defects}
+Testing combines business-rule checks, isolated PostgreSQL integration tests,
+frontend regression scripts and local API smoke tests. The
+\href{https://github.com/huyho44/IELTS-Evaluator-Pro/blob/dbbe536/docs/validation/MVP-checks-2026-10-30.md}{30 October validation record}
+reports the following results on Node.js~24.21.0.
+
+\begin{center}
+\begingroup
+\small
+\begin{tabularx}{\linewidth}{@{}p{0.30\linewidth}X@{}}
+\toprule
+\textbf{Check} & \textbf{Recorded result} \\
+\midrule
+Backend regular suite & 133 passed; 19 opt-in database tests skipped in this command. \\
+PostgreSQL integration & All 19 passed in a separate isolated-database run. \\
+Frontend regressions & All five scripts passed: session, catalogue, instructor, student learning and course completion. \\
+Local API smoke tests & 11 endpoint checks passed across three roles, including rejection of learner access to operational reports. \\
+Static checks and builds & Backend type checking, backend/frontend lint and production builds passed. \\
+Deployment configuration & Docker Compose configuration validation passed. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\end{center}
+
+The integration runner created a disposable database, applied migrations and
+seed data, and removed that database afterwards. Scenarios covered repeated
+submissions, stale drafts and review claims, publication timing, appeals,
+invalid evidence, provider retries and worker recovery. A separate 28 October
+browser check exercised selected learner flows and desktop/mobile layouts.
+However, full browser acceptance of the integrated Writing Clinic across all
+three roles remains pending; the existing root-endpoint test does not
+establish that complete flow. A node-postgres warning about concurrent queries
+on a transaction connection also requires investigation despite passing tests.
+Mocked provider tests and synthetic evaluation replay verify software behaviour,
+not AI scoring accuracy or learning improvement.
+
+\subsection{Security, Privacy and Error Handling}
+Passwords use salted \texttt{scrypt} hashes. Access tokens expire after
+15 minutes; refresh tokens are stored as hashes and rotated on refresh.
+Backend checks enforce roles, course assignments, enrolment and submission
+ownership. Input and assessment validators reject invalid values and
+unsupported quotations. Version checks and database-backed job recovery
+protect against stale updates and repeated processing. AI failures are
+recorded rather than replaced with fabricated scores; official Writing
+results require teacher decisions. Provider credentials remain server-side,
+and local environment files are excluded through ignore rules. Real essays
+and labels must be collected with permission and excluded from Git; approved
+learning materials and explicit disclosure of AI services are also required.
+These measures do not constitute a completed security audit.
+
+\subsection{Trial Deployment and Reproducibility}
+The documented setup uses Node.js~24, PostgreSQL, migrations and an idempotent
+demo seed. Deployment configuration separates the API, worker, frontend and
+database; PostgreSQL is not exposed to the host, and Caddy provides the
+planned HTTPS entry point. Operational reporting includes grading states,
+provider errors, latency and token usage where available. However, the
+validation environment had no running Docker daemon: image execution,
+certificate issuance and public deployment were not verified. A reachable
+prototype URL and secure trial-account instructions therefore remain
+outstanding. Before final delivery, the team will verify a clean installation,
+the three-role demo and backup/restore procedures in the deployment environment.
+
+\section{Team Contributions and Remaining Plan}
+\label{sec:plan}
+
+\subsection{Individual Contributions and Evidence}
+The
+\href{https://docs.google.com/document/d/1tDeQUFaP0ttOuAwh-ihx1wdaSiAIPZxqVrUM3X8RfFQ/edit}{weekly progress log}
+records the following division of work. Completed design-stage tasks and
+recorded implementation responsibilities are distinguished below; an assigned
+task alone is not treated as evidence of completion.
+
+\begin{center}
+\begingroup
+\small
+\begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}p{0.105\linewidth}X@{}}
+\toprule
+\textbf{Member} & \textbf{ID} & \textbf{Recorded contribution or responsibility} \\
+\midrule
+Hồ Quốc Huy & 2352379 & Database setup with Hoàng Hải, marked complete in weeks 39--40; later assigned LLM integration research and code review. Git also records schema, review and MVP integration work (\texttt{98c99bc}, \texttt{dfac810}, \texttt{dbbe536}). \\
+Phạm Quang Huy & 2352405 & UI/UX prototype with Hoàn Hải, marked complete in weeks 39--40; assigned frontend implementation and API integration in weeks 41--43. \\
+Nguyễn Gia Hùng & 2352422 & Initial NestJS/database APIs, marked complete with \href{https://github.com/huyho44/IELTS-Evaluator-Pro/pull/12}{PR~12}; later assigned backend APIs with Hoàng Hải. \\
+Đào Nguyên Hưng & 2452421 & Assigned React Router configuration, API-client setup and frontend-to-backend connection checks; completion evidence requires reconciliation. \\
+Lê Đoàn Hoàn Hải & 2452307 & UI/UX prototype marked complete; learner catalogue, lessons, practice and session integration are also recorded in Git (\texttt{33b27a2}, \texttt{451c3be}, \texttt{2c31830}). \\
+Phạm Hoàng Hải & 2450007 & Database setup with Quốc Huy, marked complete in weeks 39--40; assigned backend APIs with Gia Hùng in weeks 41--43. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\end{center}
+
+The log links early deliverables to issues and pull requests, but several
+later status and evidence fields remain incomplete. The team will reconcile
+these fields with commits, test records and demonstrated outcomes instead
+of assigning unsupported completion percentages.
+
+\subsection{Risks and Recovery Actions}
+The principal remaining risks are:
+\begin{itemize}
+  \item \textbf{Core-scope and integration gaps:} audit every mandatory LMS
+  requirement and complete missing items before optional extensions.
+  The frontend and backend groups will jointly verify the full three-role flow.
+  \item \textbf{Deployment readiness:} resolve Docker availability and verify
+  public access, HTTPS, migrations and trial accounts before final rehearsal.
+  Quốc Huy will coordinate the proposed deployment work with the team.
+  \item \textbf{Evaluation validity:} obtain permitted essays and independent
+  expert labels, freeze development/held-out groups, and compare against
+  declared baselines. Quốc Huy and Gia Hùng are proposed coordinators;
+  synthetic fixtures will remain clearly separated from accuracy evidence.
+\end{itemize}
+
+\subsection{Remaining Milestones: Weeks 45--50}
+The following plan proposes owners according to the recorded division of work.
+Each milestone has a concrete acceptance outcome; individual allocations will
+be confirmed in the weekly log.
+
+\begin{center}
+\begingroup
+\small
+\begin{tabularx}{\linewidth}{@{}p{0.10\linewidth}Xp{0.25\linewidth}@{}}
+\toprule
+\textbf{Week} & \textbf{Deliverable and acceptance outcome} & \textbf{Proposed owners} \\
+\midrule
+45--46 & Close mandatory-feature gaps and finish assessment/recommendation integration; complete a three-role scenario and prepare permitted evaluation data. & UI: Quang Huy, Hoàn Hải, Nguyên Hưng; APIs: Gia Hùng, Hoàng Hải; integration: Quốc Huy. \\
+47 & Execute functional, security, usability and reliability checks; investigate the database warning and resolve critical defects with regression evidence. & All members, by module ownership. \\
+48 & Verify public deployment and repeatable setup; run the declared evaluations and consolidate results, report, slides and demo script. & Quốc Huy coordinates; backend and frontend groups verify their flows. \\
+49 & Rehearse the complete demo; verify lecturer access, sample data and trial accounts; resolve remaining blocking defects. & All six members. \\
+50 & Deliver the final report, application, source, run instructions and evaluation/test evidence by 23:59, 13 December 2026 (UTC+7). & All six members; team leader consolidates submission. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\end{center}
+
+\subsection{Interim Summary}
+The interim checkpoint provides an integrated local implementation supported
+by recorded automated checks. The remaining priorities are complete
+three-role acceptance, verifiable public deployment, independent evaluation
+of the advanced component and consolidated contribution evidence. These
+outcomes, rather than the existence of screens or synthetic results alone,
+will determine final readiness.

@@ -7,7 +7,7 @@ Tài liệu giải thích dữ liệu được tạo để phục vụ việc g�
 Nguồn đối chiếu:
 
 - [`schema.prisma`](../backend/prisma/schema.prisma): model, trường, enum, khóa chính, unique và khóa ngoại.
-- [`constraints.sql`](../backend/prisma/constraints.sql): các CHECK, partial unique index và trigger bổ sung dự kiến.
+- [Migration ràng buộc nghiệp vụ](../backend/prisma/migrations/20261025000000_enforce_domain_constraints/migration.sql): các CHECK, partial unique index và trigger được cài qua Prisma Migrate.
 - [`SCHEMA_NOTES.md`](../backend/prisma/SCHEMA_NOTES.md): giới hạn của schema và trách nhiệm service/worker.
 - Các ví dụ nghiệp vụ Reading, Writing, appeal, profile và recommendation đã trao đổi: dùng để diễn giải quan hệ; ID, điểm, phản hồi và tài nguyên minh họa không phải kết quả thực nghiệm.
 - [`seed.ts`](../backend/prisma/seed.ts): bộ khởi tạo nhỏ gồm tài khoản, khóa học, đề Reading, đáp án, bài giao và rubric demo.
@@ -628,10 +628,10 @@ Không giữ transaction database mở trong thời gian chờ provider AI trả
 | Lớp | Bảo vệ những gì? | Không tự bảo vệ những gì? |
 |---|---|---|
 | Prisma schema và migration tương ứng | Kiểu, nullability, PK, unique, FK đơn/ghép | Quyền truy cập, toàn bộ ngữ cảnh xuyên nhiều bảng, quy trình công bố và chất lượng điểm |
-| SQL bổ sung trong constraints.sql | 17 CHECK, 3 partial unique index và trigger cho hai nhóm cha–con theo thiết kế | Tính đúng của AI, nội dung trích dẫn, chọn evidence, công thức profile, quyền người dùng |
+| Migration ràng buộc nghiệp vụ | 17 CHECK, 3 partial unique index và trigger cho hai nhóm cha–con theo thiết kế | Tính đúng của AI, nội dung trích dẫn, chọn evidence, công thức profile, quyền người dùng |
 | Service/worker và transaction | Điều kiện nghiệp vụ, quyền, đồng thời, idempotency, thuật toán | Phải được implement; một tài liệu hoặc comment schema không tự tạo kiểm tra |
 
-Trong mã nguồn được đối chiếu, constraints.sql nằm ngoài thư mục migrations và được đánh dấu chưa thực thi. Migration hiện tại có lệnh bật vector nhưng không tích hợp các CHECK/partial index/trigger nói trên. Tài liệu này không kiểm tra catalog database đang chạy, nên không khẳng định chúng đã được cài thủ công hay chưa. Cần review và tích hợp phù hợp trước khi coi các quy tắc đó là được database bảo vệ.
+Repository đã có [migration ràng buộc nghiệp vụ](../backend/prisma/migrations/20261025000000_enforce_domain_constraints/migration.sql) chứa các CHECK, partial unique index và trigger nói trên. Áp dụng bằng `npx prisma migrate deploy` từ `backend/`, không chạy lại SQL thủ công. Tài liệu này không kiểm tra catalog database đang chạy nên không khẳng định migration đã được áp dụng tại đó. Migration chuyển schema trước đó xóa bảng legacy; cần backup và kế hoạch chuyển dữ liệu nếu database có dữ liệu cần giữ.
 
 ### 14.2 Các điều kiện nghiệp vụ quan trọng
 
@@ -692,7 +692,7 @@ Các chuỗi dưới đây là đường nối dữ liệu để đọc, không 
 
 ### 16.1 Seed thực thi hiện tại
 
-seed.ts dùng upsert để tạo dữ liệu tác giả ban đầu: 3 role, 4 tài khoản, 1 khóa Reading, phân công giáo viên, 2 lượt ghi danh, 1 practice Reading với 2 câu, options, đáp án, một bài giao theo phiên bản và một rubric Writing demo có 4 tiêu chí.
+seed.ts dùng upsert để tạo dữ liệu tác giả ban đầu: 3 role, 4 tài khoản, khóa Reading cùng bài học, practice 2 câu, options và đáp án; khóa Writing Clinic có 6 kỹ năng và 6 hoạt động; phân công giáo viên, ghi danh, bài giao theo phiên bản và rubric Writing demo. Seed lại giữ nguyên các bản ghi khớp và không đặt lại mật khẩu tài khoản đã có.
 
 Seed chưa tạo Attempt, SubmissionRevision, điểm AI/giáo viên/đáp án, evidence, profile hoặc recommendation. Chạy seed không tự chạy các workflow kể trên và không tự nhập file full-system-sample-data.json.
 

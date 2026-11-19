@@ -1,0 +1,85 @@
+% Insert as Section 1; no document environment is included.
+% Required preamble packages: \usepackage{booktabs,tabularx,array,hyperref}
+% Evidence checkpoint: main, dbbe536, 30 October 2026.
+% Sources: the supplied Section 1 draft; docs/MVP.md; docs/evaluation.md;
+% docs/validation/MVP-checks-2026-10-30.md; weekly progress log, weeks 39--40.
+
+\section{Scope and Progress Against the Proposal}
+\label{sec:scope}
+
+\subsection{Project Context, Target Users and Current Scope}
+IELTS Evaluator Pro is an online learning platform intended to help learners
+connect assessment feedback with appropriate practice. It supports three
+roles: learners study and submit work, instructors manage content and review
+assessments, and administrators manage accounts and system configuration.
+
+The initial design covered all four IELTS skills. The current MVP prioritises
+a Writing Task~2 clinic within the core LMS: submission, evidence-linked
+feedback, instructor review, targeted practice, revision and a new-topic task.
+Provisional AI feedback is distinguished from official teacher-confirmed
+results; only accepted and released evidence updates the official skill
+profile. A Reading demonstration remains available. This narrower IELTS
+focus does not remove the mandatory LMS requirements; unfinished core items
+must remain visible in the implementation status and completion plan.
+
+\subsection{Changes Relative to the Submitted Team Proposal}
+The revised design emphasises traceability and controlled use of AI outputs.
+The main changes are summarised below; the revised design is documented in
+\path{docs/New Proposal.md}.
+
+\begin{center}
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\linewidth}{@{}p{0.21\linewidth}XX@{}}
+\toprule
+\textbf{Initial direction} & \textbf{Current scope} & \textbf{Rationale and impact} \\
+\midrule
+Four-skill IELTS platform & Writing Clinic as the main advanced learning flow. & Prioritises an integrated, demonstrable cycle; broader skill coverage is deferred. \\
+Redis/BullMQ queue & PostgreSQL-backed jobs and a transactional outbox. & Submission and grading requests are persisted together; retries and duplicate-processing controls support recovery. \\
+Structured AI feedback and provisional bands & Versioned assessment inputs, quote validation and teacher review. & Improves traceability and separates AI suggestions from official results; valid quotations do not establish correct judgments. \\
+Lowest-criterion recommendations & Accepted skill evidence, prerequisites, history and explanations. & Supports more specific activity selection; the original rule remains an evaluation baseline. \\
+Course-grounded AI support & RAG retained as an optional extension. & Separates course-material retrieval from essay-evidence validation; no grading-speed improvement is claimed without measurements. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\end{center}
+
+\subsection{Goal-versus-Result Summary at the Interim Milestone}
+Progress against weeks~39--44 is assessed at commit \texttt{dbbe536}.
+Implementation, local verification and external evaluation are reported
+separately.
+
+\begin{center}
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\linewidth}{@{}p{0.25\linewidth}XX@{}}
+\toprule
+\textbf{Planned outcome} & \textbf{Status and evidence} & \textbf{Remaining work} \\
+\midrule
+UI/UX prototype & Recorded complete in the weekly log; Issue~11 is linked as evidence. & Complete acceptance checks against the integrated interface. \\
+Database and core APIs & Three migrations and demo seed; 19 isolated integration tests and 11 local API smoke checks passed. & Audit remaining mandatory functionality and verify deployment setup. \\
+AI grading pipeline & Implemented; validation, retry and recovery behaviour covered by automated tests. & Run a real provider and measure accuracy against independent expert labels. \\
+Recommendation engine & Implemented; policy checks and synthetic evaluation replay available. & Compare baseline policies using independent relevance judgments. \\
+Frontend integration & Production build, lint and five regression scripts passed; selected learner browser checks recorded. & Verify the full learner--instructor--administrator flow. \\
+\bottomrule
+\end{tabularx}
+\endgroup
+\end{center}
+
+Evidence is available in the
+\href{https://docs.google.com/document/d/1tDeQUFaP0ttOuAwh-ihx1wdaSiAIPZxqVrUM3X8RfFQ/edit}{weekly progress log}
+and the
+\href{https://github.com/huyho44/IELTS-Evaluator-Pro/blob/dbbe536/docs/validation/MVP-checks-2026-10-30.md}{30 October validation record}.
+
+\paragraph{Deviation Analysis.}
+The main foundations and selected integrated flows are implemented, but full
+acceptance, public deployment and independent evaluation remain outstanding.
+The remaining plan prioritises mandatory LMS gaps, a reproducible three-role
+demo, permitted expert-labelled data and comparisons against declared
+baselines. Synthetic checks support pipeline verification and do not
+establish scoring accuracy or learning gains. Section~\ref{sec:plan}
+provides proposed responsibilities, risks and recovery milestones.

@@ -1,0 +1,146 @@
+% Insert after Section 2. No document environment is included.
+% Required preamble package: \usepackage{hyperref}
+% Current implementation checkpoint: main, dbbe536 (30 October 2026).
+% Earlier Thunder Client scenarios/screenshots: supplied Section 3 document,
+% which identifies feat/features, 8da171a as the tested backend checkpoint.
+% Do not present these manual scenarios as new tests on dbbe536.
+% Current sources: docs/MVP.md; docs/validation/MVP-checks-2026-10-30.md;
+% frontend/docs/interim-student-checks.md; current backend/frontend source.
+% Retain selected screenshots from the supplied document beside the relevant
+% scenarios, with their original tested checkpoint identified in the captions.
+
+\section{Implemented Core Features and Integration Evidence}
+\label{sec:core}
+
+The interim implementation checkpoint is \texttt{main}, commit
+\texttt{dbbe536}, dated 30 October 2026. It integrates authentication,
+course learning, submissions, grading, instructor review, recommendations
+and management interfaces. The Thunder Client scenarios below document
+earlier backend checks at commit \texttt{8da171a}; they are distinguished
+from the later build and automated validation evidence. An implemented
+feature is not treated as fully verified solely because its code or
+interface exists.
+
+\subsection{Mandatory Functional Coverage}
+
+\subsubsection{Accounts and Authorisation}
+Registration, login, logout, refresh-token rotation, profile retrieval and
+editing, role checks and ownership protection are implemented. Management
+functions support account roles and status changes with audit records.
+Automated checks cover selected permission and session behaviours; earlier
+API demonstrations also exercised authentication failures and access denial.
+Password recovery remains outside the implemented authentication flow, and
+complete browser acceptance of account-management operations is pending.
+
+\subsubsection{Courses and Content}
+Course creation, editing, publication and hiding, chapters, text lessons and
+Writing activities are implemented. The learner catalogue provides search,
+filtering and pagination over the fetched course list. Lesson rendering
+supports text and external links, while the authoring workflow primarily
+creates text content. End-to-end authoring and delivery of a second material
+type, and complete presentation/enforcement of course prerequisites, still
+require verification. Skill prerequisites used by recommendations do not
+alone satisfy course-prerequisite requirements.
+
+\subsubsection{Enrolment and Learning}
+Learners can enrol, leave courses, open permitted lessons and persist lesson
+completion. The interface displays saved progress, and configured course
+completion checks are implemented. Earlier API checks demonstrated that
+leaving a course prevents further lesson access. Selected learner browser
+checks and frontend regressions provide additional evidence. Resuming the
+last study position and a complete in-progress/completed-course overview
+remain integration or acceptance tasks.
+
+\subsubsection{Assignments and Assessment}
+Versioned assignments, time limits, deadlines, draft locking, immutable
+submission revisions, objective grading, instructor feedback, publication
+and attempt history are implemented. The Reading example uses answer-key
+grading; Writing supports teacher review and revision. Integration tests
+cover repeated submissions, stale updates and publication behaviour.
+Provider transport tests use mocks, so live AI assessment and scoring
+accuracy are not established. File/audio handling is outside the verified
+demonstration paths.
+
+\subsubsection{Interaction and Notifications}
+Assessment publication creates notifications; retrieval, read-state updates
+and a notification page are implemented. Appeals preserve learner reasons
+and instructor resolutions. These functions do not replace the required
+discussion, Q\&A or comment channel, or inappropriate-content reporting,
+which remain outstanding. Notification coverage for new content and
+upcoming deadlines also requires completion or verification.
+
+\subsubsection{Administration and Reporting}
+The implementation includes account/role/status management, instructor
+application decisions, course-instructor assignment, skill administration
+and audit recording. Role-scoped operational reports summarise grading,
+review and provider activity. These reports do not establish complete
+enrolment, completion-rate and learning-outcome analytics. A full
+administrator browser scenario, including management changes and their
+audit evidence, remains to be demonstrated.
+
+\subsection{Integrated Demonstration Scenarios}
+
+\subsubsection{Learner Scenario}
+In the earlier Thunder Client demonstration, a test learner signed in,
+enrolled in a published course, accessed a lesson and recorded completion.
+A Reading attempt used a 300-second limit and version-controlled draft
+updates. Submission created an immutable revision and queued objective
+grading. Correct answers produced \textbf{2/2 RAW marks}, not an IELTS band.
+Repeating the submission returned the existing revision; another learner's
+request for that submission returned HTTP~403. The supplied screenshots
+show the RAW result and rejected access. Integration tests additionally
+cover repeated submissions and stale draft updates.
+
+% Suggested retained caption: Earlier backend demonstration at 8da171a:
+% answer-key assessment returns RAW 2/2; unauthorised access returns HTTP 403.
+
+\subsubsection{Instructor Scenario}
+The earlier Writing demonstration used synthetic text, a test rubric and
+\texttt{MANUAL} result release. Without an AI configuration, submission
+entered \texttt{AWAITING\_REVIEW}. The assigned instructor claimed the case
+and recorded four criterion scores, feedback and a skill observation.
+Before publication, the learner received an empty assessment list. After
+publication, the teacher assessment became visible. The before/after
+screenshots support this release-policy behaviour. Integration tests also
+check that unpublished results do not expose accepted skill evidence.
+Synthetic inputs and teacher-entered scores demonstrate workflow behaviour,
+not AI accuracy.
+
+% Suggested retained caption: Earlier MANUAL-release demonstration at
+% 8da171a: assessment visibility before and after instructor publication.
+
+\subsubsection{Appeal Handling and Administrator Verification}
+The earlier API test record reports a learner appeal, rejection of a
+duplicate open appeal, and instructor resolution with a persisted reason.
+In the tested rejection path, the original score remained unchanged.
+These actions demonstrate learner--instructor integration rather than an
+administrator workflow. At the later checkpoint, local API smoke checks
+exercise all three roles, including rejection of learner access to
+operational reports. Administrator management interfaces are implemented,
+but a complete browser demonstration of an account/course management action,
+its audit record and reporting remains an acceptance task.
+
+\subsection{Integration Status and Known Functional Gaps}
+
+The current implementation connects authenticated users to enrolments,
+learning progress, pinned assignment versions, submission revisions,
+assessments and review decisions in PostgreSQL. Only accepted and released
+evidence contributes to the official skill profile; recommendations apply
+eligibility and prerequisite checks to that profile. Frontend pages are
+connected to these APIs, although full three-role browser acceptance remains
+pending.
+
+The
+\href{https://github.com/huyho44/IELTS-Evaluator-Pro/blob/dbbe536/docs/validation/MVP-checks-2026-10-30.md}{30 October validation record}
+reports 19 passing isolated database integration tests, 11 local API smoke
+checks, five passing frontend regression scripts and successful production
+builds. Migration reproducibility was checked by applying three migrations
+and the seed to a fresh isolated test database. The earlier backend
+implementation is traceable through
+\href{https://github.com/huyho44/IELTS-Evaluator-Pro/commit/8da171afdce3bfe58bec1d10ded401ce745ad9a3}{commit 8da171a}.
+
+Remaining work includes the mandatory communication/reporting gaps,
+password recovery, complete content and study-flow acceptance, public
+deployment, and independent evaluation of assessment and recommendations.
+Section~\ref{sec:plan} sets out proposed responsibilities and completion
+milestones, prioritising mandatory requirements over optional extensions.
