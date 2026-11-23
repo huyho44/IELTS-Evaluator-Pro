@@ -1,258 +1,447 @@
-import { useEffect, useState } from 'react'
-import CourseCard from './CourseCard'
-import type { Course } from './course'
-import { getCourses } from './coursesApi'
+import { useEffect, useState } from "react";
+import { useSession } from "../auth/session";
+import CourseCard from "./CourseCard";
+import type { Course } from "./course";
+import { getCourses } from "./coursesApi";
+import {
+  getMyEnrollments,
+  type EnrollmentStatus,
+} from "./enrollmentsApi";
+import { catalogPage } from "./catalogPagination";
 
-import { catalogPage } from './catalogPagination'
+type CatalogFilter = "ALL" | "OPEN" | "MY_COURSES";
 
-export default function CourseCatalogPage({ loadCourses = getCourses }: { loadCourses?: typeof getCourses }) {
-    const [courses, setCourses] = useState<Course[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [reloadKey, setReloadKey] = useState(0)
+type EnrollmentsSnapshot = {
+  userId: string;
+  status: "loading" | "ready" | "error";
+  statuses: Record<string, EnrollmentStatus>;
+  error: string | null;
+};
 
-    const [search, setSearch] = useState('')
-    const [openOnly, setOpenOnly] = useState(false)
-    const [page, setPage] = useState(1)
+export default function CourseCatalogPage({
+  loadCourses = getCourses,
+}: {
+  loadCourses?: typeof getCourses;
+}) {
+  const { session, requestToken } = useSession();
+  const userId = session?.user.id ?? null;
+  const isLearner = Boolean(session?.user.roles.includes("LEARNER"));
 
-    useEffect(() => {
-        const controller = new AbortController()
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [enrollmentsReloadKey, setEnrollmentsReloadKey] = useState(0);
+  const [enrollmentsState, setEnrollmentsState] =
+    useState<EnrollmentsSnapshot | null>(null);
 
-        async function loadCatalog() {
-            setLoading(true)
-            setError(null)
+  const [search, setSearch] = useState("");
+  const [filterState, setFilterState] = useState<{
+    userKey: string | null;
+    mode: CatalogFilter;
+  }>({ userKey: userId, mode: "ALL" });
+  const [pageState, setPageState] = useState<{
+    userKey: string | null;
+    page: number;
+  }>({ userKey: userId, page: 1 });
 
-            try {
-                const result = await loadCourses(controller.signal)
+  const filter: CatalogFilter =
+    filterState.userKey === userId &&
+    (filterState.mode !== "MY_COURSES" || (isLearner && Boolean(userId)))
+      ? filterState.mode
+      : "ALL";
+  const page = pageState.userKey === userId ? pageState.page : 1;
 
-                if (!controller.signal.aborted) {
-                    setCourses(result)
-                }
-            } catch (caught) {
-                if (!controller.signal.aborted) {
-                    setError(
-                        caught instanceof Error
-                            ? caught.message
-                            : 'Unable to load courses.',
-                    )
-                }
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false)
-                }
-            }
+  function setFilter(next: CatalogFilter) {
+    setFilterState({ userKey: userId, mode: next });
+  }
+
+  function setPage(next: number) {
+    setPageState({ userKey: userId, page: next });
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCatalog() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await loadCourses(controller.signal);
+
+        if (!controller.signal.aborted) {
+          setCourses(result);
         }
-
-        void loadCatalog()
-
-        return () => controller.abort()
-    }, [reloadKey, loadCourses])
-
-    const { filteredCourses, totalPages, currentPage, visibleCourses } = catalogPage(courses, search, openOnly, page)
-
-    function resetFilters() {
-        setSearch('')
-        setOpenOnly(false)
-        setPage(1)
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load courses.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
     }
 
-    return (
-        <main className="mx-auto max-w-[1440px] px-6 py-8 lg:px-8">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold">
-                    Explore Preparation Courses
-                </h1>
+    void loadCatalog();
 
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Choose focused IELTS lessons and continue your enrolled courses.
-                </p>
-            </div>
+    return () => controller.abort();
+  }, [reloadKey, loadCourses]);
 
-            <div className="mx-auto mt-5 max-w-lg">
-                <label htmlFor="course-search" className="sr-only">
-                    Search courses
-                </label>
+  useEffect(() => {
+    if (!requestToken || !userId || !isLearner) {
+      return;
+    }
 
-                <div className="relative">
-                    <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.3-4.3" />
-                        </svg>
-                    </span>
+    const controller = new AbortController();
+    const token = requestToken;
+    const expectedUserId = userId;
 
-                    <input
-                        id="course-search"
-                        type="search"
-                        value={search}
-                        onChange={(event) => {
-                            setSearch(event.target.value)
-                            setPage(1)
-                        }}
-                        placeholder="Search by keyword or instructor..."
-                        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                    />
-                </div>
-            </div>
+    async function loadEnrollments() {
+      setEnrollmentsState((previous) => ({
+        userId: expectedUserId,
+        status: "loading",
+        statuses:
+          previous?.userId === expectedUserId ? previous.statuses : {},
+        error: null,
+      }));
+      try {
+        const mine = await getMyEnrollments(token, controller.signal);
+        if (controller.signal.aborted) return;
+        const statuses: Record<string, EnrollmentStatus> = {};
+        for (const item of mine) {
+          statuses[item.courseId] = item.status;
+        }
+        setEnrollmentsState({
+          userId: expectedUserId,
+          status: "ready",
+          statuses,
+          error: null,
+        });
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setEnrollmentsState({
+            userId: expectedUserId,
+            status: "error",
+            statuses: {},
+            error:
+              caught instanceof Error
+                ? caught.message
+                : "Unable to load your enrolled courses.",
+          });
+        }
+      }
+    }
 
-            <div
-                role="group"
-                aria-label="Filter courses"
-                className="mt-4 flex flex-wrap justify-center gap-2"
+    void loadEnrollments();
+    return () => controller.abort();
+  }, [requestToken, userId, isLearner, reloadKey, enrollmentsReloadKey]);
+
+  const currentEnrollmentSnap =
+    userId && isLearner && enrollmentsState?.userId === userId
+      ? enrollmentsState
+      : null;
+  const enrollmentsLoading =
+    isLearner &&
+    Boolean(userId) &&
+    Boolean(requestToken) &&
+    (currentEnrollmentSnap === null ||
+      currentEnrollmentSnap.status === "loading");
+  const enrollmentsError =
+    currentEnrollmentSnap?.status === "error"
+      ? currentEnrollmentSnap.error
+      : null;
+  const enrollmentStatuses =
+    currentEnrollmentSnap?.status === "ready"
+      ? currentEnrollmentSnap.statuses
+      : {};
+  const enrolledCourseIds = new Set(
+    Object.entries(enrollmentStatuses)
+      .filter(([, status]) => status === "ACTIVE" || status === "COMPLETED")
+      .map(([courseId]) => courseId),
+  );
+
+  const { filteredCourses, totalPages, currentPage, visibleCourses } =
+    catalogPage(
+      courses,
+      search,
+      filter === "OPEN",
+      page,
+      filter === "MY_COURSES" ? enrolledCourseIds : null,
+    );
+
+  function resetFilters() {
+    setSearch("");
+    setFilter("ALL");
+    setPage(1);
+  }
+
+  return (
+    <div className="student-surface-catalog min-h-[calc(100vh-4rem)]">
+    <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+          Explore Preparation Courses
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          Choose focused IELTS lessons and continue your enrolled courses.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-5 max-w-lg">
+        <label htmlFor="course-search" className="sr-only">
+          Search courses
+        </label>
+
+        <div className="relative">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-                {[false, true].map((onlyOpen) => (
-                    <button
-                        key={String(onlyOpen)}
-                        type="button"
-                        aria-pressed={openOnly === onlyOpen}
-                        onClick={() => {
-                            setOpenOnly(onlyOpen)
-                            setPage(1)
-                        }}
-                        className={
-                            'rounded-full px-4 py-2 text-xs font-semibold ' +
-                            (openOnly === onlyOpen
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200')
-                        }
-                    >
-                        {onlyOpen ? 'Open for enrollment' : 'All Courses'}
-                    </button>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </span>
+
+          <input
+            id="course-search"
+            type="search"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by keyword or instructor..."
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-500 focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+          />
+        </div>
+      </div>
+
+      <div
+        role="group"
+        aria-label="Filter courses"
+        className="mt-4 flex flex-wrap justify-center gap-2"
+      >
+        {(
+          [
+            { key: "ALL", label: "All Courses" },
+            { key: "OPEN", label: "Open for enrollment" },
+            ...(isLearner && userId
+              ? [{ key: "MY_COURSES" as const, label: "My Courses" }]
+              : []),
+          ] as const
+        ).map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={filter === option.key}
+            onClick={() => {
+              setFilter(option.key);
+              setPage(1);
+            }}
+            className={
+              "rounded-full px-4 py-2 text-xs font-semibold transition-colors " +
+              (filter === option.key
+                ? "bg-brand-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <section
+        aria-label="Available courses"
+        aria-busy={loading}
+        className="mt-6"
+      >
+        {loading ? (
+          <div
+            role="status"
+            className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600"
+          >
+            Loading courses...
+          </div>
+        ) : error !== null ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-white p-8 text-center"
+          >
+            <h2 className="font-semibold text-red-700">
+              Could not load courses
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-600">{error}</p>
+
+            <button
+              type="button"
+              onClick={() => setReloadKey((previous) => previous + 1)}
+              className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        ) : filter === "MY_COURSES" && enrollmentsLoading ? (
+          <div
+            role="status"
+            className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600"
+          >
+            Loading your enrolled courses...
+          </div>
+        ) : filter === "MY_COURSES" && enrollmentsError !== null ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-white p-8 text-center"
+          >
+            <h2 className="font-semibold text-red-700">
+              Unable to load your enrolled courses
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-600">{enrollmentsError}</p>
+
+            <button
+              type="button"
+              onClick={() =>
+                setEnrollmentsReloadKey((previous) => previous + 1)
+              }
+              className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        ) : filter === "MY_COURSES" && enrolledCourseIds.size === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+            <h2 className="text-lg font-semibold text-slate-900">
+              No enrolled courses yet
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-600">
+              You have not enrolled in any courses yet. Browse open courses to
+              start learning.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFilter("OPEN");
+                setPage(1);
+              }}
+              className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Browse open courses
+            </button>
+          </div>
+        ) : (
+          <>
+            <p role="status" className="mb-4 text-xs text-slate-500">
+              {filteredCourses.length}{" "}
+              {filteredCourses.length === 1 ? "course" : "courses"} found
+            </p>
+
+            {visibleCourses.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {visibleCourses.map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    enrollmentStatus={enrollmentStatuses[course.id] ?? null}
+                  />
                 ))}
-            </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+                <h2 className="text-lg font-semibold">
+                  {courses.length === 0
+                    ? "No courses available yet"
+                    : "No courses found"}
+                </h2>
 
-            <section
-                aria-label="Available courses"
-                aria-busy={loading}
-                className="mt-6"
-            >
-                {loading ? (
-                    <div
-                        role="status"
-                        className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600"
-                    >
-                        Loading courses...
-                    </div>
-                ) : error !== null ? (
-                    <div
-                        role="alert"
-                        className="rounded-xl border border-red-200 bg-white p-8 text-center"
-                    >
-                        <h2 className="font-semibold text-red-700">
-                            Could not load courses
-                        </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  {courses.length === 0
+                    ? "Please check back later."
+                    : "Try a different keyword or course filter."}
+                </p>
 
-                        <p className="mt-2 text-sm text-slate-600">{error}</p>
-
-                        <button
-                            type="button"
-                            onClick={() => setReloadKey((previous) => previous + 1)}
-                            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-                        >
-                            Try again
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <p role="status" className="mb-4 text-xs text-slate-500">
-                            {filteredCourses.length}{' '}
-                            {filteredCourses.length === 1 ? 'course' : 'courses'} found
-                        </p>
-
-                        {visibleCourses.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                                {visibleCourses.map((course) => (
-                                    <CourseCard key={course.id} course={course} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-                                <h2 className="text-lg font-semibold">
-                                    {courses.length === 0
-                                        ? 'No courses available yet'
-                                        : 'No courses found'}
-                                </h2>
-
-                                <p className="mt-2 text-sm text-slate-600">
-                                    {courses.length === 0
-                                        ? 'Please check back later.'
-                                        : 'Try a different keyword or course filter.'}
-                                </p>
-
-                                {courses.length > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={resetFilters}
-                                        className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-                                    >
-                                        Clear filters
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        {totalPages > 1 && (
-                            <nav
-                                aria-label="Course pagination"
-                                className="mt-8 flex flex-wrap justify-center gap-2"
-                            >
-                                <button
-                                    type="button"
-                                    disabled={currentPage === 1}
-                                    onClick={() => setPage(currentPage - 1)}
-                                    className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
-                                >
-                                    ← Previous
-                                </button>
-
-                                {Array.from(
-                                    { length: totalPages },
-                                    (_, index) => index + 1,
-                                ).map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        aria-current={
-                                            currentPage === pageNumber ? 'page' : undefined
-                                        }
-                                        onClick={() => setPage(pageNumber)}
-                                        className={
-                                            'rounded-lg px-3 py-2 text-sm ' +
-                                            (currentPage === pageNumber
-                                                ? 'bg-blue-600 text-white'
-                                                : 'border border-slate-300 bg-white')
-                                        }
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                ))}
-
-                                <button
-                                    type="button"
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => setPage(currentPage + 1)}
-                                    className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
-                                >
-                                    Next →
-                                </button>
-                            </nav>
-                        )}
-                    </>
+                {courses.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Clear filters
+                  </button>
                 )}
-            </section>
-        </main>
-    )
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <nav
+                aria-label="Course pagination"
+                className="mt-8 flex flex-wrap justify-center gap-2"
+              >
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
+                  className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+                >
+                  ← Previous
+                </button>
+
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1,
+                ).map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    aria-current={
+                      currentPage === pageNumber ? "page" : undefined
+                    }
+                    onClick={() => setPage(pageNumber)}
+                    className={
+                      "rounded-lg px-3 py-2 text-sm " +
+                      (currentPage === pageNumber
+                        ? "bg-brand-600 text-white"
+                        : "border border-slate-300 bg-white")
+                    }
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setPage(currentPage + 1)}
+                  className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+                >
+                  Next →
+                </button>
+              </nav>
+            )}
+          </>
+        )}
+      </section>
+    </main>
+    </div>
+  );
 }

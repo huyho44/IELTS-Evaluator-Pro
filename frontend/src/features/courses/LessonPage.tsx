@@ -35,31 +35,78 @@ function MaterialContent({ material }: { material: LessonMaterial }) {
     }
 
     if (material.kind === "URL" && material.externalUrl) {
-        let safeUrl: string | null = null;
+        let safeUrl: URL | null = null;
 
         try {
-            const url = new URL(material.externalUrl);
+            const parsed = new URL(material.externalUrl);
 
-            if (url.protocol === "https:" || url.protocol === "http:") {
-                safeUrl = url.href;
+            if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+                safeUrl = parsed;
             }
         } catch {
             // Invalid links are displayed as unavailable.
         }
 
-        return safeUrl ? (
-            <a
-                href={safeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block break-all font-semibold text-blue-600 hover:underline"
-            >
-                Open learning resource ↗
-            </a>
-        ) : (
-            <p className="text-sm text-slate-500">
-                This resource link is unavailable.
-            </p>
+        if (!safeUrl) {
+            return (
+                <p className="text-sm text-slate-500">
+                    This resource link is unavailable.
+                </p>
+            );
+        }
+
+        const host = safeUrl.hostname.toLowerCase();
+        const path = safeUrl.pathname.toLowerCase();
+        const isVideo =
+            [
+                "youtube.com",
+                "www.youtube.com",
+                "m.youtube.com",
+                "youtu.be",
+                "vimeo.com",
+                "player.vimeo.com",
+                "loom.com",
+                "www.loom.com",
+            ].includes(host) ||
+            /\.(mp4|webm|mov)$/i.test(path);
+
+        return (
+            <div className="flex flex-col gap-3 rounded-xl border border-brand-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-800">
+                        {isVideo ? (
+                            <>
+                                <svg
+                                    aria-hidden="true"
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                                Video resource
+                            </>
+                        ) : (
+                            "External learning resource"
+                        )}
+                    </span>
+                    <p className="truncate text-sm font-medium text-slate-900">
+                        {safeUrl.hostname}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                        {safeUrl.href}
+                    </p>
+                </div>
+                <a
+                    href={safeUrl.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+                >
+                    {isVideo ? "Open video ↗" : "Open learning resource ↗"}
+                </a>
+            </div>
         );
     }
 
@@ -205,10 +252,11 @@ function LessonContent({
         currentIndex >= 0 ? lessons[currentIndex + 1] : null;
 
     return (
+        <div className="student-surface-lesson min-h-[calc(100vh-4rem)]">
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
             <Link
                 to={`/courses/${courseId}`}
-                className="text-sm font-semibold text-blue-600 hover:underline"
+                className="text-sm font-semibold text-brand-600 hover:underline"
             >
                 ← Back to course overview
             </Link>
@@ -236,39 +284,45 @@ function LessonContent({
                     <button
                         type="button"
                         onClick={() => setReloadKey((value) => value + 1)}
-                        className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
                     >
                         Try again
                     </button>
                 </section>
             ) : lesson && course ? (
                 <>
-                    <h1 className="mt-5 break-words text-2xl font-bold">
-                        {course.title}
-                    </h1>
+                    <header className="mt-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+                            Lesson
+                        </p>
+                        <h1 className="mt-1.5 break-words text-2xl font-bold text-slate-900">
+                            {lesson.learningItem.title}
+                        </h1>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">
+                            {course.title} · By {course.creator.displayName}
+                        </p>
+                    </header>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                            Lesson workspace
-                        </span>
-                        <span className="text-sm leading-6 text-slate-500">
-                            By {course.creator.displayName}
-                        </span>
+                    <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+                        <a
+                            href="#course-lessons-sidebar"
+                            className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-800"
+                        >
+                            Course lessons ({lessons.length}) &darr;
+                        </a>
                     </div>
 
-                    <div className="mt-6 grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
+                    <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-[2fr_1fr]">
                         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                            <h2 className="break-words text-xl font-bold">
-                                {lesson.learningItem.title}
-                            </h2>
-
                             {lesson.summary && (
-                                <p className="mt-3 text-sm leading-7 text-slate-500">
+                                <div className="rounded-lg border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm leading-6 text-slate-700">
                                     {lesson.summary}
-                                </p>
+                                </div>
                             )}
 
-                            <div className="mt-6 space-y-6 border-t border-slate-100 pt-6">
+                            <div
+                                className={`${lesson.summary ? "mt-5" : ""} space-y-6 rounded-xl border border-slate-200/80 bg-slate-50 p-5 sm:p-6`}
+                            >
                                 {lesson.lessonMaterials.length === 0 ? (
                                     <p className="text-sm text-slate-500">
                                         No learning materials available yet.
@@ -285,12 +339,12 @@ function LessonContent({
                                 )}
                             </div>
 
-                            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 {completionSaved ? <CompletionBadge /> : <button
                                     type="button"
                                     disabled={saving}
                                     onClick={() => void handleComplete()}
-                                    className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {saving ? "Saving..." : "Mark complete"}
                                 </button>}
@@ -323,7 +377,7 @@ function LessonContent({
                                     {nextLesson && (
                                         <Link
                                             to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                                            className="ml-auto rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                                            className="ml-auto rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100"
                                         >
                                             Next lesson →
                                         </Link>
@@ -332,7 +386,10 @@ function LessonContent({
                             </div>
                         </section>
 
-                        <aside className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <aside
+                            id="course-lessons-sidebar"
+                            className="min-w-0 scroll-mt-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                        >
                             <h2 className="text-lg font-semibold">Course lessons</h2>
 
                             <p className="mt-2 text-sm text-slate-500">
@@ -349,7 +406,7 @@ function LessonContent({
                                         className={
                                             "block break-words rounded-lg border p-3 text-sm leading-6 no-underline " +
                                             (item.id === lessonId
-                                                ? "border-blue-200 bg-blue-50 font-semibold text-blue-700"
+                                                ? "border-brand-200 bg-brand-50 font-semibold text-brand-700"
                                                 : "border-slate-200 text-slate-600 hover:bg-slate-50")
                                         }
                                     >
@@ -364,6 +421,7 @@ function LessonContent({
                 </>
             ) : null}
         </main>
+        </div>
     );
 }
 

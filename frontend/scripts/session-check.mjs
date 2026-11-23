@@ -226,3 +226,25 @@ assert.equal(back('/attempts/123'), '/courses');
 assert.equal(back('https://outside.example/courses/anything'), '/courses');
 assert.equal(back('/courses/invalid/lessons/123'), '/courses');
 console.log('Auth back destination checks passed independently of post-login return URL.');
+
+const workspaceContext = { exports: {} };
+vm.runInNewContext(
+  ts.transpileModule(
+    readFileSync(new URL('../src/features/auth/workspaceAccess.ts', import.meta.url), 'utf8'),
+    { compilerOptions: { module: ts.ModuleKind.CommonJS } },
+  ).outputText,
+  workspaceContext,
+);
+const { signedInDestination, workspaceHome, workspacePath } = workspaceContext.exports;
+assert.equal(workspaceHome([]), '/courses');
+assert.equal(workspaceHome(['LEARNER']), '/learning');
+assert.equal(workspaceHome(['INSTRUCTOR']), '/teacher/reviews');
+assert.equal(workspaceHome(['ADMIN', 'LEARNER']), '/admin');
+assert.equal(signedInDestination('/attempts/abc?revision=2#feedback', ['LEARNER']), '/attempts/abc?revision=2#feedback');
+assert.equal(signedInDestination('/attempts/abc', ['INSTRUCTOR']), '/teacher/reviews');
+assert.equal(signedInDestination('/teacher/reviews/abc', ['ADMIN']), '/admin');
+assert.equal(signedInDestination('/teacher/authoring?course=abc', ['ADMIN']), '/admin/authoring?course=abc');
+assert.equal(signedInDestination('/teacher/reviews/abc', ['ADMIN', 'INSTRUCTOR']), '/teacher/reviews/abc');
+assert.equal(signedInDestination('/admin/skills', ['LEARNER']), '/learning');
+assert.equal(workspacePath(['INSTRUCTOR'], '/notifications'), '/teacher/notifications');
+console.log('Workspace checks passed: role home, authorized return links, and legacy paths.');

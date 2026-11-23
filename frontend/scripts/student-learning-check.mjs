@@ -137,6 +137,21 @@ await assert.rejects(
   writing.submitWriting(attempt, "session-token", " \n "),
   /Enter an essay/,
 );
+responder = () => ({
+  ok: false,
+  status: 409,
+  json: async () => ({
+    message: "Please revise your essay before submitting a new revision.",
+  }),
+});
+await assert.rejects(
+  writing.submitWriting(attempt, "session-token", "Unedited essay."),
+  (cause) =>
+    cause instanceof client.StudentApiError &&
+    cause.status === 409 &&
+    cause.message ===
+      "Please revise your essay before submitting a new revision.",
+);
 assert.throws(
   () => writing.parseReceipt({ ...receipt, attemptId: "other" }, attempt.id),
   /could not be verified/,

@@ -181,6 +181,15 @@ function fixture() {
         },
       ),
     },
+    acceptedAssessment: {
+      findMany: vi.fn(async () => [] as Array<{
+        result: {
+          revision: {
+            attempt: { assignmentVersion: { activityId: string } };
+          };
+        };
+      }>),
+    },
   };
   const db = prisma as unknown as PrismaService;
   const reload = () => new CoursesService(db, new AccessService(db));
@@ -266,23 +275,34 @@ describe('course lesson progress', () => {
   ])('returns no personal progress for an $name', async ({ actor }) => {
     await f.service.completeLesson(courseId, lessonId, an);
     f.prisma.lessonProgress.findMany.mockClear();
+    f.prisma.acceptedAssessment.findMany.mockClear();
     const course = await f.service.findOne(courseId, actor);
     expect(course.learningItems.every((item) => item.progress === null)).toBe(
       true,
     );
+    expect(
+      course.learningItems.every((item) => item.practiceCompleted === false),
+    ).toBe(true);
     expect(f.prisma.lessonProgress.findMany).not.toHaveBeenCalled();
+    expect(f.prisma.acceptedAssessment.findMany).not.toHaveBeenCalled();
     expect(course.sections).toHaveLength(1);
   });
 
   it('batches outline progress reads and leaves practice items without lesson progress', async () => {
     await f.service.completeLesson(courseId, lessonId, an);
     f.prisma.lessonProgress.findUnique.mockClear();
+    f.prisma.acceptedAssessment.findMany.mockClear();
     const course = await f.service.findOne(courseId, an);
     expect(f.prisma.lessonProgress.findMany).toHaveBeenCalledTimes(1);
+    expect(f.prisma.acceptedAssessment.findMany).toHaveBeenCalledTimes(1);
     expect(f.prisma.lessonProgress.findUnique).not.toHaveBeenCalled();
     expect(
       course.learningItems.find((item) => item.id === practiceId)?.progress,
     ).toBeNull();
+    expect(
+      course.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(false);
   });
 
   it('still denies lesson access and completion without an active enrollment', async () => {
@@ -338,5 +358,189 @@ describe('course lesson progress', () => {
     await expect(
       f.service.completeLesson(courseId, lessonId, an),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('marks practiceCompleted true only for enrolled learners with a current published accepted assessment', async () => {
+    f.prisma.acceptedAssessment.findMany.mockResolvedValue([
+      {
+        result: {
+          revision: {
+            attempt: { assignmentVersion: { activityId: practiceId } },
+          },
+        },
+      },
+    ]);
+
+    const activeCourse = await f.service.findOne(courseId, an);
+    expect(f.prisma.acceptedAssessment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isCurrent: true,
+          publishedAt: { lte: expect.any(Date) },
+          result: {
+            revision: {
+              attempt: {
+                learnerId: an.id,
+                assignmentVersion: {
+                  activityId: { in: [practiceId] },
+                  assignment: { courseId },
+                },
+              },
+            },
+          },
+        }),
+      }),
+    );
+    expect(
+      activeCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(true);
+    expect(
+      activeCourse.learningItems.find((item) => item.id === lessonId)
+        ?.practiceCompleted,
+    ).toBe(false);
+
+    f.enrollments[0].status = 'COMPLETED';
+    const completedCourse = await f.service.findOne(courseId, an);
+    expect(
+      completedCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(true);
+
+    f.enrollments[0].status = 'LEFT';
+    f.prisma.acceptedAssessment.findMany.mockClear();
+    const leftCourse = await f.service.findOne(courseId, an);
+    expect(f.prisma.acceptedAssessment.findMany).not.toHaveBeenCalled();
+    expect(
+      leftCourse.learningItems.find((item) => item.id === practiceId)
+        ?.practiceCompleted,
+    ).toBe(false);
+  });
+});
+
+describe('course assignment attempt availability', () => {
+  const assignmentFixture = (
+    attempts: Array<{
+      id: string;
+      assignmentId: string;
+      attemptNo: number;
+      status: string;
+      expiresAt: Date | null;
+    }>,
+    maxAttempts = 2,
+  ) => {
+    const db = {
+      enrollment: {
+        findUnique: vi.fn(async () => ({
+          id: 'an-enrollment',
+          learnerId: an.id,
+          courseId,
+          status: 'ACTIVE',
+        })),
+      },
+      assignment: {
+        findMany: vi.fn(async () => [
+          {
+            id: 'assign-1',
+            title: 'Diagnostic Writing',
+            activityId: practiceId,
+            assignmentVersions: [
+              {
+                id: 'ver-1',
+                versionNo: 1,
+                maxAttempts,
+                timeLimitSeconds: 2400,
+              },
+            ],
+          },
+        ]),
+      },
+      attempt: {
+        findMany: vi.fn(async () => attempts),
+      },
+    } as unknown as PrismaService;
+    return {
+      db,
+      service: new CoursesService(db, new AccessService(db)),
+    };
+  };
+
+  it('reports remaining new attempts when the learner still has quota left', async () => {
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-1',
+          assignmentId: 'assign-1',
+          attemptNo: 1,
+          status: 'SUBMITTED',
+          expiresAt: null,
+        },
+      ],
+      3,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 1,
+      attemptsRemaining: 2,
+      activeAttempt: null,
+    });
+  });
+
+  it('keeps an active non-expired in-progress attempt resumable even when 0 new attempts remain', async () => {
+    const futureExpiry = new Date(Date.now() + 600_000);
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-2',
+          assignmentId: 'assign-1',
+          attemptNo: 2,
+          status: 'IN_PROGRESS',
+          expiresAt: futureExpiry,
+        },
+        {
+          id: 'att-1',
+          assignmentId: 'assign-1',
+          attemptNo: 1,
+          status: 'SUBMITTED',
+          expiresAt: null,
+        },
+      ],
+      2,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 2,
+      attemptsRemaining: 0,
+      activeAttempt: {
+        id: 'att-2',
+        attemptNo: 2,
+        expiresAt: futureExpiry,
+      },
+    });
+  });
+
+  it('reports 0 remaining attempts and no active attempt when max attempts are used or expired', async () => {
+    const pastExpiry = new Date(Date.now() - 60_000);
+    const { service } = assignmentFixture(
+      [
+        {
+          id: 'att-2',
+          assignmentId: 'assign-1',
+          attemptNo: 2,
+          status: 'IN_PROGRESS',
+          expiresAt: pastExpiry,
+        },
+      ],
+      2,
+    );
+
+    const [assignment] = await service.assignments(courseId, an);
+    expect(assignment).toMatchObject({
+      attemptsUsed: 2,
+      attemptsRemaining: 0,
+      activeAttempt: null,
+    });
   });
 });

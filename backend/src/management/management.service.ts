@@ -469,11 +469,63 @@ export class ManagementService {
     ]);
     return { courses, skills, rubrics, gradingConfigs };
   }
-  notifications(actor: Actor) {
-    return this.prisma.notification.findMany({
+  async notifications(actor: Actor) {
+    const rows = await this.prisma.notification.findMany({
       where: { recipientId: actor.id },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 200,
+    });
+    const submissionPath =
+      /^\/submissions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+    const submissionRevisionId = (path: string | null) =>
+      path ? submissionPath.exec(path.trim())?.[1].toLowerCase() : undefined;
+    const revisionIds = [
+      ...new Set(
+        rows
+          .map((row) => submissionRevisionId(row.navigationPath))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ];
+    if (revisionIds.length === 0) {
+      return rows;
+    }
+    const revisions = await this.prisma.submissionRevision.findMany({
+      where: {
+        id: { in: revisionIds },
+        attempt: { learnerId: actor.id },
+      },
+      select: {
+        id: true,
+        revisionNo: true,
+        attempt: {
+          select: {
+            attemptNo: true,
+            assignmentVersion: {
+              select: {
+                assignment: {
+                  select: {
+                    title: true,
+                    course: { select: { title: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const revisionById = new Map(revisions.map((item) => [item.id, item]));
+    return rows.map((row) => {
+      const revisionId = submissionRevisionId(row.navigationPath);
+      const revision = revisionId ? revisionById.get(revisionId) : undefined;
+      if (!revision) return row;
+      return {
+        ...row,
+        assignmentTitle: revision.attempt.assignmentVersion.assignment.title,
+        courseTitle: revision.attempt.assignmentVersion.assignment.course.title,
+        attemptNo: revision.attempt.attemptNo,
+        revisionNo: revision.revisionNo,
+      };
     });
   }
   async readNotification(id: string, actor: Actor) {

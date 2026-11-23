@@ -381,7 +381,10 @@ export class SubmissionsService {
         where: { attemptId },
         orderBy: { revisionNo: 'desc' },
       });
-      if (previous?.contentHash === contentHash)
+      if (
+        previous?.contentHash === contentHash &&
+        !(mode === 'WRITING' && attempt.status === 'IN_PROGRESS')
+      )
         return this.receipt(tx, previous.id, attemptId);
       this.window(version);
       if (
@@ -391,6 +394,10 @@ export class SubmissionsService {
         throw new ConflictException('Attempt is closed');
       if ((previous?.revisionNo ?? 0) >= version.maxRevisions)
         throw new ConflictException('Maximum revisions reached');
+      if (mode === 'WRITING' && previous?.contentHash === contentHash)
+        throw new ConflictException(
+          'Please revise your essay before submitting a new revision.',
+        );
       if (payload.audioAssetId) {
         const asset = await tx.fileAsset.findUnique({
           where: { id: payload.audioAssetId },

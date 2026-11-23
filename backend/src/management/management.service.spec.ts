@@ -142,6 +142,7 @@ function fixture() {
       findMany: vi.fn().mockResolvedValue([{ lessonId: 'lesson' }]),
     },
     acceptedAssessment: { findMany: vi.fn().mockResolvedValue([]) },
+    submissionRevision: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const transaction = vi.fn(async (work: (tx: typeof db) => Promise<unknown>) =>
     work(db),
@@ -513,6 +514,70 @@ describe('Learner profile, notifications and course completion', () => {
     });
     expect((await service.readNotification(id, learner)).readAt).toBe(readAt);
     expect(db.notification.update).not.toHaveBeenCalled();
+  });
+
+  it('enriches submission notifications with assignment, course, attempt, and revision context', async () => {
+    const { service, db } = fixture();
+    const createdAt = new Date('2026-11-15T10:00:00.000Z');
+    const revisionId = '00000000-0000-4000-8000-000000000123';
+    const legacyNotification = {
+      id: 'notif-2',
+      recipientId: learner.id,
+      notificationType: 'ASSESSMENT_PUBLISHED',
+      title: 'Older notification',
+      body: 'Older notification body',
+      navigationPath: '/submissions/legacy-reference',
+      readAt: null,
+      createdAt,
+    };
+    db.notification.findMany.mockResolvedValue([
+      {
+        id: 'notif-1',
+        recipientId: learner.id,
+        notificationType: 'ASSESSMENT_PUBLISHED',
+        title: 'Assessment available',
+        body: 'Your assessment has been published.',
+        navigationPath: `/submissions/${revisionId}`,
+        readAt: null,
+        createdAt,
+      },
+      legacyNotification,
+    ]);
+    db.submissionRevision.findMany.mockResolvedValue([
+      {
+        id: revisionId,
+        revisionNo: 2,
+        attempt: {
+          attemptNo: 4,
+          assignmentVersion: {
+            assignment: {
+              title: '[Demo] Diagnostic: public transport',
+              course: {
+                title: '[Demo] Writing Clinic: evidence to transfer',
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    const rows = await service.notifications(learner);
+    expect(db.submissionRevision.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: [revisionId] }, attempt: { learnerId: learner.id } },
+      }),
+    );
+    expect(rows).toEqual([
+      expect.objectContaining({
+        id: 'notif-1',
+        notificationType: 'ASSESSMENT_PUBLISHED',
+        assignmentTitle: '[Demo] Diagnostic: public transport',
+        courseTitle: '[Demo] Writing Clinic: evidence to transfer',
+        attemptNo: 4,
+        revisionNo: 2,
+      }),
+      legacyNotification,
+    ]);
   });
 
   it('does not complete practice requirements from unpublished/provisional AI results', async () => {

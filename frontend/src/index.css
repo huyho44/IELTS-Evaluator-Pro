@@ -2,26 +2,219 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  scrollbar-gutter: stable;
+/* ---------------------------------------------------------------------------
+ * Design tokens — see design-system/ielts-evaluator-pro/MASTER.md
+ * `brand` channels are swapped per workspace so shared components inherit
+ * the right identity colour. Values are "R G B" for Tailwind alpha support.
+ * ------------------------------------------------------------------------- */
+@layer base {
+  :root,
+  [data-workspace='student'] {
+    /* Cobalt — learners */
+    --brand-50: 238 244 255;
+    --brand-100: 220 231 254;
+    --brand-200: 186 206 253;
+    --brand-300: 142 174 251;
+    --brand-400: 95 135 246;
+    --brand-500: 59 100 238;
+    --brand-600: 39 71 217;
+    --brand-700: 32 56 176;
+    --brand-800: 31 49 140;
+    --brand-900: 30 45 110;
+    --brand-950: 21 28 68;
+  }
+
+  [data-workspace='instructor'] {
+    /* Teal — instructors (shifted one step darker for AA on white) */
+    --brand-50: 240 253 250;
+    --brand-100: 204 251 241;
+    --brand-200: 153 246 228;
+    --brand-300: 94 234 212;
+    --brand-400: 45 212 191;
+    --brand-500: 13 148 136;
+    --brand-600: 15 118 110;
+    --brand-700: 17 94 89;
+    --brand-800: 19 78 74;
+    --brand-900: 15 63 59;
+    --brand-950: 4 47 46;
+  }
+
+  [data-workspace='admin'] {
+    /* Graphite — administration */
+    --brand-50: 244 246 249;
+    --brand-100: 232 236 242;
+    --brand-200: 211 218 228;
+    --brand-300: 174 184 199;
+    --brand-400: 125 138 160;
+    --brand-500: 90 103 128;
+    --brand-600: 61 74 97;
+    --brand-700: 46 57 77;
+    --brand-800: 34 43 59;
+    --brand-900: 24 32 48;
+    --brand-950: 14 20 32;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  :root {
+    color: theme('colors.slate.900');
+    background-color: theme('colors.canvas');
+    font-family: theme('fontFamily.sans');
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background-color: theme('colors.canvas');
+    color: theme('colors.slate.900');
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: rgb(var(--brand-100));
+    color: rgb(var(--brand-950));
+  }
+
+  /* Fallback keyboard focus for anything without its own focus style. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand-500));
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+
+  summary,
+  label[for],
+  select,
+  input[type='checkbox'],
+  input[type='radio'] {
+    cursor: pointer;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: rgb(var(--brand-600));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-:root {
-  font-family: Inter, system-ui, Arial, sans-serif;
-  color: #0f172a;
-  background-color: #f8fafc;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+/* ---------------------------------------------------------------------------
+ * Primitives for new markup. Existing pages use utilities directly.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .ui-card {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+  }
+
+  .ui-btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-btn-primary {
+    @apply ui-btn bg-brand-600 text-white shadow-xs hover:bg-brand-700;
+  }
+
+  .ui-btn-secondary {
+    @apply ui-btn border border-slate-200 bg-white text-slate-800 shadow-xs hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .ui-btn-ghost {
+    @apply ui-btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  .ui-icon-btn {
+    @apply relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
+  }
+
+  .ui-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .ui-input {
+    @apply block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 shadow-xs transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:bg-slate-50 disabled:text-slate-500;
+  }
+
+  .ui-input[aria-invalid='true'] {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/15;
+  }
+
+  .ui-menu {
+    @apply z-30 origin-top-right animate-pop-in rounded-2xl border border-slate-200/90 bg-white shadow-popover;
+  }
+
+  .ui-menu-item {
+    @apply flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors duration-100 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500;
+  }
+
+  .ui-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-brand-700;
+  }
 }
 
-body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  margin: 0;
-  min-width: 320px;
+/* ---------------------------------------------------------------------------
+ * Student page surfaces — calm canvas with a faint brand wash at the top.
+ * ------------------------------------------------------------------------- */
+.student-surface-catalog,
+.student-surface-overview,
+.student-surface-attempt-review {
+  background-color: theme('colors.canvas');
+  background-image:
+    radial-gradient(
+      900px 280px at 15% -80px,
+      rgb(var(--brand-100) / 0.7),
+      transparent 70%
+    ),
+    radial-gradient(
+      700px 240px at 92% -60px,
+      rgb(var(--brand-50) / 0.9),
+      transparent 70%
+    );
+  background-repeat: no-repeat;
 }
 
-#root {
-  min-height: 100vh;
+.student-surface-lesson,
+.student-surface-attempt-active {
+  background-color: theme('colors.canvas');
+}
+
+.student-navbar-surface {
+  background-color: rgb(255 255 255 / 0.85);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
 }

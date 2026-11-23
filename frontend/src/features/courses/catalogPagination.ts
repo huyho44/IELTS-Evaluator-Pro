@@ -5,6 +5,7 @@ export function catalogPage(
   search: string,
   openOnly: boolean,
   page: number,
+  enrolledCourseIds?: ReadonlySet<string> | null,
 ) {
   const keyword = search.trim().toLowerCase();
 
@@ -19,7 +20,8 @@ export function catalogPage(
 
     return (
       searchableText.includes(keyword) &&
-      (!openOnly || course.enrollmentOpen === true)
+      (!openOnly || course.enrollmentOpen === true) &&
+      (!enrolledCourseIds || enrolledCourseIds.has(course.id))
     );
   });
 

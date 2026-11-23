@@ -3,6 +3,9 @@ import { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { safeReturn } from '../session';
 import { authApi } from '../services/authApi';
+import Spinner from '../../../components/ui/Spinner';
+import FormAlert from './FormAlert';
+import PasswordField from './PasswordField';
 
 export default function RegisterForm() {
   const [displayName, setDisplayName] = useState('');
@@ -24,7 +27,7 @@ export default function RegisterForm() {
     try {
       await authApi.register({ displayName, email, password });
       setPassword('');
-      navigate('/login', { replace: true, state: { from: safeReturn(location.state?.from), registered: true } });
+      navigate('/login', { replace: true, state: { from: safeReturn(location.state?.from, '/'), registered: true } });
     } catch (err: unknown) {
       setError(isAxiosError(err) && typeof err.response?.data?.message === 'string' ? err.response.data.message : err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
@@ -34,63 +37,52 @@ export default function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleRegister} className="space-y-4 w-full">
-      {error && (
-        <div role="alert" className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleRegister} className="w-full space-y-5">
+      {error && <FormAlert tone="error">{error}</FormAlert>}
 
       <div>
-        <label htmlFor="register-displayName" className="block text-sm font-medium text-gray-700 mb-1">Display name</label>
+        <label htmlFor="register-displayName" className="ui-label">Display name</label>
         <input
           type="text"
-          placeholder="johndoe"
+          placeholder="e.g. Minh Anh"
           id="register-displayName"
           autoComplete="name"
           maxLength={120}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           required
-          className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          className="ui-input"
         />
       </div>
 
       <div>
-        <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <label htmlFor="register-email" className="ui-label">Email address</label>
         <input
           type="email"
-          placeholder="name@company.com"
+          placeholder="name@example.com"
           id="register-email"
           autoComplete="email"
+          inputMode="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          className="ui-input"
         />
       </div>
 
-      <div>
-        <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input
-          type="password"
-          placeholder="••••••••"
-          id="register-password"
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={256}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-        />
-      </div>
+      <PasswordField
+        id="register-password"
+        label="Password"
+        value={password}
+        onChange={setPassword}
+        autoComplete="new-password"
+        minLength={8}
+        maxLength={256}
+        hint="Use at least 8 characters."
+      />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading} className="ui-btn-primary min-h-11 w-full">
+        {loading && <Spinner className="h-4 w-4" />}
         {loading ? 'Creating Account...' : 'Sign Up'}
       </button>
     </form>

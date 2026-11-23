@@ -1,82 +1,115 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSession } from "../features/auth/session";
-export default function Dashboard() {
+import {
+  getRoleBadgeClass,
+  getWorkspaceTheme,
+} from "../features/management/workspaceTheme";
+
+const ROLE_LABELS: Record<string, string> = {
+  LEARNER: "Learner",
+  INSTRUCTOR: "Instructor",
+  ADMIN: "Administrator",
+};
+
+export default function Dashboard({ student = true }: { student?: boolean }) {
   const { session } = useSession();
-  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const user = session?.user;
   if (!user) return null;
+
+  const isLearner = student && user.roles.includes("LEARNER");
+  const theme = getWorkspaceTheme(pathname, student);
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-        <h1 className="text-2xl font-bold">Account overview</h1>
-        <dl className="mt-6 grid gap-5 break-words sm:grid-cols-2">
-          {[
-            ["Display name", user.displayName],
-            ["Email", user.email],
-            ["Roles", user.roles.join(", ") || "Not set"],
-            ["Target band", user.targetBand ?? "Not set"],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt className="text-sm text-slate-500">{label}</dt>
-              <dd className="mt-1 font-semibold">{value}</dd>
+    <div
+      className={
+        student
+          ? "student-surface-overview min-h-[calc(100vh-4rem)]"
+          : undefined
+      }
+    >
+      <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
+            <div className="flex items-center gap-3.5">
+              <span
+                aria-hidden="true"
+                className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-base font-bold ${theme.avatarBadge}`}
+              >
+                {user.displayName.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowText}`}
+                >
+                  Account overview
+                </p>
+                <h1 className="truncate text-2xl font-bold text-slate-900">
+                  {user.displayName}
+                </h1>
+              </div>
             </div>
-          ))}
-        </dl>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-            to="/profile"
-          >
-            Edit profile and goals
-          </Link>
-          {user.roles.includes("LEARNER") && (
             <Link
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
-              to="/learning"
+              className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 sm:w-auto ${theme.primaryButton}`}
+              to="../profile"
             >
-              Skills and next steps
+              {student ? "Edit profile & learning goals" : "Edit profile"}
             </Link>
-          )}
-          {user.roles.includes("ADMIN") && (
-            <Link
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
-              to="/admin"
-            >
-              Administration
-            </Link>
-          )}
-          {user.roles.some((role) =>
-            ["ADMIN", "INSTRUCTOR"].includes(role),
-          ) && (
-            <Link
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
-              to="/grading-report"
-            >
-              Grading operations
-            </Link>
-          )}
-          <Link
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-            to="/courses"
-          >
-            Browse courses
-          </Link>
-          <Link
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
-            to="/practice-history"
-          >
-            My practice attempts
-          </Link>
-          <button
-            className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700"
-            onClick={() => {
-              navigate("/logout");
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      </section>
-    </main>
+          </div>
+
+          <dl className="mt-6 grid gap-5 break-words sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Display name
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-slate-900">
+                {user.displayName}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Email address
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-slate-900">
+                {user.email}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Account roles
+              </dt>
+              <dd className="mt-1.5 flex flex-wrap gap-1.5">
+                {user.roles.length ? (
+                  user.roles.map((role) => (
+                    <span
+                      key={role}
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getRoleBadgeClass(role)}`}
+                    >
+                      {ROLE_LABELS[role] ?? role}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm font-semibold text-slate-600">
+                    Not set
+                  </span>
+                )}
+              </dd>
+            </div>
+            {isLearner && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Target band
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  {user.targetBand != null
+                    ? `Band ${user.targetBand}`
+                    : "Not set"}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      </main>
+    </div>
   );
 }

@@ -93,8 +93,8 @@ export function managementError(cause: unknown): string {
       : "The request could not be completed.";
 }
 export const field =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-50";
+  "block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-xs transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:bg-slate-50 disabled:text-slate-500";
 export const button =
-  "rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50";
 export const panel =
-  "space-y-4 rounded-xl border border-slate-200 bg-white p-5";
+  "space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6";

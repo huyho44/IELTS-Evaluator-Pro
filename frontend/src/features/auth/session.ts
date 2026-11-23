@@ -226,14 +226,14 @@ export async function sessionFetch(
     expireSession(headers.get("Authorization")?.slice(7));
   return retried;
 }
-export function safeReturn(value: unknown) {
+export function safeReturn(value: unknown, fallback = "/courses") {
   if (
     typeof value !== "string" ||
     !value.startsWith("/") ||
     value.startsWith("//") ||
     /[\\\r\n]/.test(value)
   )
-    return "/courses";
+    return fallback;
   try {
     const url = new URL(value, window.location.origin);
     return url.origin === window.location.origin &&
@@ -241,8 +241,8 @@ export function safeReturn(value: unknown) {
         decodeURIComponent(url.pathname).replace(/\/+$/, "").toLowerCase(),
       )
       ? url.pathname + url.search + url.hash
-      : "/courses";
+      : fallback;
   } catch {
-    return "/courses";
+    return fallback;
   }
 }

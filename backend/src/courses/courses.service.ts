@@ -94,6 +94,52 @@ export class CoursesService {
     const progressByLesson = new Map(
       progresses.map(({ lessonId, ...progress }) => [lessonId, progress]),
     );
+    const validEnrollment = Boolean(
+      enrolled && ['ACTIVE', 'COMPLETED'].includes(enrolled.status),
+    );
+    const practiceIds = learningItems
+      .filter((item) => item.kind === 'PRACTICE')
+      .map((item) => item.id);
+    const accepted =
+      actor && validEnrollment && practiceIds.length
+        ? await this.prisma.acceptedAssessment.findMany({
+            where: {
+              isCurrent: true,
+              publishedAt: { lte: new Date() },
+              result: {
+                revision: {
+                  attempt: {
+                    learnerId: actor.id,
+                    assignmentVersion: {
+                      activityId: { in: practiceIds },
+                      assignment: { courseId: id },
+                    },
+                  },
+                },
+              },
+            },
+            select: {
+              result: {
+                select: {
+                  revision: {
+                    select: {
+                      attempt: {
+                        select: {
+                          assignmentVersion: { select: { activityId: true } },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          })
+        : [];
+    const completedPractices = new Set(
+      accepted.map(
+        (a) => a.result.revision.attempt.assignmentVersion.activityId,
+      ),
+    );
     return {
       ...details,
       sections: chapters,
@@ -107,6 +153,8 @@ export class CoursesService {
                 completedAt: null,
               })
             : null,
+        practiceCompleted:
+          item.kind === 'PRACTICE' && completedPractices.has(item.id),
       })),
     };
   }
@@ -241,24 +289,72 @@ export class CoursesService {
       update: { status: 'COMPLETED', completedAt: new Date() },
     });
   }
-  // List course assignments.
+  // List course assignments with the learner's remaining attempts and resumable attempt state.
   async assignments(courseId: string, actor: Actor) {
     await this.access.learner(actor, courseId, true);
-    return this.prisma.assignment.findMany({
+    const now = new Date();
+    const rows = await this.prisma.assignment.findMany({
       where: {
         courseId,
-        assignmentVersions: { some: { publishedAt: { lte: new Date() } } },
+        assignmentVersions: { some: { publishedAt: { lte: now } } },
       },
       select: {
         id: true,
         title: true,
         activityId: true,
         assignmentVersions: {
-          where: { publishedAt: { lte: new Date() } },
+          where: { publishedAt: { lte: now } },
           orderBy: { versionNo: 'desc' },
           take: 1,
         },
       },
+    });
+    const attempts =
+      rows.length > 0 && this.prisma.attempt?.findMany
+        ? await this.prisma.attempt.findMany({
+            where: {
+              learnerId: actor.id,
+              assignmentId: { in: rows.map((row) => row.id) },
+            },
+            orderBy: { attemptNo: 'desc' },
+            select: {
+              id: true,
+              assignmentId: true,
+              attemptNo: true,
+              status: true,
+              expiresAt: true,
+            },
+          })
+        : [];
+    return rows.map((row) => {
+      const latestVersion = row.assignmentVersions?.[0];
+      const maxAttempts = latestVersion?.maxAttempts ?? 1;
+      const assignmentAttempts = attempts.filter(
+        (attempt) => attempt.assignmentId === row.id,
+      );
+      const attemptsUsed = assignmentAttempts.reduce(
+        (max, attempt) => Math.max(max, attempt.attemptNo),
+        0,
+      );
+      const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed);
+      const active =
+        assignmentAttempts.find(
+          (attempt) =>
+            attempt.status === 'IN_PROGRESS' &&
+            (!attempt.expiresAt || attempt.expiresAt > now),
+        ) ?? null;
+      return {
+        ...row,
+        attemptsUsed,
+        attemptsRemaining,
+        activeAttempt: active
+          ? {
+              id: active.id,
+              attemptNo: active.attemptNo,
+              expiresAt: active.expiresAt,
+            }
+          : null,
+      };
     });
   }
 }

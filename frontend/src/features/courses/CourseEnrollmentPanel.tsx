@@ -208,12 +208,16 @@ function EnrollmentPanel({
     Boolean(error);
 
   return (
-    <div className="mt-6 border-t border-slate-100 pt-5">
+    <div className="mt-6 rounded-xl border border-slate-200/90 bg-slate-50/50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Course status &amp; completion
+      </p>
+
       {!accessToken || sessionExpired ? (
         <Link
           to="/login"
           state={{ from: `/courses/${encodeURIComponent(courseId)}` }}
-          className="inline-flex rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          className="mt-3 inline-flex rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Sign in to enroll
         </Link>
@@ -225,7 +229,7 @@ function EnrollmentPanel({
             onClick={() => void handleEnroll()}
             disabled={disabled}
             aria-busy={loading || submitting}
-            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {buttonText}
           </button>
@@ -235,10 +239,10 @@ function EnrollmentPanel({
       <div
         role="status"
         className={
-          "mt-4 flex items-start gap-3 rounded-lg border p-3 text-sm leading-6 " +
+          "mt-3 flex items-start gap-3 rounded-lg border p-3 text-sm leading-6 " +
           (status === "ACTIVE" || status === "COMPLETED"
-            ? "border-emerald-100 bg-emerald-50 text-emerald-800"
-            : "border-slate-200 bg-slate-50 text-slate-600")
+            ? "border-emerald-200/80 bg-emerald-50 text-emerald-800"
+            : "border-slate-200 bg-white text-slate-600")
         }
       >
         <span
@@ -247,7 +251,7 @@ function EnrollmentPanel({
             "mt-2 h-2 w-2 shrink-0 rounded-full " +
             (status === "ACTIVE" || status === "COMPLETED"
               ? "bg-emerald-500"
-              : "bg-blue-500")
+              : "bg-brand-500")
           }
         />
 
@@ -261,7 +265,7 @@ function EnrollmentPanel({
             type="button"
             disabled={loading || checkingCompletion}
             onClick={() => void handleCompletion()}
-            className="mt-4 rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50"
+            className="mt-3 rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
           >
             {checkingCompletion
               ? "Checking completion..."
@@ -290,7 +294,7 @@ function EnrollmentPanel({
             <button
               type="button"
               onClick={() => setReloadKey((value) => value + 1)}
-              className="mt-2 text-sm font-semibold text-blue-600 hover:underline"
+              className="mt-2 text-sm font-semibold text-brand-600 hover:underline"
             >
               Check enrollment again
             </button>

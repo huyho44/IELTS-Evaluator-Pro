@@ -67,11 +67,11 @@ function AttemptContent({
         </p>
         <button
           onClick={() => setReloadKey((value) => value + 1)}
-          className="text-blue-600"
+          className="text-brand-600"
         >
           Try again
         </button>
-        <Link to="/practice-history" className="block text-blue-600">
+        <Link to="/practice-history" className="block text-brand-600">
           Open your practice history
         </Link>
       </main>
@@ -104,7 +104,7 @@ function AttemptContent({
         This Speaking activity requires an audio submission workflow. Your
         attempt is preserved.
       </p>
-      <Link className="mt-4 block text-blue-600" to="/practice-history">
+      <Link className="mt-4 block text-brand-600" to="/practice-history">
         Back to your attempts
       </Link>
     </main>
