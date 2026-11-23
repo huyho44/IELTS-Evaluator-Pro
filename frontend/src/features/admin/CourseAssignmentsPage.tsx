@@ -87,7 +87,7 @@ export default function CourseAssignmentsPage() {
         </a>
         <a
           href="#assign-instructor-panel"
-          className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-900 shadow-2xs"
+          className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-900 shadow-2xs"
         >
           Assign instructor form &darr;
         </a>
@@ -118,8 +118,8 @@ export default function CourseAssignmentsPage() {
                   onClick={() => setFocusSelected((prev) => !prev)}
                   className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
                     focusSelected
-                      ? "border-violet-700 bg-violet-700 text-white"
-                      : "border-violet-200 bg-violet-50 text-violet-900 hover:bg-violet-100"
+                      ? "border-brand-700 bg-brand-700 text-white"
+                      : "border-brand-200 bg-brand-50 text-brand-900 hover:bg-brand-100"
                   }`}
                 >
                   {focusSelected ? "Show all courses" : "Focused on selected"}
@@ -161,8 +161,8 @@ export default function CourseAssignmentsPage() {
                   key={course.id}
                   className={`rounded-xl border p-4 transition ${
                     isSelected
-                      ? "border-violet-400 bg-violet-50/40 ring-2 ring-violet-600/15"
-                      : "border-slate-200 bg-white hover:border-violet-200"
+                      ? "border-brand-400 bg-brand-50/40 ring-2 ring-brand-600/15"
+                      : "border-slate-200 bg-white hover:border-brand-200"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -190,8 +190,8 @@ export default function CourseAssignmentsPage() {
                       onClick={() => setCourseId(isSelected ? "" : course.id)}
                       className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                         isSelected
-                          ? "bg-violet-700 text-white"
-                          : "border border-violet-200 bg-white text-violet-900 hover:bg-violet-50"
+                          ? "bg-brand-700 text-white"
+                          : "border border-brand-200 bg-white text-brand-900 hover:bg-brand-50"
                       }`}
                     >
                       {isSelected ? "Selected" : "Select course"}
@@ -270,8 +270,8 @@ export default function CourseAssignmentsPage() {
             }
           >
             {selected ? (
-              <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+              <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">
                   Selected course
                 </p>
                 <p className="mt-0.5 text-sm font-bold text-slate-950">
@@ -292,7 +292,7 @@ export default function CourseAssignmentsPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/30 p-3 text-xs text-slate-600">
+              <div className="rounded-xl border border-dashed border-brand-200 bg-brand-50/30 p-3 text-xs text-slate-600">
                 Select a course below or click any course card on the left before assigning.
               </div>
             )}
@@ -343,7 +343,7 @@ export default function CourseAssignmentsPage() {
             </label>
 
             <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-lg border border-violet-100 bg-violet-50/40 p-2 text-violet-950">
+              <div className="rounded-lg border border-brand-100 bg-brand-50/40 p-2 text-brand-950">
                 <span className="font-bold">OWNER</span>
                 <p className="mt-0.5 text-slate-600">
                   Manage syllabus, rubrics &amp; grade reviews.

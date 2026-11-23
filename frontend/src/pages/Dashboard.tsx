@@ -44,7 +44,7 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
                 >
                   Account overview
                 </p>
-                <h1 className="truncate text-2xl font-bold text-[#0f172a]">
+                <h1 className="truncate text-2xl font-bold text-slate-900">
                   {user.displayName}
                 </h1>
               </div>
@@ -59,23 +59,23 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
 
           <dl className="mt-6 grid gap-5 break-words sm:grid-cols-2">
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Display name
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[#0f172a]">
+              <dd className="mt-1 text-sm font-semibold text-slate-900">
                 {user.displayName}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Email address
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[#0f172a]">
+              <dd className="mt-1 text-sm font-semibold text-slate-900">
                 {user.email}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Account roles
               </dt>
               <dd className="mt-1.5 flex flex-wrap gap-1.5">
@@ -97,10 +97,10 @@ export default function Dashboard({ student = true }: { student?: boolean }) {
             </div>
             {isLearner && (
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Target band
                 </dt>
-                <dd className="mt-1 text-sm font-semibold text-[#0f172a]">
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
                   {user.targetBand != null
                     ? `Band ${user.targetBand}`
                     : "Not set"}

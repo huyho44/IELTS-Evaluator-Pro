@@ -1,14 +1,15 @@
 import type { FormEvent, ReactNode } from "react";
-import { button, panel } from "./managementApi";
+import { panel } from "./managementApi";
 
 export type RoleVariant = "admin" | "instructor" | "student";
 
+const PRIMARY_BUTTON =
+  "inline-flex min-h-10 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-50";
+
 const VARIANT_BUTTONS: Record<RoleVariant, string> = {
-  admin:
-    "rounded-lg bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-2xs transition-colors hover:bg-violet-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-700 disabled:opacity-50",
-  instructor:
-    "rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-2xs transition-colors hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-50",
-  student: button,
+  admin: PRIMARY_BUTTON,
+  instructor: PRIMARY_BUTTON,
+  student: PRIMARY_BUTTON,
 };
 
 export default function ActionForm({

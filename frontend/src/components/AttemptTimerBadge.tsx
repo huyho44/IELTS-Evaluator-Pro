@@ -15,7 +15,7 @@ export default function AttemptTimerBadge({
       : timer.kind === "urgent"
         ? "border-amber-300 bg-amber-50 text-amber-900"
         : timer.kind === "running"
-          ? "border-blue-200 bg-[#eff6ff] text-[#1e40af]"
+          ? "border-brand-200 bg-brand-50 text-brand-800"
           : "border-slate-200 bg-slate-100 text-slate-700";
 
   return (

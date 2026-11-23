@@ -209,7 +209,7 @@ function EnrollmentPanel({
 
   return (
     <div className="mt-6 rounded-xl border border-slate-200/90 bg-slate-50/50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         Course status &amp; completion
       </p>
 
@@ -217,7 +217,7 @@ function EnrollmentPanel({
         <Link
           to="/login"
           state={{ from: `/courses/${encodeURIComponent(courseId)}` }}
-          className="mt-3 inline-flex rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          className="mt-3 inline-flex rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Sign in to enroll
         </Link>
@@ -229,7 +229,7 @@ function EnrollmentPanel({
             onClick={() => void handleEnroll()}
             disabled={disabled}
             aria-busy={loading || submitting}
-            className="mt-3 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {buttonText}
           </button>
@@ -251,7 +251,7 @@ function EnrollmentPanel({
             "mt-2 h-2 w-2 shrink-0 rounded-full " +
             (status === "ACTIVE" || status === "COMPLETED"
               ? "bg-emerald-500"
-              : "bg-blue-500")
+              : "bg-brand-500")
           }
         />
 
@@ -265,7 +265,7 @@ function EnrollmentPanel({
             type="button"
             disabled={loading || checkingCompletion}
             onClick={() => void handleCompletion()}
-            className="mt-3 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:opacity-50"
+            className="mt-3 rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
           >
             {checkingCompletion
               ? "Checking completion..."
@@ -294,7 +294,7 @@ function EnrollmentPanel({
             <button
               type="button"
               onClick={() => setReloadKey((value) => value + 1)}
-              className="mt-2 text-sm font-semibold text-blue-600 hover:underline"
+              className="mt-2 text-sm font-semibold text-brand-600 hover:underline"
             >
               Check enrollment again
             </button>

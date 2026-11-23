@@ -56,7 +56,7 @@ export default function InstructorApprovalsPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                 activeTab === tab.id
-                  ? "bg-violet-700 text-white shadow-2xs"
+                  ? "bg-brand-700 text-white shadow-2xs"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
@@ -71,7 +71,7 @@ export default function InstructorApprovalsPage() {
             <div>
               <h2
                 id="pending-applications"
-                className="text-base font-bold text-violet-950"
+                className="text-base font-bold text-brand-950"
               >
                 Pending applications
               </h2>
@@ -117,7 +117,7 @@ export default function InstructorApprovalsPage() {
                 <div className="flex items-center gap-2.5">
                   <span
                     aria-hidden="true"
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-100 text-xs font-bold text-violet-800"
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-800"
                   >
                     {item.applicant.displayName.charAt(0).toUpperCase()}
                   </span>
@@ -137,8 +137,8 @@ export default function InstructorApprovalsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
+              <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">
                   Submitted qualifications &amp; profile
                 </p>
                 <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
@@ -157,7 +157,7 @@ export default function InstructorApprovalsPage() {
                       name="status"
                       value="APPROVED"
                       defaultChecked
-                      className="mt-0.5 size-4 text-violet-700"
+                      className="mt-0.5 size-4 text-brand-700"
                     />
                     <span>
                       <span className="block font-semibold text-emerald-900">
@@ -173,7 +173,7 @@ export default function InstructorApprovalsPage() {
                       type="radio"
                       name="status"
                       value="REJECTED"
-                      className="mt-0.5 size-4 text-violet-700"
+                      className="mt-0.5 size-4 text-brand-700"
                     />
                     <span>
                       <span className="block font-semibold text-rose-900">
@@ -234,7 +234,7 @@ export default function InstructorApprovalsPage() {
                   onClick={() => setHistoryFilter(tab)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                     historyFilter === tab
-                      ? "bg-violet-700 text-white"
+                      ? "bg-brand-700 text-white"
                       : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
                   }`}
                 >

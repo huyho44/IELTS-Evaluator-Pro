@@ -151,20 +151,11 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-7">
       <header
         className={`flex flex-wrap items-end justify-between gap-4 border-b pb-5 ${
-          isAdminMode ? "border-violet-100" : "border-teal-100"
+          "border-brand-100"
         }`}
       >
         <div>
-          <p
-            className={`text-xs font-semibold uppercase tracking-wider ${
-              isAdminMode ? "text-violet-700" : "text-teal-700"
-            }`}
-          >
-            {isAdminMode
-              ? "Admin Console / Grading Setup"
-              : "Instructor Workspace / Course Authoring"}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
             {isAdminMode ? "Grading setup" : "Course authoring"}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -180,13 +171,13 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
               <button
                 type="button"
                 onClick={() => setShowCreateForm((prev) => !prev)}
-                className="rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-teal-800"
+                className="rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-brand-800"
               >
                 {showCreateForm ? "Hide new course form" : "+ New draft course"}
               </button>
               <Link
                 to="/teacher/reviews"
-                className="rounded-lg border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold text-teal-800 shadow-2xs transition hover:bg-teal-50"
+                className="rounded-lg border border-brand-200 bg-white px-3.5 py-2 text-xs font-semibold text-brand-800 shadow-2xs transition hover:bg-brand-50"
               >
                 Open review queue
               </Link>
@@ -200,9 +191,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
               setRefresh((v) => v + 1);
             }}
             className={`rounded-lg border bg-white px-3.5 py-2 text-xs font-semibold shadow-2xs transition disabled:opacity-50 ${
-              isAdminMode
-                ? "border-violet-200 text-violet-900 hover:bg-violet-50"
-                : "border-teal-200 text-teal-900 hover:bg-teal-50"
+              "border-brand-200 text-brand-900 hover:bg-brand-50"
             }`}
           >
             {loading ? "Refreshing..." : "Refresh"}
@@ -305,9 +294,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                 onClick={() => setStatusFilter(tab.key)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                   statusFilter === tab.key
-                    ? isAdminMode
-                      ? "bg-violet-700 text-white"
-                      : "bg-teal-700 text-white"
+                    ? "bg-brand-700 text-white"
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
@@ -367,9 +354,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                   onClick={() => setCourseId(c.id)}
                   className={`flex flex-col justify-between rounded-xl border p-3.5 text-left transition ${
                     isSelected
-                      ? isAdminMode
-                        ? "border-violet-400 bg-violet-50/50 ring-2 ring-violet-600/15"
-                        : "border-teal-400 bg-teal-50/50 ring-2 ring-teal-600/15"
+                      ? "border-brand-400 bg-brand-50/50 ring-2 ring-brand-600/15"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                   }`}
                 >
@@ -397,7 +382,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                     {instructor ? (
                       <span
                         className={`font-semibold ${
-                          mine ? "text-teal-800" : "text-slate-500"
+                          mine ? "text-brand-800" : "text-slate-500"
                         }`}
                       >
                         {mine
@@ -413,9 +398,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                     <span
                       className={`font-semibold ${
                         isSelected
-                          ? isAdminMode
-                            ? "text-violet-800"
-                            : "text-teal-800"
+                          ? "text-brand-800"
                           : "text-slate-400"
                       }`}
                     >
@@ -454,9 +437,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
             onClick={() => setActiveTab(tab.id)}
             className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
               activeTab === tab.id
-                ? isAdminMode
-                  ? "bg-violet-700 text-white shadow-2xs"
-                  : "bg-teal-700 text-white shadow-2xs"
+                ? "bg-brand-700 text-white shadow-2xs"
                 : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -568,7 +549,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                             onClick={() => setCurriculumSubTab(sub.id)}
                             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                               curriculumSubTab === sub.id
-                                ? "bg-teal-700 text-white shadow-2xs"
+                                ? "bg-brand-700 text-white shadow-2xs"
                                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                             }`}
                           >
@@ -636,7 +617,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                               type="checkbox"
                               name="enrollmentOpen"
                               defaultChecked={course.enrollmentOpen}
-                              className="size-4 rounded border-slate-300 text-teal-700"
+                              className="size-4 rounded border-slate-300 text-brand-700"
                             />
                             Open enrollment
                           </label>
@@ -972,7 +953,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                             {a.assignmentVersions.map((v) => (
                               <span
                                 key={v.id}
-                                className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800"
+                                className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-800"
                               >
                                 v{v.versionNo} · {v.mode}
                               </span>

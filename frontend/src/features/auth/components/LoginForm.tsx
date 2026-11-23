@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { signIn } from '../session';
+import Spinner from '../../../components/ui/Spinner';
+import FormAlert from './FormAlert';
+import PasswordField from './PasswordField';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -29,49 +32,37 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} className="space-y-4 w-full">
-      {location.state?.registered && <p role="status" className="text-sm text-emerald-700">Account created. Please sign in.</p>}
-      {error && (
-        <div role="alert" className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
-          {error}
-        </div>
+    <form onSubmit={handleLogin} className="w-full space-y-5">
+      {location.state?.registered && (
+        <FormAlert tone="success">Account created. Please sign in.</FormAlert>
       )}
+      {error && <FormAlert tone="error">{error}</FormAlert>}
 
       <div>
-        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <label htmlFor="login-email" className="ui-label">Email address</label>
         <input
           type="email"
-          placeholder="name@company.com"
+          placeholder="name@example.com"
           id="login-email"
           autoComplete="email"
+          inputMode="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          className="ui-input"
         />
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">Password</label>
-        </div>
-        <input
-          type="password"
-          placeholder="••••••••"
-          id="login-password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-        />
-      </div>
+      <PasswordField
+        id="login-password"
+        label="Password"
+        value={password}
+        onChange={setPassword}
+        autoComplete="current-password"
+      />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading} className="ui-btn-primary min-h-11 w-full">
+        {loading && <Spinner className="h-4 w-4" />}
         {loading ? 'Signing in...' : 'Sign In'}
       </button>
     </form>

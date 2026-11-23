@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Icon from "../../components/ui/Icon";
+import Spinner from "../../components/ui/Spinner";
 
 export default function AdminSection({
   title,
@@ -20,16 +22,15 @@ export default function AdminSection({
   children: ReactNode;
 }) {
   return (
-    <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-8 sm:py-7">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-violet-100 pb-5">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-violet-700">
-            Admin Console / {title}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+    <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
             {title}
           </h1>
-          <p className="mt-1.5 text-sm text-slate-600">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-600">
+            {description}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {actions}
@@ -37,8 +38,13 @@ export default function AdminSection({
             type="button"
             disabled={loading}
             onClick={reload}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-white px-3.5 py-2 text-xs font-semibold text-violet-900 shadow-2xs transition hover:bg-violet-50 disabled:opacity-50"
+            className="ui-btn-secondary"
           >
+            {loading ? (
+              <Spinner className="h-4 w-4" />
+            ) : (
+              <Icon name="repeat" size={16} className="text-slate-500" />
+            )}
             {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
@@ -51,7 +57,7 @@ export default function AdminSection({
           <span>{error}</span>
           <button
             type="button"
-            className="rounded-md border border-red-300 bg-white px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-100"
+            className="min-h-9 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-800 transition-colors hover:bg-red-100"
             onClick={reload}
           >
             Reload
@@ -69,8 +75,9 @@ export default function AdminSection({
       {loading && (
         <div
           role="status"
-          className="rounded-xl border border-violet-100 bg-white/80 px-4 py-2.5 text-sm text-slate-600"
+          className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm text-slate-600 shadow-2xs"
         >
+          <Spinner className="h-4 w-4" />
           Loading latest records…
         </div>
       )}

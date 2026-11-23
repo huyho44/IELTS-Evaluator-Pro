@@ -321,13 +321,13 @@ function ReviewDetailContent() {
     (rubric?.rubricCriterions ?? []).map((c) => [c.code, Number(c.weight)]),
   );
   const fieldClass =
-    "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50";
+    "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-50";
 
   const statusBadgeClass: Record<ReviewStatus, string> = {
     PENDING: "border-amber-200 bg-amber-50 text-amber-800",
     CLAIMED: isClaimedByOther
       ? "border-indigo-200 bg-indigo-50 text-indigo-800"
-      : "border-teal-200 bg-teal-50 text-teal-800",
+      : "border-brand-200 bg-brand-50 text-brand-800",
     CONFIRMED: "border-emerald-200 bg-emerald-50 text-emerald-800",
     CANCELLED: "border-slate-200 bg-slate-100 text-slate-600",
   };
@@ -349,7 +349,7 @@ function ReviewDetailContent() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             to="/teacher/reviews"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-900 hover:underline"
           >
             &larr; Back to review queue
           </Link>
@@ -357,7 +357,7 @@ function ReviewDetailContent() {
             type="button"
             disabled={busy}
             onClick={() => void reloadStatus()}
-            className="rounded-lg border border-teal-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-teal-800 shadow-2xs transition hover:bg-teal-50 disabled:opacity-50"
+            className="rounded-lg border border-brand-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-brand-800 shadow-2xs transition hover:bg-brand-50 disabled:opacity-50"
           >
             Reload review status
           </button>
@@ -366,7 +366,7 @@ function ReviewDetailContent() {
         <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
                 Writing Submission Review
               </p>
               <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
@@ -398,7 +398,7 @@ function ReviewDetailContent() {
                   {releaseLabel}
                 </span>
                 {rubric && (
-                  <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-800">
+                  <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-800">
                     {rubric.rubricCode} · v{rubric.versionNo}
                   </span>
                 )}
@@ -411,7 +411,7 @@ function ReviewDetailContent() {
                   type="button"
                   disabled={busy || !canClaim}
                   onClick={() => void handleClaim()}
-                  className="w-full rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:opacity-50 lg:w-auto"
+                  className="w-full rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800 disabled:opacity-50 lg:w-auto"
                 >
                   {busy ? "Claiming..." : "Claim review"}
                 </button>
@@ -431,7 +431,7 @@ function ReviewDetailContent() {
         {message && (
           <div
             role="status"
-            className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900"
+            className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-900"
           >
             {message}
           </div>
@@ -443,7 +443,7 @@ function ReviewDetailContent() {
         )}
 
         <div
-          className="sticky top-14 z-10 -mx-1 flex items-center gap-2 rounded-xl border border-teal-200 bg-white/95 px-3 py-2 shadow-xs backdrop-blur lg:hidden"
+          className="sticky top-14 z-10 -mx-1 flex items-center gap-2 rounded-xl border border-brand-200 bg-white/95 px-3 py-2 shadow-xs backdrop-blur lg:hidden"
           aria-label="Quick section jump"
         >
           <a
@@ -454,7 +454,7 @@ function ReviewDetailContent() {
           </a>
           <a
             href="#instructor-rubric-panel"
-            className="flex-1 rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-center text-xs font-semibold text-teal-900 hover:bg-teal-100"
+            className="flex-1 rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-center text-xs font-semibold text-brand-900 hover:bg-brand-100"
           >
             Rubric &amp; grading
           </a>
@@ -510,7 +510,7 @@ function ReviewDetailContent() {
                       key={paragraph.id}
                       className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3.5"
                     >
-                      <span className="mt-0.5 shrink-0 rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 font-mono text-xs font-bold text-teal-800">
+                      <span className="mt-0.5 shrink-0 rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 font-mono text-xs font-bold text-brand-800">
                         P{paragraph.paragraphNo}
                       </span>
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
@@ -654,7 +654,7 @@ function ReviewDetailContent() {
                               {finding.findingAnchors.map((anchor, index) => (
                                 <blockquote
                                   key={`${anchor.paragraphId}-${index}`}
-                                  className="border-l-2 border-teal-400 bg-white py-1 pl-3 italic text-slate-600"
+                                  className="border-l-2 border-brand-400 bg-white py-1 pl-3 italic text-slate-600"
                                 >
                                   &ldquo;{anchor.exactQuote}&rdquo;
                                 </blockquote>
@@ -699,7 +699,7 @@ function ReviewDetailContent() {
                       type="button"
                       disabled={busy || needsReload}
                       onClick={() => void reviewAction("reopen")}
-                      className="rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-semibold text-teal-900 transition hover:bg-teal-100 disabled:opacity-50"
+                      className="rounded-lg border border-brand-200 bg-brand-50 px-3.5 py-2 text-xs font-semibold text-brand-900 transition hover:bg-brand-100 disabled:opacity-50"
                     >
                       Open a correction review
                     </button>
@@ -833,7 +833,7 @@ function ReviewDetailContent() {
                   type="button"
                   disabled={busy || needsReload}
                   onClick={() => void handlePublish()}
-                  className="rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-teal-800 disabled:opacity-50"
+                  className="rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-brand-800 disabled:opacity-50"
                 >
                   Publish confirmed assessment
                 </button>
@@ -842,16 +842,16 @@ function ReviewDetailContent() {
 
             <form onSubmit={(event) => void handleConfirm(event)}>
               <fieldset disabled={!canConfirm || busy} className="space-y-4">
-                <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-[#f5fbfa] p-4">
+                <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-canvas p-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-teal-900">
+                    <p className="text-xs font-bold uppercase tracking-wider text-brand-900">
                       Overall band
                     </p>
-                    <p className="mt-0.5 text-xs text-teal-700">
+                    <p className="mt-0.5 text-xs text-brand-700">
                       Weighted average from {criteria.length} rubric criteria
                     </p>
                   </div>
-                  <output className="text-3xl font-bold text-teal-900">
+                  <output className="text-3xl font-bold text-brand-900">
                     {overall ?? "—"}
                   </output>
                 </div>
@@ -866,7 +866,7 @@ function ReviewDetailContent() {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded bg-teal-700 px-2 py-0.5 text-xs font-bold text-white">
+                            <span className="rounded bg-brand-700 px-2 py-0.5 text-xs font-bold text-white">
                               {row.code}
                             </span>
                             <span className="text-sm font-semibold text-slate-900">
@@ -964,7 +964,7 @@ function ReviewDetailContent() {
 
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:opacity-50"
+                  className="w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800 disabled:opacity-50"
                 >
                   {busy ? "Saving..." : "Confirm assessment"}
                 </button>
@@ -1006,7 +1006,7 @@ function ReviewDetailContent() {
                       type="button"
                       disabled={busy || needsReload}
                       onClick={() => void handlePublish()}
-                      className="rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:opacity-50"
+                      className="rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
                     >
                       Publish confirmed assessment
                     </button>

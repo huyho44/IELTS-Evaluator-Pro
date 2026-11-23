@@ -82,7 +82,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
               Inbox
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-[#0f172a]">
+              <h1 className="text-2xl font-bold text-slate-900">
                 Notifications
               </h1>
               {session && (
@@ -136,7 +136,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
 
         {!loading && !error && !items.length && (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
-            <p className="text-sm font-semibold text-[#0f172a]">
+            <p className="text-sm font-semibold text-slate-900">
               No notifications yet
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -186,7 +186,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                           <h2
                             className={`text-sm sm:text-base ${
                               unreadItem
-                                ? "font-bold text-[#0f172a]"
+                                ? "font-bold text-slate-900"
                                 : "font-semibold text-slate-700"
                             }`}
                           >

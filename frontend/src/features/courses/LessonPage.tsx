@@ -71,9 +71,9 @@ function MaterialContent({ material }: { material: LessonMaterial }) {
             /\.(mp4|webm|mov)$/i.test(path);
 
         return (
-            <div className="flex flex-col gap-3 rounded-xl border border-blue-200 bg-[#f8fafc] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-xl border border-brand-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-800">
                         {isVideo ? (
                             <>
                                 <svg
@@ -91,10 +91,10 @@ function MaterialContent({ material }: { material: LessonMaterial }) {
                             "External learning resource"
                         )}
                     </span>
-                    <p className="truncate text-sm font-medium text-[#0f172a]">
+                    <p className="truncate text-sm font-medium text-slate-900">
                         {safeUrl.hostname}
                     </p>
-                    <p className="truncate text-xs text-[#64748b]">
+                    <p className="truncate text-xs text-slate-500">
                         {safeUrl.href}
                     </p>
                 </div>
@@ -102,7 +102,7 @@ function MaterialContent({ material }: { material: LessonMaterial }) {
                     href={safeUrl.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                    className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
                 >
                     {isVideo ? "Open video ↗" : "Open learning resource ↗"}
                 </a>
@@ -256,7 +256,7 @@ function LessonContent({
         <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
             <Link
                 to={`/courses/${courseId}`}
-                className="text-sm font-semibold text-blue-600 hover:underline"
+                className="text-sm font-semibold text-brand-600 hover:underline"
             >
                 ← Back to course overview
             </Link>
@@ -284,7 +284,7 @@ function LessonContent({
                     <button
                         type="button"
                         onClick={() => setReloadKey((value) => value + 1)}
-                        className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
                     >
                         Try again
                     </button>
@@ -292,10 +292,10 @@ function LessonContent({
             ) : lesson && course ? (
                 <>
                     <header className="mt-5">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
                             Lesson
                         </p>
-                        <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
+                        <h1 className="mt-1.5 break-words text-2xl font-bold text-slate-900">
                             {lesson.learningItem.title}
                         </h1>
                         <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -306,7 +306,7 @@ function LessonContent({
                     <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
                         <a
                             href="#course-lessons-sidebar"
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1e40af]"
+                            className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-800"
                         >
                             Course lessons ({lessons.length}) &darr;
                         </a>
@@ -315,13 +315,13 @@ function LessonContent({
                     <div className="mt-4 grid items-start gap-6 lg:mt-6 lg:grid-cols-[2fr_1fr]">
                         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             {lesson.summary && (
-                                <div className="rounded-lg border border-blue-100 bg-[#eff6ff]/70 px-4 py-3 text-sm leading-6 text-slate-700">
+                                <div className="rounded-lg border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm leading-6 text-slate-700">
                                     {lesson.summary}
                                 </div>
                             )}
 
                             <div
-                                className={`${lesson.summary ? "mt-5" : ""} space-y-6 rounded-xl border border-slate-200/80 bg-[#f8fafc] p-5 sm:p-6`}
+                                className={`${lesson.summary ? "mt-5" : ""} space-y-6 rounded-xl border border-slate-200/80 bg-slate-50 p-5 sm:p-6`}
                             >
                                 {lesson.lessonMaterials.length === 0 ? (
                                     <p className="text-sm text-slate-500">
@@ -339,12 +339,12 @@ function LessonContent({
                                 )}
                             </div>
 
-                            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-[#f8fafc] p-4">
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 {completionSaved ? <CompletionBadge /> : <button
                                     type="button"
                                     disabled={saving}
                                     onClick={() => void handleComplete()}
-                                    className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {saving ? "Saving..." : "Mark complete"}
                                 </button>}
@@ -377,7 +377,7 @@ function LessonContent({
                                     {nextLesson && (
                                         <Link
                                             to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                                            className="ml-auto rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                                            className="ml-auto rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100"
                                         >
                                             Next lesson →
                                         </Link>
@@ -406,7 +406,7 @@ function LessonContent({
                                         className={
                                             "block break-words rounded-lg border p-3 text-sm leading-6 no-underline " +
                                             (item.id === lessonId
-                                                ? "border-blue-200 bg-blue-50 font-semibold text-blue-700"
+                                                ? "border-brand-200 bg-brand-50 font-semibold text-brand-700"
                                                 : "border-slate-200 text-slate-600 hover:bg-slate-50")
                                         }
                                     >

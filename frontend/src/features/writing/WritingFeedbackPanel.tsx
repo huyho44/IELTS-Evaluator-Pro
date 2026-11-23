@@ -19,7 +19,7 @@ type Props = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
+  "mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
 export default function WritingFeedbackPanel({
   revisionId,
@@ -140,7 +140,7 @@ export default function WritingFeedbackPanel({
       ? "border-t-4 border-t-amber-500"
       : processingFailed
         ? "border-t-4 border-t-rose-500"
-        : "border-t-4 border-t-[#2563eb]";
+        : "border-t-4 border-t-brand-600";
   const primaryStatus = official
     ? {
         label: "Official instructor assessment",
@@ -166,7 +166,7 @@ export default function WritingFeedbackPanel({
           : isProcessing
             ? {
                 label: "Evaluating essay automatically",
-                className: "border border-blue-200 bg-blue-50 text-[#1e40af]",
+                className: "border border-brand-200 bg-brand-50 text-brand-800",
               }
             : {
                 label: "Awaiting evaluation",
@@ -237,7 +237,7 @@ export default function WritingFeedbackPanel({
             <div className="flex flex-wrap items-center gap-2.5">
               <h2
                 id="feedback-panel-heading"
-                className="text-lg font-bold text-[#0f172a]"
+                className="text-lg font-bold text-slate-900"
               >
                 {revision
                   ? `Feedback · Revision ${revision.revisionNo}`
@@ -257,7 +257,7 @@ export default function WritingFeedbackPanel({
               )}
             </div>
             {revision && (
-              <p className="text-xs text-[#64748b]">
+              <p className="text-xs text-slate-500">
                 Submitted {new Date(revision.submittedAt).toLocaleString()}
               </p>
             )}
@@ -266,7 +266,7 @@ export default function WritingFeedbackPanel({
           <button
             type="button"
             onClick={() => setReloadKey((value) => value + 1)}
-            className="shrink-0 rounded-lg border border-blue-200 bg-[#eff6ff]/70 px-3 py-1.5 text-xs font-semibold text-[#1e40af] transition-colors hover:bg-[#eff6ff]"
+            className="shrink-0 rounded-lg border border-brand-200 bg-brand-50/70 px-3 py-1.5 text-xs font-semibold text-brand-800 transition-colors hover:bg-brand-50"
           >
             {assessments.length > 0 ? "Refresh feedback" : "Check for feedback"}
           </button>
@@ -298,7 +298,7 @@ export default function WritingFeedbackPanel({
                     ? "border-rose-200 bg-rose-50/70 text-rose-900"
                     : awaitingInstructorReview
                       ? "border-indigo-200 bg-indigo-50/70 text-indigo-950"
-                      : "border-blue-200 bg-[#eff6ff]/80 text-[#0f172a]"
+                      : "border-brand-200 bg-brand-50/80 text-slate-900"
                 }`}
               >
                 <p className="text-sm font-semibold">
@@ -331,7 +331,7 @@ export default function WritingFeedbackPanel({
                     : "border-slate-200 bg-white"
                 }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#f8fafc] p-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-3.5">
                   <div className="space-y-1">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
@@ -353,10 +353,10 @@ export default function WritingFeedbackPanel({
                   </div>
                   {assessment.overallScore !== null && (
                     <div className="text-right">
-                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">
+                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                         Overall band
                       </span>
-                      <p className="text-3xl font-bold tracking-tight text-[#0f172a]">
+                      <p className="text-3xl font-bold tracking-tight text-slate-900">
                         Band {Number(assessment.overallScore).toFixed(1)}
                       </p>
                     </div>
@@ -376,10 +376,10 @@ export default function WritingFeedbackPanel({
                       className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <dt className="text-xs font-semibold text-[#0f172a]">
+                        <dt className="text-xs font-semibold text-slate-900">
                           {criterion.criterion.code} · {criterion.criterion.name}
                         </dt>
-                        <dd className="shrink-0 rounded-md bg-white px-2 py-0.5 text-sm font-bold text-[#1e40af] shadow-sm">
+                        <dd className="shrink-0 rounded-md bg-white px-2 py-0.5 text-sm font-bold text-brand-800 shadow-sm">
                           {Number(criterion.score).toFixed(1)}
                         </dd>
                       </div>
@@ -394,7 +394,7 @@ export default function WritingFeedbackPanel({
 
                 {!!assessment.findings.length && (
                   <div className="space-y-3 pt-1">
-                    <h3 className="text-sm font-bold text-[#0f172a]">
+                    <h3 className="text-sm font-bold text-slate-900">
                       Feedback and quoted evidence
                     </h3>
                     <div className="space-y-3">
@@ -403,7 +403,7 @@ export default function WritingFeedbackPanel({
                           key={finding.id}
                           className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/40 p-3.5"
                         >
-                          <p className="whitespace-pre-wrap text-sm leading-6 text-[#0f172a]">
+                          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
                             {finding.explanation}
                           </p>
                           {finding.findingAnchors.map((anchor, index) => {
@@ -413,9 +413,9 @@ export default function WritingFeedbackPanel({
                             return (
                               <blockquote
                                 key={`${anchor.paragraphId}-${index}`}
-                                className="rounded-r-lg border-l-4 border-[#2563eb] bg-blue-50/50 px-3 py-2 text-xs leading-5 text-slate-700"
+                                className="rounded-r-lg border-l-4 border-brand-600 bg-brand-50/50 px-3 py-2 text-xs leading-5 text-slate-700"
                               >
-                                <span className="font-semibold text-[#1e40af]">
+                                <span className="font-semibold text-brand-800">
                                   {paragraph
                                     ? `Paragraph ${paragraph.paragraphNo}: `
                                     : "Quoted evidence: "}
@@ -434,7 +434,7 @@ export default function WritingFeedbackPanel({
 
             {!!appeals.length && (
               <section className="space-y-3 border-t border-slate-100 pt-4">
-                <h3 className="text-sm font-bold text-[#0f172a]">
+                <h3 className="text-sm font-bold text-slate-900">
                   Review requests
                 </h3>
                 {appeals.map((appeal) => (
@@ -442,7 +442,7 @@ export default function WritingFeedbackPanel({
                     key={appeal.id}
                     className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"
                   >
-                    <p className="font-semibold text-[#0f172a]">
+                    <p className="font-semibold text-slate-900">
                       {appeal.status.replaceAll("_", " ")}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-slate-700">
@@ -468,13 +468,13 @@ export default function WritingFeedbackPanel({
                 open={Boolean(reason || error || message)}
                 className="group border-t border-slate-100 pt-4"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-[#0f172a] hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
                   <span>
                     {official
                       ? "Need a second look? Request an appeal review"
                       : "Want an instructor to check this essay?"}
                   </span>
-                  <span className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-[#1e40af] group-open:hidden">
+                  <span className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-brand-800 group-open:hidden">
                     Open form
                   </span>
                   <span className="hidden rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 group-open:inline">
@@ -488,7 +488,7 @@ export default function WritingFeedbackPanel({
                   }}
                   className="mt-3 space-y-3 rounded-lg border border-slate-200/80 bg-white p-4"
                 >
-                  <label className="block text-sm font-semibold text-[#0f172a]">
+                  <label className="block text-sm font-semibold text-slate-900">
                     {official
                       ? "Request a review of this published assessment"
                       : "Ask your instructor to review this essay"}
@@ -504,7 +504,7 @@ export default function WritingFeedbackPanel({
                   </label>
                   <button
                     disabled={busy || !reason.trim()}
-                    className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e40af] hover:bg-blue-50 disabled:opacity-50"
+                    className="rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-50 disabled:opacity-50"
                   >
                     {busy ? "Sending..." : "Send review request"}
                   </button>
@@ -516,7 +516,7 @@ export default function WritingFeedbackPanel({
               (!official &&
                 reviewPending &&
                 (assessments.length > 0 || !awaitingInstructorReview))) && (
-              <p className="rounded-lg bg-blue-50/70 px-3.5 py-2.5 text-sm text-[#1e40af]">
+              <p className="rounded-lg bg-brand-50/70 px-3.5 py-2.5 text-sm text-brand-800">
                 Your instructor review is pending. Return here later to check its
                 outcome.
               </p>
@@ -539,15 +539,15 @@ export default function WritingFeedbackPanel({
       {revision && (
         <section
           id="writing-submitted-essay"
-          className="scroll-mt-20 overflow-hidden rounded-xl border border-slate-200 bg-[#fcfdff] shadow-xs"
+          className="scroll-mt-20 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs"
         >
           <details open={!compact && !assessments.length} className="group">
-            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-[#f8fafc] px-5 py-3.5 transition-colors hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-slate-50 px-5 py-3.5 transition-colors hover:bg-slate-100/70 [&::-webkit-details-marker]:hidden">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Document
                 </span>
-                <span className="text-sm font-bold text-[#0f172a]">
+                <span className="text-sm font-bold text-slate-900">
                   Submitted essay · Revision {revision.revisionNo}
                 </span>
                 <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600">
@@ -556,7 +556,7 @@ export default function WritingFeedbackPanel({
                   {essayParagraphCount === 1 ? "paragraph" : "paragraphs"}
                 </span>
               </div>
-              <span className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-[#1e40af] shadow-2xs group-open:hidden">
+              <span className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-brand-800 shadow-2xs group-open:hidden">
                 Read submitted essay
               </span>
               <span className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs group-open:inline">

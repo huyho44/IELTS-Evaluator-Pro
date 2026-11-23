@@ -93,12 +93,12 @@ export default function AccountsPage() {
               {selected && (
                 <a
                   href="#account-access-editor"
-                  className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-900 xl:hidden"
+                  className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-900 xl:hidden"
                 >
                   Jump to editor &darr;
                 </a>
               )}
-              <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-900">
+              <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-900">
                 {filtered.length} of {accounts.length} accounts
               </span>
             </div>
@@ -156,7 +156,7 @@ export default function AccountsPage() {
                   setRoleFilter("ALL");
                   setStatusFilter("ALL");
                 }}
-                className="font-semibold text-violet-800 hover:underline"
+                className="font-semibold text-brand-800 hover:underline"
               >
                 Clear filters
               </button>
@@ -165,7 +165,7 @@ export default function AccountsPage() {
 
           <div className="overflow-x-auto rounded-lg border border-slate-200/80">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-violet-100 bg-violet-50/70 text-xs font-semibold uppercase tracking-wide text-violet-950">
+              <thead className="border-b border-brand-100 bg-brand-50/70 text-xs font-semibold uppercase tracking-wide text-brand-950">
                 <tr>
                   {["Account", "Roles", "Status", "Action"].map((heading) => (
                     <th key={heading} scope="col" className="px-4 py-3">
@@ -182,7 +182,7 @@ export default function AccountsPage() {
                       key={account.id}
                       className={
                         isEditing
-                          ? "bg-violet-50/60"
+                          ? "bg-brand-50/60"
                           : "transition-colors hover:bg-slate-50/80"
                       }
                     >
@@ -192,7 +192,7 @@ export default function AccountsPage() {
                             aria-hidden="true"
                             className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold ${
                               isEditing
-                                ? "bg-violet-700 text-white"
+                                ? "bg-brand-700 text-white"
                                 : "bg-slate-100 text-slate-700"
                             }`}
                           >
@@ -244,8 +244,8 @@ export default function AccountsPage() {
                           aria-label={`Edit ${account.displayName}`}
                           className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                             isEditing
-                              ? "bg-violet-700 text-white"
-                              : "border border-violet-200 bg-white text-violet-900 hover:bg-violet-50"
+                              ? "bg-brand-700 text-white"
+                              : "border border-brand-200 bg-white text-brand-900 hover:bg-brand-50"
                           }`}
                         >
                           {isEditing ? "Editing" : "Edit"}
@@ -269,14 +269,14 @@ export default function AccountsPage() {
             id="account-access-editor"
             className="min-w-0 space-y-2 scroll-mt-20 xl:sticky xl:top-20"
           >
-            <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50/70 px-3.5 py-2 text-xs">
+            <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/70 px-3.5 py-2 text-xs">
               <a
                 href="#accounts-directory-table"
-                className="font-semibold text-violet-900 hover:underline xl:hidden"
+                className="font-semibold text-brand-900 hover:underline xl:hidden"
               >
                 &uarr; Back to user directory
               </a>
-              <span className="hidden font-semibold text-violet-900 xl:inline">
+              <span className="hidden font-semibold text-brand-900 xl:inline">
                 Contextual access editor
               </span>
               <button
@@ -313,10 +313,10 @@ export default function AccountsPage() {
                 });
               }}
             >
-              <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5">
+              <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">
                       Target account
                     </p>
                     <p className="mt-0.5 truncate text-sm font-bold text-slate-950">
@@ -368,7 +368,7 @@ export default function AccountsPage() {
                   {ROLE_OPTIONS.map((role) => (
                     <label
                       key={role.value}
-                      className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 bg-slate-50/50 p-2.5 text-sm hover:border-violet-200 hover:bg-violet-50/30"
+                      className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 bg-slate-50/50 p-2.5 text-sm hover:border-brand-200 hover:bg-brand-50/30"
                     >
                       <input
                         type="checkbox"
@@ -376,7 +376,7 @@ export default function AccountsPage() {
                         value={role.value}
                         defaultChecked={selected.roles.includes(role.value)}
                         onChange={() => setRoleValidationError("")}
-                        className="mt-0.5 size-4 rounded border-slate-300 text-violet-700 focus:ring-violet-600"
+                        className="mt-0.5 size-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600"
                       />
                       <span className="min-w-0">
                         <span className="block text-xs font-bold text-slate-900">

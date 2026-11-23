@@ -8,15 +8,10 @@ import {
 } from "../management/managementApi";
 import AdminSection from "./AdminSection";
 import { useAdminSection } from "./useAdminSection";
+import { SKILL_AREA_BADGES } from "../../lib/skillTone";
 
 const loadSkills = () => managementRequest<SkillRow[]>("GET", "/skills");
 
-const AREA_BADGES: Record<string, string> = {
-  WRITING: "border border-violet-200 bg-violet-50 text-violet-900",
-  READING: "border border-sky-200 bg-sky-50 text-sky-900",
-  LISTENING: "border border-teal-200 bg-teal-50 text-teal-900",
-  SPEAKING: "border border-amber-200 bg-amber-50 text-amber-900",
-};
 
 export default function SkillCatalogPage() {
   const section = useAdminSection(loadSkills);
@@ -133,7 +128,7 @@ export default function SkillCatalogPage() {
                   onClick={() => setStatusTab(tab.id)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                     statusTab === tab.id
-                      ? "bg-violet-700 text-white"
+                      ? "bg-brand-700 text-white"
                       : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -182,7 +177,7 @@ export default function SkillCatalogPage() {
                 return (
                   <article
                     key={s.id}
-                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs transition hover:border-violet-200"
+                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs transition hover:border-brand-200"
                   >
                     <div className="space-y-2.5">
                       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -197,7 +192,7 @@ export default function SkillCatalogPage() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span
                             className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                              AREA_BADGES[s.skillArea] ??
+                              SKILL_AREA_BADGES[s.skillArea] ??
                               "border border-slate-200 bg-slate-100 text-slate-700"
                             }`}
                           >
@@ -232,10 +227,10 @@ export default function SkillCatalogPage() {
                               return (
                                 <span
                                   key={p.prerequisiteSkillId}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50/70 px-2.5 py-1 text-xs font-medium text-violet-950"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50/70 px-2.5 py-1 text-xs font-medium text-brand-950"
                                 >
                                   <span>{prereq?.name ?? "Unavailable skill"}</span>
-                                  <span className="text-[10px] font-normal text-violet-700">
+                                  <span className="text-[10px] font-normal text-brand-700">
                                     ({p.minStrength ?? "default 0.6"} /{" "}
                                     {p.minSupport ?? "default 0.33"})
                                   </span>
@@ -258,7 +253,7 @@ export default function SkillCatalogPage() {
                             .getElementById("skill-authoring-panel")
                             ?.scrollIntoView({ behavior: "smooth", block: "start" });
                         }}
-                        className="text-xs font-semibold text-violet-800 hover:underline"
+                        className="text-xs font-semibold text-brand-800 hover:underline"
                       >
                         Edit prerequisites
                       </button>
@@ -268,7 +263,7 @@ export default function SkillCatalogPage() {
                         className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
                           isPublished
                             ? "border-slate-200 bg-white text-slate-700 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-800"
-                            : "border-violet-200 bg-violet-50 text-violet-900 hover:bg-violet-100"
+                            : "border-brand-200 bg-brand-50 text-brand-900 hover:bg-brand-100"
                         }`}
                         onClick={() =>
                           void run("PATCH", `/skills/${s.id}`, {
@@ -307,7 +302,7 @@ export default function SkillCatalogPage() {
                   onClick={() => setAuthoringTab(tab.id)}
                   className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                     authoringTab === tab.id
-                      ? "bg-violet-700 text-white shadow-2xs"
+                      ? "bg-brand-700 text-white shadow-2xs"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
@@ -458,14 +453,14 @@ export default function SkillCatalogPage() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3.5 py-2.5 text-xs text-violet-950">
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 bg-brand-50/60 px-3.5 py-2.5 text-xs text-brand-950">
                     <div>
                       <span className="font-semibold">{targetSkill.name}</span>{" "}
-                      <span className="font-mono text-[11px] text-violet-700">
+                      <span className="font-mono text-[11px] text-brand-700">
                         {targetSkill.code}
                       </span>
                     </div>
-                    <span className="rounded-full border border-violet-200 bg-white px-2.5 py-0.5 font-semibold text-violet-900">
+                    <span className="rounded-full border border-brand-200 bg-white px-2.5 py-0.5 font-semibold text-brand-900">
                       Area: {targetSkill.skillArea}
                     </span>
                   </div>
@@ -648,7 +643,7 @@ export default function SkillCatalogPage() {
                             type="button"
                             disabled={!candidateSkillId}
                             onClick={() => addCandidatePrerequisite()}
-                            className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-900 hover:bg-violet-100 disabled:opacity-40"
+                            className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-900 hover:bg-brand-100 disabled:opacity-40"
                           >
                             + Add link
                           </button>

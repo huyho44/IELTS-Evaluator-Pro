@@ -16,7 +16,7 @@ type Props = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-50";
 
 const outcomes: { value: ObservationOutcome; label: string }[] = [
   { value: "MET", label: "Demonstrated" },
@@ -61,7 +61,7 @@ export default function ReviewEvidenceEditor({
               Select only feedback you have verified. Unselected AI suggestions remain provisional.
             </p>
           </div>
-          <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-800">
+          <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-[11px] font-semibold text-brand-800">
             {findings.filter((f) => f.approved).length} selected
           </span>
         </div>
@@ -71,7 +71,7 @@ export default function ReviewEvidenceEditor({
             key={finding.id}
             className={`space-y-3 rounded-xl border p-3.5 transition ${
               finding.approved
-                ? "border-teal-200 bg-teal-50/20"
+                ? "border-brand-200 bg-brand-50/20"
                 : "border-slate-200 bg-slate-50/50"
             }`}
           >
@@ -83,7 +83,7 @@ export default function ReviewEvidenceEditor({
                   onChange={(event) =>
                     changeFinding(finding.id, { approved: event.target.checked })
                   }
-                  className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
+                  className="size-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600"
                 />
                 <span>Include feedback {findingIndex + 1}</span>
               </label>
@@ -262,7 +262,7 @@ export default function ReviewEvidenceEditor({
                                     ),
                                   })
                                 }
-                                className="font-semibold text-teal-700 hover:underline"
+                                className="font-semibold text-brand-700 hover:underline"
                               >
                                 Copy P{selectedParagraph.paragraphNo}
                               </button>
@@ -312,7 +312,7 @@ export default function ReviewEvidenceEditor({
                 <button
                   type="button"
                   disabled={finding.anchors.length >= 20 || !paragraphs.length}
-                  className="text-xs font-semibold text-teal-700 hover:underline disabled:opacity-50"
+                  className="text-xs font-semibold text-brand-700 hover:underline disabled:opacity-50"
                   onClick={() =>
                     changeFinding(finding.id, {
                       anchors: [
@@ -335,7 +335,7 @@ export default function ReviewEvidenceEditor({
         <button
           type="button"
           disabled={findings.length >= 100}
-          className="rounded-lg border border-teal-200 bg-teal-50/40 px-3 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-50 disabled:opacity-50"
+          className="rounded-lg border border-brand-200 bg-brand-50/40 px-3 py-2 text-xs font-semibold text-brand-800 transition hover:bg-brand-50 disabled:opacity-50"
           onClick={() =>
             onFindingsChange([
               ...findings,
@@ -387,7 +387,7 @@ export default function ReviewEvidenceEditor({
               key={observation.id}
               className={`space-y-2 rounded-xl border p-3 transition ${
                 observation.approved
-                  ? "border-teal-200 bg-teal-50/20"
+                  ? "border-brand-200 bg-brand-50/20"
                   : "border-slate-200 bg-white"
               }`}
             >
@@ -400,7 +400,7 @@ export default function ReviewEvidenceEditor({
                       approved: event.target.checked,
                     })
                   }
-                  className="mt-0.5 size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
+                  className="mt-0.5 size-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600"
                 />
                 <span>{skill?.name ?? "Unavailable skill"}</span>
               </label>

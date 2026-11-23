@@ -49,7 +49,7 @@ function Content({ id, token }: { id: string; token: string }) {
       <p role={error ? "alert" : "status"}>
         {error || "Opening your feedback..."}
       </p>
-      <Link to="/practice-history" className="text-blue-600">
+      <Link to="/practice-history" className="text-brand-600">
         Open practice history
       </Link>
     </main>

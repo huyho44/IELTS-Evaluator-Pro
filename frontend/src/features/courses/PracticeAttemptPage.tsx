@@ -101,7 +101,7 @@ function AnswerInput({
               optionIds: [],
             })
           }
-          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
+          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100"
         />
       </div>
     );
@@ -121,7 +121,7 @@ function AnswerInput({
               className={
                 "flex items-start gap-3 rounded-lg border p-3 text-sm leading-6 " +
                 (selected
-                  ? "border-blue-300 bg-blue-50 text-blue-900"
+                  ? "border-brand-300 bg-brand-50 text-brand-900"
                   : "border-slate-200 text-slate-700") +
                 (disabled ? " cursor-not-allowed opacity-70" : " cursor-pointer")
               }
@@ -137,7 +137,7 @@ function AnswerInput({
                     optionIds: [option.id],
                   })
                 }
-                className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+                className="mt-1 h-4 w-4 shrink-0 accent-brand-600"
               />
 
               <span className="break-words">
@@ -152,7 +152,7 @@ function AnswerInput({
           type="button"
           disabled={disabled || answer.optionIds.length === 0}
           onClick={() => onChange({ textAnswer: "", optionIds: [] })}
-          className="text-xs font-semibold text-blue-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          className="text-xs font-semibold text-brand-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           Clear selection
         </button>
@@ -522,7 +522,7 @@ function AttemptContent({
               ? `/courses/${encodeURIComponent(version.assignment.courseId)}`
               : "/courses"
           }
-          className="inline-flex w-fit text-sm font-semibold text-[#2563eb] hover:underline"
+          className="inline-flex w-fit text-sm font-semibold text-brand-600 hover:underline"
         >
           {accessToken && version
             ? "← Back to course overview"
@@ -549,7 +549,7 @@ function AttemptContent({
           {accessDenied && (
             <Link
               to="/practice-history"
-              className="mt-4 block w-fit text-sm font-semibold text-blue-600 hover:underline"
+              className="mt-4 block w-fit text-sm font-semibold text-brand-600 hover:underline"
             >
               My practice attempts
             </Link>
@@ -557,7 +557,7 @@ function AttemptContent({
           <button
             type="button"
             onClick={() => setReloadKey((value) => value + 1)}
-            className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
           >
             Try again
           </button>
@@ -567,7 +567,7 @@ function AttemptContent({
           {isSubmittedView ? (
             <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+                <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
                   Reading practice · Reviewing submission
                 </span>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
@@ -575,7 +575,7 @@ function AttemptContent({
                 </span>
               </div>
 
-              <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
+              <h1 className="mt-1.5 break-words text-2xl font-bold text-slate-900">
                 {version.assignment.title}
               </h1>
 
@@ -584,7 +584,7 @@ function AttemptContent({
               </p>
 
               <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                <span className="font-semibold text-[#0f172a]">
+                <span className="font-semibold text-slate-900">
                   Attempt {attempt.attemptNo}
                 </span>
               </div>
@@ -594,7 +594,7 @@ function AttemptContent({
               <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
-                    <span className="font-semibold uppercase tracking-wide text-[#2563eb]">
+                    <span className="font-semibold uppercase tracking-wide text-brand-600">
                       {attemptClosed
                         ? "Reading practice · Attempt closed"
                         : "Reading practice"}
@@ -602,11 +602,11 @@ function AttemptContent({
                     <span className="text-slate-300" aria-hidden="true">
                       ·
                     </span>
-                    <span className="font-semibold text-[#0f172a]">
+                    <span className="font-semibold text-slate-900">
                       Attempt {attempt.attemptNo}
                     </span>
                   </div>
-                  <h1 className="mt-0.5 truncate text-base font-bold text-[#0f172a] sm:text-lg">
+                  <h1 className="mt-0.5 truncate text-base font-bold text-slate-900 sm:text-lg">
                     {version.assignment.title}
                   </h1>
                 </div>
@@ -636,13 +636,13 @@ function AttemptContent({
           )}
 
           {activity.instructions && (
-            <div className="whitespace-pre-wrap rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900">
+            <div className="whitespace-pre-wrap rounded-xl border border-brand-100 bg-brand-50 p-5 text-sm leading-7 text-brand-900">
               {activity.instructions}
             </div>
           )}
 
           <div
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
             aria-label="Quick section jump"
           >
             <a
@@ -653,7 +653,7 @@ function AttemptContent({
             </a>
             <a
               href="#reading-questions-panel"
-              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-center text-xs font-semibold text-[#1e40af] hover:bg-blue-100"
+              className="flex-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-center text-xs font-semibold text-brand-800 hover:bg-brand-100"
             >
               Questions {isSubmittedView ? "& result" : "& submit"}
             </a>
@@ -662,11 +662,11 @@ function AttemptContent({
           <div className="grid items-start gap-6 lg:grid-cols-2">
             <section
               id="reading-passage-panel"
-              className={`min-w-0 scroll-mt-24 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6 ${
+              className={`min-w-0 scroll-mt-24 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-slate-50 p-5 shadow-sm sm:p-6 ${
                 isSubmittedView ? "order-2 lg:order-1" : ""
               }`}
             >
-              <h2 className="text-lg font-semibold text-[#0f172a]">
+              <h2 className="text-lg font-semibold text-slate-900">
                 Reading passage
               </h2>
               <div className="mt-4 whitespace-pre-wrap break-words leading-8 text-slate-700">
@@ -678,12 +678,12 @@ function AttemptContent({
               id="reading-questions-panel"
               className={`min-w-0 scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
                 !isSubmittedView && !attemptClosed
-                  ? "border-blue-200/90 ring-1 ring-blue-50"
+                  ? "border-brand-200/90 ring-1 ring-brand-50"
                   : "border-slate-200"
               } ${isSubmittedView ? "order-1 lg:order-2" : ""}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-[#0f172a]">
+                <h2 className="text-lg font-semibold text-slate-900">
                   Questions
                 </h2>
                 {!isSubmittedView && (
@@ -753,7 +753,7 @@ function AttemptContent({
                   <div>
                     <Link
                       to="/practice-history"
-                      className="text-sm font-semibold text-[#2563eb] hover:underline"
+                      className="text-sm font-semibold text-brand-600 hover:underline"
                     >
                       View all attempts in practice history →
                     </Link>
@@ -826,7 +826,7 @@ function AttemptContent({
                         draftConflict ||
                         unsupportedQuestions
                       }
-                      className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {submitting ? "Submitting..." : "Submit answers"}
                     </button>

@@ -16,31 +16,31 @@ import {
 const REASON_BADGES: Record<string, { label: string; className: string }> = {
   DIAGNOSTIC: {
     label: "Explore a skill",
-    className: "bg-[#eef2ff] text-[#3730a3]",
+    className: "bg-indigo-50 text-indigo-800",
   },
   REINFORCEMENT: {
     label: "Reinforce a skill",
-    className: "bg-[#ecfdf5] text-[#047857]",
+    className: "bg-emerald-50 text-emerald-700",
   },
 };
 
 const DEFAULT_REASON_BADGE = {
   label: "Focused practice",
-  className: "bg-[#eff6ff] text-[#1e40af]",
+  className: "bg-brand-50 text-brand-800",
 };
 
 const SKILL_CARD_THEMES: Record<string, { card: string; badge: string }> = {
   "Needs focused practice": {
     card: "border-slate-200 bg-white",
-    badge: "bg-[#fef3c7] text-[#92400e]",
+    badge: "bg-amber-100 text-amber-800",
   },
   "Usually demonstrated": {
     card: "border-slate-200 bg-white",
-    badge: "bg-[#d1fae5] text-[#047857]",
+    badge: "bg-emerald-100 text-emerald-700",
   },
   Developing: {
     card: "border-slate-200 bg-white",
-    badge: "bg-[#dbeafe] text-[#1e40af]",
+    badge: "bg-brand-100 text-brand-800",
   },
 };
 
@@ -160,15 +160,15 @@ function LearningContent({
   return (
     <div className="student-surface-catalog min-h-[calc(100vh-4rem)]">
       <main className="mx-auto max-w-[1280px] space-y-5 px-4 py-4 sm:space-y-6 sm:px-8 sm:py-7">
-        <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-[#e2e8f0] border-l-4 border-l-[#2563eb] bg-gradient-to-r from-[#f8fafc] to-white p-3.5 shadow-sm sm:flex-row sm:items-start sm:gap-4 sm:p-5">
+        <header className="flex flex-col items-start justify-between gap-3 rounded-xl border border-slate-200 border-l-4 border-l-brand-600 bg-gradient-to-r from-slate-50 to-white p-3.5 shadow-sm sm:flex-row sm:items-start sm:gap-4 sm:p-5">
         <div className="min-w-0 space-y-1.5">
-          <span className="block text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-brand-600">
             Your learning
           </span>
-          <h1 className="text-xl font-semibold leading-tight text-[#0f172a] sm:text-[28px] sm:font-bold">
+          <h1 className="text-xl font-semibold leading-tight text-slate-900 sm:text-[28px] sm:font-bold">
             Skills and next steps
           </h1>
-          <p className="max-w-3xl text-sm leading-relaxed text-[#64748b]">
+          <p className="max-w-3xl text-sm leading-relaxed text-slate-500">
             Build on confirmed feedback. Start with a diagnostic activity when
             you have little or no evidence.
           </p>
@@ -177,7 +177,7 @@ function LearningContent({
           type="button"
           disabled={loading || !!opening}
           onClick={() => setReloadKey((value) => value + 1)}
-          className="shrink-0 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#1e40af] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
+          className="shrink-0 rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-50"
         >
           {loading ? (
             "Updating..."
@@ -198,13 +198,13 @@ function LearningContent({
       >
         <Link
           to="/courses"
-          className="rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+          className="rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
         >
           Courses
         </Link>
         <Link
           to="/practice-history"
-          className="rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+          className="rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
         >
           My Practice Attempts
         </Link>
@@ -238,7 +238,7 @@ function LearningContent({
       {loading && (
         <p
           role="status"
-          className="rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 text-sm text-[#64748b]"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500"
         >
           Loading your skills and suggested activities...
         </p>
@@ -247,20 +247,20 @@ function LearningContent({
       {recommendations && (
         <section
           aria-labelledby="suggested-activities-heading"
-          className="space-y-3.5 rounded-2xl border border-blue-200/80 bg-gradient-to-b from-[#eff6ff]/70 to-white p-4 shadow-sm sm:p-6"
+          className="space-y-3.5 rounded-2xl border border-brand-200/80 bg-gradient-to-b from-brand-50/70 to-white p-4 shadow-sm sm:p-6"
         >
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
                 Recommended next steps
               </span>
               <h2
                 id="suggested-activities-heading"
-                className="text-xl font-bold text-[#0f172a]"
+                className="text-xl font-bold text-slate-900"
               >
                 Suggested next activities
               </h2>
-              <p className="text-sm leading-relaxed text-[#64748b]">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Based on your confirmed learning evidence and available course
                 activities.
               </p>
@@ -268,7 +268,7 @@ function LearningContent({
           </div>
 
           {hasSuggestedPractice && (
-            <p className="rounded-xl border border-blue-200 bg-white/90 px-3.5 py-2.5 text-xs leading-relaxed text-[#1e40af]">
+            <p className="rounded-xl border border-brand-200 bg-white/90 px-3.5 py-2.5 text-xs leading-relaxed text-brand-800">
               Starting a suggested practice uses an available attempt and begins
               its time limit. An existing in-progress attempt for that version
               will resume.
@@ -276,7 +276,7 @@ function LearningContent({
           )}
 
           {!recommendations.recommendedActivities.length ? (
-            <p className="rounded-xl border border-[#e2e8f0] bg-white p-5 text-sm text-[#64748b]">
+            <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
               No suitable activity is available right now. Browse your enrolled
               courses or ask your instructor about the next practice.
             </p>
@@ -289,7 +289,7 @@ function LearningContent({
                 return (
                   <article
                     key={item.id}
-                    className="flex flex-col rounded-xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5"
+                    className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span
@@ -297,14 +297,14 @@ function LearningContent({
                       >
                         {badge.label}
                       </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                         {isLesson ? "Lesson" : "Practice"}
                       </span>
                     </div>
-                    <h3 className="mt-3 text-base font-bold leading-snug text-[#0f172a] sm:text-lg">
+                    <h3 className="mt-3 text-base font-bold leading-snug text-slate-900 sm:text-lg">
                       {item.learningItem.title}
                     </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-[#64748b]">
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
                       {item.reasonText}
                     </p>
                     <div className="mt-auto pt-4">
@@ -314,8 +314,8 @@ function LearningContent({
                         onClick={() => void open(item)}
                         className={
                           isLesson
-                            ? "w-full rounded-[10px] border border-[#e2e8f0] bg-white px-3.5 py-2.5 text-sm font-semibold text-[#0f172a] transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
-                            : "w-full rounded-[10px] bg-[#2563eb] px-3.5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] disabled:opacity-50"
+                            ? "w-full rounded-[10px] border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-50"
+                            : "w-full rounded-[10px] bg-brand-600 px-3.5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-50"
                         }
                       >
                         {opening === item.id
@@ -336,13 +336,13 @@ function LearningContent({
       {profile && (
         <section
           aria-labelledby="skill-evidence-heading"
-          className="space-y-4 rounded-2xl border border-[#e2e8f0] bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm sm:p-6"
+          className="space-y-4 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm sm:p-6"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span
                 aria-hidden="true"
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#eff6ff] text-[#2563eb]"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -361,12 +361,12 @@ function LearningContent({
               </span>
               <h2
                 id="skill-evidence-heading"
-                className="text-xl font-bold text-[#0f172a]"
+                className="text-xl font-bold text-slate-900"
               >
                 Your skill evidence
               </h2>
             </div>
-            <p className="text-sm leading-relaxed text-[#64748b]">
+            <p className="text-sm leading-relaxed text-slate-500">
               Only accepted, published assessments update these observations.
               They describe the evidence so far and are not an IELTS band
               prediction.
@@ -374,7 +374,7 @@ function LearningContent({
           </div>
 
           {!profile.skills.length ? (
-            <p className="rounded-xl border border-[#e2e8f0] bg-slate-50 p-5 text-sm text-[#64748b]">
+            <p className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
               Your instructor has not published any skills yet.
             </p>
           ) : (
@@ -409,8 +409,8 @@ function LearningContent({
                         onClick={() => setSkillEvidenceTab(tab.id)}
                         className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                           activeSkillTab === tab.id
-                            ? "bg-[#2563eb] text-white shadow-2xs"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-[#0f172a]"
+                            ? "bg-brand-600 text-white shadow-2xs"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                         }`}
                       >
                         {tab.label}
@@ -424,8 +424,8 @@ function LearningContent({
                         {observedSkills.map((skill) => {
                           const statusLabel = describeSkill(skill);
                           const theme = SKILL_CARD_THEMES[statusLabel] ?? {
-                            card: "border-[#e2e8f0] bg-white",
-                            badge: "bg-[#f1f5f9] text-[#475569]",
+                            card: "border-slate-200 bg-white",
+                            badge: "bg-slate-100 text-slate-600",
                           };
                           return (
                             <article
@@ -433,7 +433,7 @@ function LearningContent({
                               className={`flex flex-col items-start gap-2 rounded-xl border p-4 ${theme.card}`}
                             >
                               <div className="flex w-full items-start justify-between gap-2">
-                                <h3 className="text-sm font-semibold text-[#0f172a]">
+                                <h3 className="text-sm font-semibold text-slate-900">
                                   {skill.name}
                                 </h3>
                               </div>
@@ -442,7 +442,7 @@ function LearningContent({
                               >
                                 {statusLabel}
                               </span>
-                              <p className="text-xs leading-relaxed text-[#475569]">
+                              <p className="text-xs leading-relaxed text-slate-600">
                                 Based on {skill.evidenceCount} confirmed
                                 learning{" "}
                                 {skill.evidenceCount === 1
@@ -457,7 +457,7 @@ function LearningContent({
                         })}
                       </div>
                     ) : (
-                      <p className="rounded-xl border border-[#e2e8f0] bg-slate-50 p-5 text-sm text-[#64748b]">
+                      <p className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
                         No confirmed observations recorded yet. Complete a practice or graded activity to start building skill evidence.
                       </p>
                     )
@@ -465,14 +465,14 @@ function LearningContent({
                     <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-semibold text-[#0f172a]">
+                          <h3 className="text-sm font-semibold text-slate-900">
                             Not observed yet
                           </h3>
                           <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-semibold text-slate-700">
                             {unobservedSkills.length}
                           </span>
                         </div>
-                        <p className="text-xs leading-relaxed text-[#64748b]">
+                        <p className="text-xs leading-relaxed text-slate-500">
                           Complete a diagnostic activity or receive confirmed
                           instructor feedback to build evidence for these skills.
                         </p>
@@ -483,10 +483,10 @@ function LearningContent({
                             key={skill.skillId}
                             className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                           >
-                            <span className="font-medium text-[#0f172a]">
+                            <span className="font-medium text-slate-900">
                               {skill.name}
                             </span>
-                            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-[#475569]">
+                            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                               No evidence yet
                             </span>
                           </li>

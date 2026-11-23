@@ -1,53 +1,47 @@
-import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useSession } from "../../../features/auth/session";
-import InstructorHeader from "./InstructorHeader";
-import InstructorSidebar from "./InstructorSidebar";
-import { resolveActiveInstructorKey } from "./instructorNav";
+import WorkspaceShell from "../WorkspaceShell";
+import { INSTRUCTOR_NAV_ITEMS } from "./instructorNav";
+
+const ICONS = {
+  "review-queue": "checkSquare",
+  "course-authoring": "book",
+  "grading-reports": "barChart",
+} as const;
+
+const GROUPS = [
+  {
+    label: "Workspace",
+    items: INSTRUCTOR_NAV_ITEMS.map((item) => ({
+      to: item.to,
+      label: item.label,
+      subtitle: item.subtitle,
+      icon: ICONS[item.key],
+    })),
+  },
+];
 
 export default function InstructorLayout() {
   const { session } = useSession();
-  const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   if (!session) return null;
-  const activeKey = resolveActiveInstructorKey(location.pathname);
 
   return (
-    <div className="flex min-h-screen bg-[#f6faf9]">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex">
-        <InstructorSidebar activeKey={activeKey} />
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div
-            className="fixed inset-0 bg-slate-900/40"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="relative z-10 flex">
-            <InstructorSidebar
-              activeKey={activeKey}
-              onNavigate={() => setMobileOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <InstructorHeader
-          activeKey={activeKey}
-          user={session.user}
-          mobileMenuOpen={mobileOpen}
-          onOpenMobileMenu={() => setMobileOpen((prev) => !prev)}
-        />
-        <div className="flex-1">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <WorkspaceShell
+      workspace="instructor"
+      caption="Instructor workspace"
+      homeTo="/teacher/reviews"
+      accountBase="/teacher"
+      currentRole="INSTRUCTOR"
+      roleLabel={session.user.roles.includes("ADMIN") ? "Admin · Instructor" : "Instructor"}
+      groups={GROUPS}
+      labels={{
+        nav: "Instructor navigation",
+        openMenu: "Open instructor menu",
+        closeMenu: "Close instructor menu",
+        accountMenu: "Open instructor account menu",
+      }}
+    >
+      <Outlet />
+    </WorkspaceShell>
   );
 }

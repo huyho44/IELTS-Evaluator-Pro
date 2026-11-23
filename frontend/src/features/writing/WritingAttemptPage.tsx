@@ -402,7 +402,7 @@ export default function WritingAttemptPage({
         <Link
           onClick={protectNavigation}
           to={`/courses/${encodeURIComponent(version.assignment.courseId)}`}
-          className="inline-flex text-sm font-semibold text-[#2563eb] hover:underline"
+          className="inline-flex text-sm font-semibold text-brand-600 hover:underline"
         >
           ← Back to course overview
         </Link>
@@ -413,7 +413,7 @@ export default function WritingAttemptPage({
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
-                <span className="font-semibold uppercase tracking-wide text-[#2563eb]">
+                <span className="font-semibold uppercase tracking-wide text-brand-600">
                   {canEdit
                     ? revisions.length > 0
                       ? "Writing practice · Preparing new revision"
@@ -423,7 +423,7 @@ export default function WritingAttemptPage({
                 <span className="text-slate-300" aria-hidden="true">
                   ·
                 </span>
-                <span className="font-semibold text-[#0f172a]">
+                <span className="font-semibold text-slate-900">
                   Attempt {attempt.attemptNo}
                 </span>
                 <span className="text-slate-500">
@@ -435,7 +435,7 @@ export default function WritingAttemptPage({
                   </span>
                 )}
               </div>
-              <h1 className="mt-0.5 truncate text-base font-bold text-[#0f172a] sm:text-lg">
+              <h1 className="mt-0.5 truncate text-base font-bold text-slate-900 sm:text-lg">
                 {version.assignment.title}
               </h1>
             </div>
@@ -469,7 +469,7 @@ export default function WritingAttemptPage({
         <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
                 {revisions.length === 0
                   ? "Writing practice · Attempt closed"
                   : canRevise
@@ -499,7 +499,7 @@ export default function WritingAttemptPage({
                 )}
               </div>
             </div>
-            <h1 className="mt-1.5 text-2xl font-bold text-[#0f172a]">
+            <h1 className="mt-1.5 text-2xl font-bold text-slate-900">
               {version.assignment.title}
             </h1>
             <p className="mt-1.5 text-xs leading-5 text-slate-600">
@@ -510,7 +510,7 @@ export default function WritingAttemptPage({
                   : "Review your selected submission and evaluation details below."}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
-              <span className="font-semibold text-[#0f172a]">
+              <span className="font-semibold text-slate-900">
                 Attempt {attempt.attemptNo}
               </span>
               <span>
@@ -522,7 +522,7 @@ export default function WritingAttemptPage({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 bg-[#f8fafc] px-5 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 bg-slate-50 px-5 py-3 sm:px-6">
             {revisions.length > 0 ? (
               <>
                 <div className="flex flex-wrap items-center gap-2">
@@ -539,8 +539,8 @@ export default function WritingAttemptPage({
                         aria-pressed={active}
                         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                           active
-                            ? "border-[#2563eb] bg-[#2563eb] text-white shadow-xs"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-[#1e40af]"
+                            ? "border-brand-600 bg-brand-600 text-white shadow-xs"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-800"
                         }`}
                       >
                         <span>Revision {revision.revisionNo}</span>
@@ -549,7 +549,7 @@ export default function WritingAttemptPage({
                             className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                               active
                                 ? "bg-white/20 text-white"
-                                : "bg-blue-50 text-[#1e40af]"
+                                : "bg-brand-50 text-brand-800"
                             }`}
                           >
                             Latest
@@ -588,7 +588,7 @@ export default function WritingAttemptPage({
       {message && (
         <p
           role="status"
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
+          className="rounded-lg border border-brand-200 bg-brand-50 p-4 text-sm text-brand-900"
         >
           {message}
         </p>
@@ -622,7 +622,7 @@ export default function WritingAttemptPage({
       {editing ? (
         <div className="space-y-4">
           <div
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
             aria-label="Quick section jump"
           >
             <a
@@ -633,7 +633,7 @@ export default function WritingAttemptPage({
             </a>
             <a
               href="#writing-editor-panel"
-              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-center text-xs font-semibold text-[#1e40af] hover:bg-blue-100"
+              className="flex-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-center text-xs font-semibold text-brand-800 hover:bg-brand-100"
             >
               Essay editor &amp; submit
             </a>
@@ -642,9 +642,9 @@ export default function WritingAttemptPage({
           <div className="grid items-start gap-6 lg:grid-cols-2">
             <section
               id="writing-prompt-panel"
-              className="scroll-mt-24 space-y-4 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-5 shadow-sm sm:p-6"
+              className="scroll-mt-24 space-y-4 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-slate-50 p-5 shadow-sm sm:p-6"
             >
-              <h2 className="text-lg font-bold text-[#0f172a]">Writing task</h2>
+              <h2 className="text-lg font-bold text-slate-900">Writing task</h2>
               <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
                 {version.activityVersion.promptText}
               </p>
@@ -663,19 +663,19 @@ export default function WritingAttemptPage({
               id="writing-editor-panel"
               className={`scroll-mt-24 space-y-4 rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
                 canEdit
-                  ? "border-blue-200/90 ring-1 ring-blue-50"
+                  ? "border-brand-200/90 ring-1 ring-brand-50"
                   : "border-slate-200"
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-[#0f172a]">
+                  <h2 className="text-lg font-bold text-slate-900">
                     Revision {nextRevision} draft
                   </h2>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                       canEdit
-                        ? "bg-blue-50 text-[#1e40af]"
+                        ? "bg-brand-50 text-brand-800"
                         : "bg-amber-50 text-amber-800"
                     }`}
                   >
@@ -708,7 +708,7 @@ export default function WritingAttemptPage({
                     setSubmitError("");
                     setMessage("");
                   }}
-                  className="w-full rounded-lg border border-slate-300 p-4 text-sm leading-7 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+                  className="w-full rounded-lg border border-slate-300 p-4 text-sm leading-7 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-slate-50"
                 />
               </label>
               <p className="text-xs text-slate-500">
@@ -737,7 +737,7 @@ export default function WritingAttemptPage({
                     type="button"
                     disabled={!canSubmit}
                     onClick={() => void submit()}
-                    className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
                   >
                     {busy === "submitting" ? "Submitting..." : "Submit essay"}
                   </button>
@@ -771,7 +771,7 @@ export default function WritingAttemptPage({
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-bold text-[#0f172a]">
+                  <h2 className="text-base font-bold text-slate-900">
                     Earlier submissions
                   </h2>
                   <p className="mt-0.5 text-xs text-slate-500">
@@ -789,7 +789,7 @@ export default function WritingAttemptPage({
                       aria-pressed={selectedRevision === revision.id}
                       className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
                         selectedRevision === revision.id
-                          ? "border-blue-300 bg-blue-50 text-blue-800"
+                          ? "border-brand-300 bg-brand-50 text-brand-800"
                           : "border-slate-200 text-slate-600"
                       }`}
                     >
@@ -816,12 +816,12 @@ export default function WritingAttemptPage({
       ) : (
         <div className="space-y-4">
           <div
-            className="flex flex-wrap gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
+            className="flex flex-wrap gap-1.5 rounded-xl border border-brand-200 bg-white px-3 py-2 shadow-2xs lg:hidden"
             aria-label="Review quick jump"
           >
             <a
               href="#writing-feedback-panel"
-              className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-[#1e40af]"
+              className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800"
             >
               Feedback
             </a>
@@ -868,15 +868,15 @@ export default function WritingAttemptPage({
                 id="writing-next-step"
                 className={`scroll-mt-20 space-y-3.5 rounded-xl border p-5 shadow-sm ${
                 canRevise
-                  ? "border-blue-200 bg-gradient-to-b from-[#eff6ff] to-white"
-                  : "border-slate-200 bg-[#f8fafc]"
+                  ? "border-brand-200 bg-gradient-to-b from-brand-50 to-white"
+                  : "border-slate-200 bg-slate-50"
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span
                   className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
                     canRevise
-                      ? "bg-[#dbeafe] text-[#1e40af]"
+                      ? "bg-brand-100 text-brand-800"
                       : "bg-slate-200/80 text-slate-700"
                   }`}
                 >
@@ -893,7 +893,7 @@ export default function WritingAttemptPage({
                         : "Attempt closed"}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-[#0f172a]">
+              <h2 className="text-lg font-bold text-slate-900">
                 {canRevise
                   ? `Write revision ${nextRevision}`
                   : "Revision status"}
@@ -911,7 +911,7 @@ export default function WritingAttemptPage({
                     type="button"
                     disabled={!!busy || uncertain}
                     onClick={() => void revise()}
-                    className="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                    className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
                   >
                     {busy === "revising"
                       ? "Opening draft..."
@@ -931,14 +931,14 @@ export default function WritingAttemptPage({
                 <Link
                   onClick={protectNavigation}
                   to="/learning"
-                  className="block text-sm font-semibold text-[#2563eb] hover:underline"
+                  className="block text-sm font-semibold text-brand-600 hover:underline"
                 >
                   Explore skills & suggested practice →
                 </Link>
                 <Link
                   onClick={protectNavigation}
                   to="/practice-history"
-                  className="block text-sm font-semibold text-slate-600 hover:text-[#2563eb] hover:underline"
+                  className="block text-sm font-semibold text-slate-600 hover:text-brand-600 hover:underline"
                 >
                   View all attempts in practice history →
                 </Link>
@@ -947,7 +947,7 @@ export default function WritingAttemptPage({
 
             <section
               id="writing-task-reference"
-              className="scroll-mt-20 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-[#f8fafc] p-4 sm:p-5"
+              className="scroll-mt-20 rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-slate-50 p-4 sm:p-5"
             >
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
@@ -955,11 +955,11 @@ export default function WritingAttemptPage({
                     <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       Reference
                     </span>
-                    <span className="text-sm font-bold text-[#0f172a]">
+                    <span className="text-sm font-bold text-slate-900">
                       Writing task prompt
                     </span>
                   </div>
-                  <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#1e40af] group-open:hidden">
+                  <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-brand-800 group-open:hidden">
                     Show prompt
                   </span>
                   <span className="hidden rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 group-open:inline">

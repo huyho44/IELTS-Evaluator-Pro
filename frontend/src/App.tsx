@@ -18,6 +18,7 @@ import {
   WorkspaceHome,
 } from "./features/auth/components/WorkspaceRedirects";
 import WorkspaceMessage from "./features/auth/components/WorkspaceMessage";
+import { LoadingScreen } from "./components/ui/Spinner";
 
 function LogoutPage() {
   useEffect(() => {
@@ -39,18 +40,24 @@ export default function App() {
   return (
     <BrowserRouter>
       {restoring ? (
-        <p role="status" className="p-8">
-          Restoring session...
-        </p>
+        <LoadingScreen label="Restoring session..." />
       ) : restoreError ? (
-        <section className="p-8">
-          <p role="alert">{restoreError}</p>
-          <button
-            className="mt-4 text-blue-600"
-            onClick={() => void retryRestore()}
-          >
-            Try again
-          </button>
+        <section className="flex min-h-screen items-center justify-center px-4">
+          <div className="ui-card w-full max-w-md p-8 text-center">
+            <h1 className="text-xl font-bold text-slate-900">
+              We could not restore your session
+            </h1>
+            <p role="alert" className="mt-2 text-sm text-slate-600">
+              {restoreError}
+            </p>
+            <button
+              type="button"
+              className="ui-btn-primary mt-6"
+              onClick={() => void retryRestore()}
+            >
+              Try again
+            </button>
+          </div>
         </section>
       ) : (
         <Routes>

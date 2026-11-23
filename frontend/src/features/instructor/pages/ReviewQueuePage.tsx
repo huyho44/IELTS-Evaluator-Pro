@@ -32,7 +32,7 @@ const REASON_LABELS: Record<string, { label: string; className: string }> = {
   },
   MANUAL_GRADING: {
     label: "Manual grading",
-    className: "border-teal-200 bg-teal-50 text-teal-800",
+    className: "border-brand-200 bg-brand-50 text-brand-800",
   },
   PRACTICE_REVIEW: {
     label: "Practice review",
@@ -100,8 +100,8 @@ export default function ReviewQueuePage() {
     switch (item.status) {
       case "CLAIMED":
         return isMine ? (
-          <span className="inline-flex items-center rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800">
-            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-teal-600" />
+          <span className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-800">
+            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-brand-600" />
             Claimed · Assigned to you
           </span>
         ) : (
@@ -158,12 +158,9 @@ export default function ReviewQueuePage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 border-b border-teal-100 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
-              Instructor Workspace · Grading &amp; Feedback
-            </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
               Review Queue
             </h1>
             <p className="mt-1 text-sm text-slate-600">
@@ -178,7 +175,7 @@ export default function ReviewQueuePage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
               to="/teacher/reports"
-              className="rounded-lg border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold text-teal-800 shadow-2xs transition hover:bg-teal-50"
+              className="rounded-lg border border-brand-200 bg-white px-3.5 py-2 text-xs font-semibold text-brand-800 shadow-2xs transition hover:bg-brand-50"
             >
               Grading operations report
             </Link>
@@ -186,7 +183,7 @@ export default function ReviewQueuePage() {
               type="button"
               disabled={loading}
               onClick={() => setReloadKey((value) => value + 1)}
-              className="rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-teal-800 disabled:opacity-50"
+              className="rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-brand-800 disabled:opacity-50"
             >
               {loading ? "Refreshing..." : "Refresh queue"}
             </button>
@@ -240,12 +237,12 @@ export default function ReviewQueuePage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-white p-5 shadow-2xs">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
                 Assigned to Me
               </p>
-              <p className="mt-1 text-2xl font-bold text-teal-950">
+              <p className="mt-1 text-2xl font-bold text-brand-950">
                 {mineCount}
               </p>
               <p className="mt-0.5 text-xs text-slate-500">
@@ -254,7 +251,7 @@ export default function ReviewQueuePage() {
             </div>
             <div
               aria-hidden="true"
-              className="grid size-10 place-items-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-200"
+              className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-200"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 11l3 3L22 4" />
@@ -276,7 +273,7 @@ export default function ReviewQueuePage() {
                   onClick={() => setStatusFilter(tab)}
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                     statusFilter === tab
-                      ? "bg-teal-700 text-white shadow-2xs"
+                      ? "bg-brand-700 text-white shadow-2xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -300,7 +297,7 @@ export default function ReviewQueuePage() {
                   placeholder="Search student, assignment, or reason..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-3 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-3 pr-3 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
                 />
               </div>
               <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
@@ -322,7 +319,7 @@ export default function ReviewQueuePage() {
                 <button
                   type="button"
                   onClick={() => setReloadKey((value) => value + 1)}
-                  className="mt-3 rounded-lg border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold text-teal-800 hover:bg-teal-50"
+                  className="mt-3 rounded-lg border border-brand-200 bg-white px-3.5 py-2 text-xs font-semibold text-brand-800 hover:bg-brand-50"
                 >
                   Try again
                 </button>
@@ -339,7 +336,7 @@ export default function ReviewQueuePage() {
             ) : (
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-teal-100 bg-[#f5fbfa] text-xs font-semibold uppercase tracking-wider text-teal-900">
+                  <tr className="border-b border-brand-100 bg-canvas text-xs font-semibold uppercase tracking-wider text-brand-900">
                     <th className="px-4 py-3">Assessment Details</th>
                     <th className="px-4 py-3">Student</th>
                     <th className="px-4 py-3">Submitted &amp; Routing</th>
@@ -358,7 +355,7 @@ export default function ReviewQueuePage() {
                     return (
                       <tr
                         key={item.id}
-                        className="transition-colors hover:bg-teal-50/25"
+                        className="transition-colors hover:bg-brand-50/25"
                       >
                         <td className="px-4 py-4">
                           <div className="font-semibold text-slate-900">
@@ -383,7 +380,7 @@ export default function ReviewQueuePage() {
                           <div className="flex items-center gap-2.5">
                             <span
                               aria-hidden="true"
-                              className="grid size-8 shrink-0 place-items-center rounded-full bg-teal-50 text-xs font-bold text-teal-800 ring-1 ring-teal-200/80"
+                              className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-bold text-brand-800 ring-1 ring-brand-200/80"
                             >
                               {item.revision.attempt.learner.displayName
                                 .charAt(0)
@@ -413,9 +410,9 @@ export default function ReviewQueuePage() {
                             to={`/teacher/reviews/${encodeURIComponent(item.id)}`}
                             className={`inline-flex items-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                               isPending
-                                ? "bg-teal-700 text-white shadow-2xs hover:bg-teal-800"
+                                ? "bg-brand-700 text-white shadow-2xs hover:bg-brand-800"
                                 : isMine
-                                  ? "border border-teal-300 bg-teal-50 text-teal-900 hover:bg-teal-100"
+                                  ? "border border-brand-300 bg-brand-50 text-brand-900 hover:bg-brand-100"
                                   : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                             }`}
                           >

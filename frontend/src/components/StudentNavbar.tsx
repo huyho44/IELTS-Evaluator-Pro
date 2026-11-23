@@ -10,6 +10,8 @@ import {
   markNotificationRead,
   useNotifications,
 } from "../features/management/notificationsStore";
+import Icon from "./ui/Icon";
+import Logo from "./ui/Logo";
 
 export default function StudentNavbar() {
   const { session } = useSession();
@@ -59,8 +61,7 @@ export default function StudentNavbar() {
     };
   }, [menu]);
 
-  const link =
-    "flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600";
+  const link = "ui-menu-item";
 
   function toggle(
     value: "mobile" | "notifications" | "account",
@@ -77,8 +78,8 @@ export default function StudentNavbar() {
   function navigation(mobile = false) {
     const tab = (active: boolean) =>
       mobile
-        ? `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "bg-[#eff6ff] text-[#2563eb]" : "text-[#475569] hover:bg-white/90 hover:text-[#2563eb]"}`
-        : `flex items-center border-b-2 whitespace-nowrap px-1 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${active ? "border-[#2563eb] text-[#2563eb]" : "border-transparent text-[#475569] hover:text-[#2563eb]"}`;
+        ? `flex min-h-11 items-center rounded-xl px-3 py-2 text-[15px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 ${active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`
+        : `flex min-h-10 items-center whitespace-nowrap rounded-xl px-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`;
     return (
       <>
         {user?.roles.includes("LEARNER") && (
@@ -140,22 +141,27 @@ export default function StudentNavbar() {
   }
 
   return (
-    <header ref={root} className="student-navbar-surface border-b border-[#bfdbfe]">
-      <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-3 gap-y-0 px-4 sm:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:items-stretch">
+    <header
+      ref={root}
+      className="student-navbar-surface sticky top-0 z-30 border-b border-slate-200/80"
+    >
+      <div className="relative mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link
           to="/courses"
           onClick={() => setMenu(null)}
-          className="shrink-0 whitespace-nowrap py-3.5 text-sm font-semibold text-[#2563eb] transition-colors hover:text-[#1d4ed8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:text-lg xl:py-4 xl:text-[20px]"
+          aria-label="IELTS Evaluator Pro, go to courses"
+          className="shrink-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500"
         >
-          IELTS Evaluator Pro
+          <Logo className="hidden sm:flex" />
+          <Logo compact className="sm:hidden" />
         </Link>
         <nav
           aria-label="Student navigation"
-          className="hidden min-h-[66px] min-w-0 flex-1 items-stretch justify-center gap-7 self-stretch xl:flex"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex"
         >
           {navigation()}
         </nav>
-        <div className="ml-auto flex min-h-[56px] shrink-0 items-center gap-2 self-stretch sm:gap-2.5 xl:min-h-[66px]">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <div className="flex items-center self-stretch sm:relative">
             <button
               type="button"
@@ -167,25 +173,13 @@ export default function StudentNavbar() {
               aria-expanded={menu === "notifications"}
               aria-controls="notifications-panel"
               onClick={(e) => toggle("notifications", e.currentTarget)}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[#bfdbfe]/70 bg-white/75 text-[#334155] transition-colors hover:bg-white hover:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] ${menu === "notifications" ? "bg-white text-[#2563eb] ring-1 ring-[#93c5fd]" : ""}`}
+              className={`ui-icon-btn ${menu === "notifications" ? "bg-slate-100 text-slate-900" : ""}`}
             >
-              <svg
-                aria-hidden="true"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-              </svg>
+              <Icon name="bell" size={19} />
               {user && unread.count > 0 && (
                 <span
                   aria-hidden="true"
-                  className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white"
+                  className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white tabular-nums"
                 >
                   {unread.badgeText}
                 </span>
@@ -194,24 +188,24 @@ export default function StudentNavbar() {
             {menu === "notifications" && (
               <div
                 id="notifications-panel"
-                className="absolute right-4 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg sm:right-0 sm:w-96"
+                className="ui-menu absolute right-4 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden sm:right-0 sm:w-96"
               >
-                <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-[#0f172a]">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3.5">
+                  <h2 className="text-sm font-bold text-slate-900">
                     Notifications
                   </h2>
                   {user && (
-                    <span className="text-xs font-medium text-[#64748b]">
+                    <span className="text-xs font-medium text-slate-500">
                       {unread.summaryText}
                     </span>
                   )}
                 </div>
                 {!user ? (
-                  <div className="px-4 py-4 text-sm text-[#64748b]">
+                  <div className="px-4 py-4 text-sm text-slate-500">
                     <Link
                       to="/login"
                       onClick={() => setMenu(null)}
-                      className="font-semibold text-[#2563eb] hover:underline"
+                      className="font-semibold text-brand-600 hover:underline"
                     >
                       Sign in to view notifications
                     </Link>
@@ -220,7 +214,7 @@ export default function StudentNavbar() {
                   <>
                     <div className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
                       {notificationsLoading && !recentNotifications.length && (
-                        <p role="status" className="px-4 py-4 text-xs text-[#64748b]">
+                        <p role="status" className="px-4 py-4 text-xs text-slate-500">
                           Loading notifications...
                         </p>
                       )}
@@ -239,7 +233,7 @@ export default function StudentNavbar() {
                       {!notificationsLoading &&
                         !notificationsError &&
                         !recentNotifications.length && (
-                          <p className="px-4 py-5 text-center text-xs text-[#64748b]">
+                          <p className="px-4 py-5 text-center text-xs text-slate-500">
                             No notifications yet.
                           </p>
                         )}
@@ -252,7 +246,7 @@ export default function StudentNavbar() {
                           <div
                             key={item.id}
                             className={`space-y-1.5 px-4 py-3 text-xs ${
-                              isUnread ? "bg-[#eff6ff]/50" : "bg-white"
+                              isUnread ? "bg-brand-50/60" : "bg-white"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -260,29 +254,29 @@ export default function StudentNavbar() {
                                 {isUnread && (
                                   <span
                                     aria-label="Unread notification"
-                                    className="h-2 w-2 shrink-0 rounded-full bg-[#2563eb]"
+                                    className="h-2 w-2 shrink-0 rounded-full bg-brand-600"
                                   />
                                 )}
                                 <p
                                   className={`truncate text-sm ${
                                     isUnread
-                                      ? "font-semibold text-[#0f172a]"
+                                      ? "font-semibold text-slate-900"
                                       : "font-medium text-slate-700"
                                   }`}
                                 >
                                   {item.title}
                                 </p>
                               </div>
-                              <span className="shrink-0 text-[11px] text-[#64748b]">
+                              <span className="shrink-0 text-[11px] text-slate-500">
                                 {new Date(item.createdAt).toLocaleDateString()}
                               </span>
                             </div>
                             {contextLabel && (
-                              <p className="truncate text-[11px] font-semibold text-[#1e40af]">
+                              <p className="truncate text-[11px] font-semibold text-brand-800">
                                 {contextLabel}
                               </p>
                             )}
-                            <p className="line-clamp-2 text-xs leading-relaxed text-[#64748b]">
+                            <p className="line-clamp-2 text-xs leading-relaxed text-slate-500">
                               {item.body}
                             </p>
                             <div className="flex flex-wrap items-center gap-3 pt-0.5">
@@ -295,7 +289,7 @@ export default function StudentNavbar() {
                                       void markNotificationRead(item.id);
                                     }
                                   }}
-                                  className="font-semibold text-[#2563eb] hover:underline"
+                                  className="font-semibold text-brand-600 hover:underline"
                                 >
                                   {actionLabel} →
                                 </Link>
@@ -305,7 +299,7 @@ export default function StudentNavbar() {
                                   type="button"
                                   disabled={marking}
                                   onClick={() => void markNotificationRead(item.id)}
-                                  className="font-medium text-slate-600 hover:text-[#2563eb] hover:underline disabled:opacity-50"
+                                  className="font-medium text-slate-600 hover:text-brand-600 hover:underline disabled:opacity-50"
                                 >
                                   {marking ? "Marking..." : "Mark as read"}
                                 </button>
@@ -315,11 +309,11 @@ export default function StudentNavbar() {
                         );
                       })}
                     </div>
-                    <div className="border-t border-slate-100 px-4 py-2.5">
+                    <div className="border-t border-slate-100 p-1.5">
                       <Link
                         to="/student/notifications"
                         onClick={() => setMenu(null)}
-                        className="block text-center text-xs font-semibold text-[#2563eb] hover:underline"
+                        className="flex min-h-10 items-center justify-center rounded-lg text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
                       >
                         View all notifications
                       </Link>
@@ -337,20 +331,20 @@ export default function StudentNavbar() {
                 aria-expanded={menu === "account"}
                 aria-controls="account-menu"
                 onClick={(e) => toggle("account", e.currentTarget)}
-                className={`flex max-w-[140px] items-center gap-2 rounded-full border border-[#bfdbfe] bg-white/85 p-1 pr-2.5 text-left shadow-2xs transition-colors hover:border-[#93c5fd] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] sm:max-w-[260px] sm:pr-3 ${menu === "account" ? "border-[#93c5fd] bg-white ring-1 ring-[#bfdbfe]" : ""}`}
+                className={`flex min-h-10 max-w-[160px] items-center gap-2.5 rounded-xl p-1 text-left transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 sm:max-w-[260px] sm:pr-2.5 ${menu === "account" ? "bg-slate-100" : ""}`}
               >
                 <span
                   aria-hidden="true"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#2563eb] text-xs font-bold text-white shadow-sm"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white"
                 >
                   {user.displayName.charAt(0).toUpperCase()}
                 </span>
                 <span className="flex min-w-0 flex-col items-start leading-tight">
-                  <span className="max-w-[72px] truncate text-sm font-semibold text-[#0f172a] sm:max-w-[140px]">
+                  <span className="hidden max-w-[140px] truncate text-sm font-semibold text-slate-900 sm:block">
                     {user.displayName}
                   </span>
                   {hasTargetBand && (
-                    <span className="hidden text-[11px] font-medium text-[#1e40af] sm:block">
+                    <span className="mt-0.5 hidden text-xs font-medium text-amber-700 sm:block">
                       Target band {user.targetBand}
                     </span>
                   )}
@@ -359,37 +353,37 @@ export default function StudentNavbar() {
               {menu === "account" && (
                 <div
                   id="account-menu"
-                  className="absolute right-4 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-[#e2e8f0] bg-white shadow-lg sm:right-0"
+                  className="ui-menu absolute right-4 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] sm:right-0"
                 >
-                  <div className="break-words border-b border-slate-100 px-4 py-3">
-                    <p className="text-sm font-semibold text-[#0f172a]">
+                  <div className="break-words border-b border-slate-100 px-4 py-3.5">
+                    <p className="text-sm font-semibold text-slate-900">
                       {user.displayName}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-[#64748b]">
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
                       {user.email}
                     </p>
                     {hasTargetBand && (
-                      <p className="mt-1.5 inline-flex rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e40af]">
+                      <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
                         Target band: {user.targetBand}
                       </p>
                     )}
                   </div>
                   <div className="p-1.5" onClick={() => setMenu(null)}>
                     <Link
-                      className={`${link} text-slate-700 hover:bg-slate-50`}
+                      className={link}
                       to="/student/profile"
                     >
                       Profile & learning goals
                     </Link>
                     <Link
-                      className={`${link} text-slate-700 hover:bg-slate-50`}
+                      className={link}
                       to="/student/dashboard"
                     >
                       Account overview
                     </Link>
                     {user.roles.includes("INSTRUCTOR") && (
                       <Link
-                        className={`${link} text-slate-700 hover:bg-slate-50`}
+                        className={link}
                         to="/teacher/reviews"
                       >
                         Instructor reviews
@@ -397,7 +391,7 @@ export default function StudentNavbar() {
                     )}
                     {user.roles.includes("ADMIN") && (
                       <Link
-                        className={`${link} text-slate-700 hover:bg-slate-50`}
+                        className={link}
                         to="/admin"
                       >
                         Administration
@@ -407,12 +401,13 @@ export default function StudentNavbar() {
                   <div className="border-t border-slate-100 p-1.5">
                     <button
                       type="button"
-                      className={`${link} w-full text-left text-red-600 hover:bg-red-50`}
+                      className={`${link} text-red-600 hover:bg-red-50 hover:text-red-700`}
                       onClick={() => {
                         setMenu(null);
                         navigate("/logout");
                       }}
                     >
+                      <Icon name="logOut" size={17} />
                       Sign out
                     </button>
                   </div>
@@ -422,13 +417,13 @@ export default function StudentNavbar() {
           ) : (
             <div className="flex items-center gap-2 text-sm font-semibold sm:gap-3">
               <Link
-                className="rounded-lg px-3 py-2 text-[#1e40af] transition-colors hover:bg-[#eff6ff]/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                className="ui-btn-ghost px-3"
                 to="/login"
               >
                 Sign in
               </Link>
               <Link
-                className="rounded-lg bg-[#2563eb] px-3.5 py-2 text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                className="ui-btn-primary px-3.5"
                 to="/register"
               >
                 Sign up
@@ -440,29 +435,17 @@ export default function StudentNavbar() {
             aria-label="Open navigation menu"
             aria-expanded={menu === "mobile"}
             aria-controls="mobile-navigation"
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#bfdbfe]/70 bg-white/75 text-[#0f172a] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] xl:hidden ${menu === "mobile" ? "bg-white text-[#2563eb] ring-1 ring-[#93c5fd]" : ""}`}
+            className={`ui-icon-btn lg:hidden ${menu === "mobile" ? "bg-slate-100 text-slate-900" : ""}`}
             onClick={(e) => toggle("mobile", e.currentTarget)}
           >
-            <svg
-              aria-hidden="true"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <Icon name={menu === "mobile" ? "close" : "menu"} size={20} />
           </button>
         </div>
         {menu === "mobile" && (
           <nav
             id="mobile-navigation"
             aria-label="Mobile student navigation"
-            className="flex w-full flex-col gap-1 border-t border-[#bfdbfe]/80 bg-white/95 px-2 py-2.5 shadow-sm xl:hidden"
+            className="absolute inset-x-0 top-full flex animate-pop-in flex-col gap-1 border-b border-slate-200/80 bg-white px-3 py-3 shadow-raised lg:hidden"
           >
             {navigation(true)}
           </nav>

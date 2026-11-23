@@ -185,11 +185,11 @@ export default function CourseCatalogPage({
     <div className="student-surface-catalog min-h-[calc(100vh-4rem)]">
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-[#0f172a] sm:text-3xl">
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
           Explore Preparation Courses
         </h1>
 
-        <p className="mt-3 text-sm leading-6 text-[#64748b]">
+        <p className="mt-3 text-sm leading-6 text-slate-500">
           Choose focused IELTS lessons and continue your enrolled courses.
         </p>
       </div>
@@ -229,7 +229,7 @@ export default function CourseCatalogPage({
               setPage(1);
             }}
             placeholder="Search by keyword or instructor..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-500 focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
           />
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function CourseCatalogPage({
             className={
               "rounded-full px-4 py-2 text-xs font-semibold transition-colors " +
               (filter === option.key
-                ? "bg-[#2563eb] text-white"
+                ? "bg-brand-600 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200")
             }
           >
@@ -294,7 +294,7 @@ export default function CourseCatalogPage({
             <button
               type="button"
               onClick={() => setReloadKey((previous) => previous + 1)}
-              className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+              className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Try again
             </button>
@@ -322,14 +322,14 @@ export default function CourseCatalogPage({
               onClick={() =>
                 setEnrollmentsReloadKey((previous) => previous + 1)
               }
-              className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+              className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Try again
             </button>
           </div>
         ) : filter === "MY_COURSES" && enrolledCourseIds.size === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-            <h2 className="text-lg font-semibold text-[#0f172a]">
+            <h2 className="text-lg font-semibold text-slate-900">
               No enrolled courses yet
             </h2>
 
@@ -344,14 +344,14 @@ export default function CourseCatalogPage({
                 setFilter("OPEN");
                 setPage(1);
               }}
-              className="mt-5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+              className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Browse open courses
             </button>
           </div>
         ) : (
           <>
-            <p role="status" className="mb-4 text-xs text-[#64748b]">
+            <p role="status" className="mb-4 text-xs text-slate-500">
               {filteredCourses.length}{" "}
               {filteredCourses.length === 1 ? "course" : "courses"} found
             </p>
@@ -384,7 +384,7 @@ export default function CourseCatalogPage({
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="mt-5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+                    className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
                   >
                     Clear filters
                   </button>
@@ -420,7 +420,7 @@ export default function CourseCatalogPage({
                     className={
                       "rounded-lg px-3 py-2 text-sm " +
                       (currentPage === pageNumber
-                        ? "bg-[#2563eb] text-white"
+                        ? "bg-brand-600 text-white"
                         : "border border-slate-300 bg-white")
                     }
                   >

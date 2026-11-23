@@ -37,7 +37,7 @@ export default function CourseCard({
   const isCompleted = enrollmentStatus === "COMPLETED";
 
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
       <div className="relative h-40 overflow-hidden border-b border-slate-100 bg-slate-50">
         <img
           src={coverSrc}
@@ -49,7 +49,7 @@ export default function CourseCard({
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex flex-wrap gap-2">
           {isEnrolled && (
-            <span className="rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-semibold text-[#1e40af]">
+            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
               Enrolled
             </span>
           )}
@@ -64,7 +64,7 @@ export default function CourseCard({
             </span>
           )}
           {course.category !== null && (
-            <span className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+            <span className="rounded-lg bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700">
               {course.category}
             </span>
           )}
@@ -80,15 +80,15 @@ export default function CourseCard({
           </span>
         </div>
 
-        <h2 className="break-words text-lg font-bold leading-snug text-[#0f172a]">
+        <h2 className="break-words text-lg font-bold leading-snug text-slate-900">
           {course.title}
         </h2>
 
-        <p className="line-clamp-3 text-sm leading-6 text-[#64748b]">
+        <p className="line-clamp-3 text-sm leading-6 text-slate-500">
           {course.description}
         </p>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
           <span>By {course.instructorName}</span>
           {course.learningItemCount !== undefined && (
             <span>
@@ -105,10 +105,10 @@ export default function CourseCard({
             to={`/courses/${course.id}`}
             className={
               isEnrolled
-                ? "block w-full rounded-[10px] bg-[#2563eb] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
+                ? "block w-full rounded-[10px] bg-brand-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
                 : isCompleted
-                  ? "block w-full rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
-                  : "block w-full rounded-[10px] border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-[#2563eb] hover:text-[#2563eb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
+                  ? "block w-full rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                  : "block w-full rounded-[10px] border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-brand-600 hover:text-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             }
           >
             {isEnrolled

@@ -13,13 +13,8 @@ import {
   readStoredOpenSectionIds,
   writeStoredOpenSectionIds,
 } from "./syllabusStorage";
+import { SKILL_AREA_BADGES } from "../../lib/skillTone";
 
-const SKILL_AREA_BADGES: Record<string, string> = {
-  READING: "bg-sky-50 text-sky-700 border border-sky-200",
-  WRITING: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-  LISTENING: "bg-teal-50 text-teal-700 border border-teal-200",
-  SPEAKING: "bg-amber-50 text-amber-800 border border-amber-200",
-};
 
 function formatSkillArea(area: string) {
   return area.charAt(0).toUpperCase() + area.slice(1).toLowerCase();
@@ -52,7 +47,7 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                   aria-hidden="true"
                   className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
                     isLesson
-                      ? "bg-blue-50 text-[#2563eb]"
+                      ? "bg-brand-50 text-brand-600"
                       : "bg-amber-50 text-amber-700"
                   }`}
                 >
@@ -96,7 +91,7 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                         (isLesson ? "lessons" : "practices") +
                         `/${encodeURIComponent(item.id)}`
                       }
-                      className="font-semibold text-[#1d4ed8] hover:underline"
+                      className="font-semibold text-brand-700 hover:underline"
                     >
                       {item.title}
                     </Link>
@@ -133,7 +128,7 @@ function SyllabusItems({ items }: { items: CourseLearningItem[] }) {
                   className={
                     "rounded-md px-2 py-0.5 text-[11px] font-semibold " +
                     (isLesson
-                      ? "bg-blue-50 text-blue-700"
+                      ? "bg-brand-50 text-brand-700"
                       : "bg-amber-50 text-amber-800")
                   }
                 >
@@ -276,7 +271,7 @@ export default function CourseDetailPage({
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
       <Link
         to="/courses"
-        className="mb-5 inline-block text-sm font-semibold text-blue-600 hover:underline"
+        className="mb-5 inline-block text-sm font-semibold text-brand-600 hover:underline"
       >
         ← Back to courses
       </Link>
@@ -302,7 +297,7 @@ export default function CourseDetailPage({
             <button
               type="button"
               onClick={() => setReloadKey((value) => value + 1)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
             >
               Try again
             </button>
@@ -317,11 +312,11 @@ export default function CourseDetailPage({
         </div>
       ) : course ? (
         <>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
             Course overview
           </p>
 
-          <h1 className="mt-1.5 break-words text-2xl font-bold text-[#0f172a]">
+          <h1 className="mt-1.5 break-words text-2xl font-bold text-slate-900">
             {course.title}
           </h1>
 
@@ -358,7 +353,7 @@ export default function CourseDetailPage({
           <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
             <a
               href="#course-syllabus-heading"
-              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1e40af]"
+              className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-800"
             >
               Course syllabus ({items.length}) &darr;
             </a>
@@ -371,7 +366,7 @@ export default function CourseDetailPage({
             >
               <h2
                 id="course-overview-heading"
-                className="text-lg font-semibold text-[#0f172a]"
+                className="text-lg font-semibold text-slate-900"
               >
                 About this course
               </h2>
@@ -381,17 +376,17 @@ export default function CourseDetailPage({
               </p>
 
               {hasLessonProgress && (
-                <div className="mt-5 rounded-xl border border-blue-200/90 border-l-4 border-l-[#2563eb] bg-[#eff6ff]/65 p-4 shadow-sm">
+                <div className="mt-5 rounded-xl border border-brand-200/90 border-l-4 border-l-brand-600 bg-brand-50/65 p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="font-semibold text-[#0f172a]">
+                    <span className="font-semibold text-slate-900">
                       Lesson progress
                     </span>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-[#1e40af]">
+                      <span className="font-semibold text-brand-800">
                         {completedLessons} of {lessonCount}{" "}
                         {lessonCount === 1 ? "lesson" : "lessons"} completed
                       </span>
-                      <span className="rounded-full border border-blue-200 bg-white px-2.5 py-0.5 text-xs font-bold text-[#2563eb]">
+                      <span className="rounded-full border border-brand-200 bg-white px-2.5 py-0.5 text-xs font-bold text-brand-600">
                         {lessonProgressPct}%
                       </span>
                     </div>
@@ -402,14 +397,14 @@ export default function CourseDetailPage({
                     aria-valuenow={completedLessons}
                     aria-valuemin={0}
                     aria-valuemax={lessonCount}
-                    className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-blue-100"
+                    className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-brand-100"
                   >
                     <div
-                      className="h-full rounded-full bg-[#2563eb] transition-all"
+                      className="h-full rounded-full bg-brand-600 transition-all"
                       style={{ width: `${lessonProgressPct}%` }}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-[#64748b]">
+                  <p className="mt-2 text-xs text-slate-500">
                     Tracks published lessons marked complete. Required practice
                     results are verified separately via course completion.
                   </p>
@@ -426,7 +421,7 @@ export default function CourseDetailPage({
                     <dt className="text-[11px] font-medium leading-4 text-slate-500 sm:text-xs">
                       {fact.label}
                     </dt>
-                    <dd className="mt-1 text-xl font-bold tracking-tight text-[#0f172a]">
+                    <dd className="mt-1 text-xl font-bold tracking-tight text-slate-900">
                       {fact.value}
                     </dd>
                   </div>
@@ -446,7 +441,7 @@ export default function CourseDetailPage({
             >
               <h2
                 id="course-syllabus-heading"
-                className="scroll-mt-20 text-lg font-semibold text-[#0f172a]"
+                className="scroll-mt-20 text-lg font-semibold text-slate-900"
               >
                 Course syllabus
               </h2>
@@ -461,20 +456,20 @@ export default function CourseDetailPage({
                     <details
                       key={section.id}
                       open={resolvedOpenSectionIds.includes(section.id)}
-                      className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors open:border-blue-200 open:shadow-sm"
+                      className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors open:border-brand-200 open:shadow-sm"
                     >
                       <summary
                         onClick={(event) =>
                           handleToggleSection(event, section.id)
                         }
-                        className="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50/90 p-4 text-slate-700 transition-colors hover:bg-slate-100 group-open:bg-[#eff6ff]/70 group-open:text-[#1e40af] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden"
+                        className="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50/90 p-4 text-slate-700 transition-colors hover:bg-slate-100 group-open:bg-brand-50/70 group-open:text-brand-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600 [&::-webkit-details-marker]:hidden"
                       >
                         <span className="min-w-0">
                           <span className="block break-words text-sm font-semibold leading-6">
                             {index + 1}. {section.title}
                           </span>
 
-                          <span className="mt-1 block text-xs text-slate-500 group-open:text-[#1e40af]/80">
+                          <span className="mt-1 block text-xs text-slate-500 group-open:text-brand-800/80">
                             {sectionItems.length}{" "}
                             {sectionItems.length === 1
                               ? "learning item"
@@ -484,11 +479,11 @@ export default function CourseDetailPage({
 
                         <span
                           aria-hidden="true"
-                          className="mr-1 h-2 w-2 shrink-0 rotate-45 border-b-2 border-r-2 border-slate-400 transition-transform duration-200 group-open:rotate-[225deg] group-open:border-[#2563eb] motion-reduce:transition-none"
+                          className="mr-1 h-2 w-2 shrink-0 rotate-45 border-b-2 border-r-2 border-slate-400 transition-transform duration-200 group-open:rotate-[225deg] group-open:border-brand-600 motion-reduce:transition-none"
                         />
                       </summary>
 
-                      <div className="border-t border-slate-200 group-open:border-blue-100">
+                      <div className="border-t border-slate-200 group-open:border-brand-100">
                         <SyllabusItems items={sectionItems} />
                       </div>
                     </details>
@@ -516,7 +511,7 @@ export default function CourseDetailPage({
 
               <Link
                 to="/courses"
-                className="mt-5 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="mt-5 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               >
                 ← Back to courses
               </Link>

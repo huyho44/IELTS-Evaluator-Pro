@@ -14,52 +14,27 @@ export type WorkspaceTheme = {
   sectionBorder: string;
 };
 
+// Hue comes from the workspace `brand` scale (see index.css), so every
+// workspace shares the same class recipe.
+const BASE_THEME: Omit<WorkspaceTheme, "variant"> = {
+  eyebrowText: "text-brand-700",
+  primaryButton:
+    "bg-brand-600 text-white shadow-xs hover:bg-brand-700 focus-visible:outline-brand-500",
+  outlineButton:
+    "border-slate-200 bg-white text-slate-800 shadow-xs hover:border-slate-300 hover:bg-slate-50",
+  avatarBadge: "bg-brand-600 text-white",
+  unreadBadge: "border-brand-200 bg-brand-50 text-brand-800",
+  unreadCardBorder: "border-l-brand-600 bg-brand-50/40 hover:bg-brand-50/70",
+  accentLink: "text-brand-700 hover:text-brand-900",
+  accentSummary: "text-brand-800",
+  chipBadge: "border border-brand-200 bg-brand-50 text-brand-800",
+  sectionBorder: "border-slate-200/80",
+};
+
 const THEMES: Record<RoleVariant, WorkspaceTheme> = {
-  student: {
-    variant: "student",
-    eyebrowText: "text-[#2563eb]",
-    primaryButton:
-      "bg-[#2563eb] text-white hover:bg-blue-700 focus-visible:outline-[#2563eb]",
-    outlineButton:
-      "border-slate-200 bg-white text-[#1e40af] hover:border-blue-200 hover:bg-[#eff6ff]/60",
-    avatarBadge: "bg-[#2563eb] text-white",
-    unreadBadge: "border-blue-200 bg-[#eff6ff] text-[#1e40af]",
-    unreadCardBorder: "border-l-[#2563eb] bg-[#eff6ff]/35 hover:bg-[#eff6ff]/55",
-    accentLink: "text-[#1e40af] hover:text-[#2563eb]",
-    accentSummary: "text-[#1e40af]",
-    chipBadge: "bg-[#eff6ff] text-[#1e40af]",
-    sectionBorder: "border-slate-200/80",
-  },
-  instructor: {
-    variant: "instructor",
-    eyebrowText: "text-teal-700",
-    primaryButton:
-      "bg-teal-700 text-white hover:bg-teal-800 focus-visible:outline-teal-700",
-    outlineButton:
-      "border-teal-200 bg-white text-teal-800 hover:border-teal-300 hover:bg-teal-50/70",
-    avatarBadge: "bg-teal-700 text-white",
-    unreadBadge: "border-teal-200 bg-teal-50 text-teal-800",
-    unreadCardBorder: "border-l-teal-600 bg-teal-50/45 hover:bg-teal-50/70",
-    accentLink: "text-teal-700 hover:text-teal-900",
-    accentSummary: "text-teal-800",
-    chipBadge: "bg-teal-50 text-teal-800 border border-teal-200",
-    sectionBorder: "border-teal-100",
-  },
-  admin: {
-    variant: "admin",
-    eyebrowText: "text-violet-700",
-    primaryButton:
-      "bg-violet-700 text-white hover:bg-violet-800 focus-visible:outline-violet-700",
-    outlineButton:
-      "border-violet-200 bg-white text-violet-900 hover:border-violet-300 hover:bg-violet-50",
-    avatarBadge: "bg-violet-700 text-white",
-    unreadBadge: "border-violet-200 bg-violet-50 text-violet-800",
-    unreadCardBorder: "border-l-violet-700 bg-violet-50/45 hover:bg-violet-50/70",
-    accentLink: "text-violet-800 hover:text-violet-950",
-    accentSummary: "text-violet-800",
-    chipBadge: "bg-violet-50 text-violet-900 border border-violet-200",
-    sectionBorder: "border-violet-100",
-  },
+  student: { variant: "student", ...BASE_THEME },
+  instructor: { variant: "instructor", ...BASE_THEME },
+  admin: { variant: "admin", ...BASE_THEME },
 };
 
 export function resolveWorkspaceVariant(
@@ -80,10 +55,10 @@ export function getWorkspaceTheme(
 
 export function getRoleBadgeClass(role: string): string {
   if (role === "ADMIN") {
-    return "border border-violet-200 bg-violet-50 text-violet-900";
+    return "border border-slate-300 bg-slate-100 text-slate-800";
   }
   if (role === "INSTRUCTOR") {
     return "border border-teal-200 bg-teal-50 text-teal-800";
   }
-  return "border border-blue-200 bg-blue-50 text-blue-800";
+  return "border border-indigo-200 bg-indigo-50 text-indigo-800";
 }

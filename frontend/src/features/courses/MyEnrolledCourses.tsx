@@ -93,7 +93,7 @@ function EnrolledCoursesContent({
                     <button
                         type="button"
                         onClick={() => setReloadKey((value) => value + 1)}
-                        className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
                     >
                         Try again
                     </button>
@@ -110,7 +110,7 @@ function EnrolledCoursesContent({
 
                     <Link
                         to="/courses"
-                        className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:underline"
+                        className="mt-4 inline-block text-sm font-semibold text-brand-600 hover:underline"
                     >
                         Browse courses
                     </Link>
@@ -122,7 +122,7 @@ function EnrolledCoursesContent({
                             key={enrollment.id}
                             className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                         >
-                            <span className="self-start rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                            <span className="self-start rounded-lg bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700">
                                 {enrollment.status === "COMPLETED"
                                     ? "Completed"
                                     : "Enrolled"}
@@ -140,7 +140,7 @@ function EnrolledCoursesContent({
                             <div className="mt-auto pt-6">
                                 <Link
                                     to={`/courses/${enrollment.courseId}`}
-                                    className="block rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700 hover:border-blue-600 hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                                    className="block rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700 hover:border-brand-600 hover:text-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
                                 >
                                     View Course
                                 </Link>

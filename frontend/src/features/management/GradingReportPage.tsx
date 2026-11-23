@@ -43,7 +43,6 @@ const METRIC_STATUS_COLOR: Record<string, string> = {
 export default function GradingReportPage() {
   const { pathname } = useLocation();
   const theme = getWorkspaceTheme(pathname, false);
-  const isAdmin = theme.variant === "admin";
   const [report, setReport] = useState<Report | null>(null);
   const [activeTab, setActiveTab] = useState<"summary" | "telemetry">("summary");
   const [loading, setLoading] = useState(true);
@@ -76,14 +75,7 @@ export default function GradingReportPage() {
         className={`flex flex-wrap items-end justify-between gap-4 border-b pb-5 ${theme.sectionBorder}`}
       >
         <div>
-          <p
-            className={`text-xs font-semibold uppercase tracking-wider ${theme.eyebrowText}`}
-          >
-            {isAdmin
-              ? "Admin Console / Grading Reports"
-              : "Instructor Workspace / Grading Reports"}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
             Grading operations
           </h1>
           <p className="mt-1 text-sm text-slate-600">
