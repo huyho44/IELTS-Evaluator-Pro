@@ -424,6 +424,20 @@ async function main() {
         });
       }
 
+      // One published Reading skill so instructors can author auto-graded quizzes.
+      const readingSkill = await tx.skill.upsert({
+        where: { code: 'demo.reading.detail' },
+        update: {},
+        create: {
+          code: 'demo.reading.detail',
+          name: 'Scanning for specific detail',
+          skillArea: 'READING',
+          observableDefinition:
+            'Locates names, numbers and facts in a passage and copies them accurately.',
+          status: 'PUBLISHED',
+        },
+      });
+
       const writing = await seedWriting(tx, teacher.id, [an.id, binh.id]);
       // Learner attempts, grades, evidence and recommendations must come from actual workflows.
       return {
@@ -433,6 +447,7 @@ async function main() {
         answerKeyVersion: answerKey.versionNo,
         assignmentId: assignment.id,
         unpublishedDemoRubricVersion: rubric.versionNo,
+        readingSkill: readingSkill.code,
         writing,
       };
     },

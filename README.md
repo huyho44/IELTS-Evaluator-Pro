@@ -49,7 +49,26 @@ Sau khi seed database mới, mật khẩu chung là `IeltsDemo123!` (hoặc `DEM
 | Instructor | `teacher@ielts.example`      | Review queue; Course authoring                  |
 | Admin      | `admin@ielts.example`        | Administration; AI configuration                |
 
-Seed gồm khóa Reading và **[Demo] Writing Clinic: evidence to transfer**, 6 kỹ năng Writing và 6 hoạt động. Các mô tả rubric là tài liệu giảng dạy mẫu, chưa được hiệu chuẩn thành thang chấm IELTS chính thức. Bài làm, điểm và bằng chứng kỹ năng được tạo qua thao tác sử dụng; seed không giả kết quả học tập.
+Seed gồm khóa Reading và **[Demo] Writing Clinic: evidence to transfer**, 6 kỹ năng Writing, 1 kỹ năng Reading và 6 hoạt động. Các mô tả rubric là tài liệu giảng dạy mẫu, chưa được hiệu chuẩn thành thang chấm IELTS chính thức. Bài làm, điểm và bằng chứng kỹ năng được tạo qua thao tác sử dụng; seed không giả kết quả học tập.
+
+## Dữ liệu test (chỉ local/staging)
+
+`npm run db:reset:test` (trong `backend`) **xóa toàn bộ database đang cấu hình**, chạy lại migration, seed gốc và `prisma/seed-test.ts`. Chỉ dùng với database dev; không chạy trên production. Không đặt `DEMO_GRADING_PROVIDER` khi chạy, để bài Writing đi vào hàng review của giảng viên. Seed test gọi chính các service của ứng dụng (nộp bài → giảng viên claim/confirm → công bố; quiz chấm theo đáp án), nên điểm, bằng chứng kỹ năng, thông báo và audit đều sinh từ luồng thật. Chạy lại `npm run db:seed:test` trên database đã có dữ liệu test sẽ tự dừng.
+
+| Email                          | Vai trò    | Dùng để test                                                                                     |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
+| `admin@ielts.example`          | Admin      | Đơn xin làm giảng viên, báo cáo về khóa học, analytics, audit log, phân công giảng viên           |
+| `teacher@ielts.example`        | Instructor | Review queue (Binh chờ chấm, Chi đã claim), báo cáo chờ xử lý, thảo luận, soạn nội dung và quiz |
+| `teacher.lan@ielts.example`    | Instructor | Sở hữu IELTS Listening Starter, reviewer của Writing Clinic, đã chấm bài Dung                    |
+| `student.an@ielts.example`     | Learner    | Có điểm chính thức, kỹ năng, gợi ý; đã xong Reading Foundations; Continue learning; quiz sắp hạn |
+| `student.binh@ielts.example`   | Learner    | Bài chờ chấm; bị chặn ghi danh Reading Intermediate vì chưa xong khóa tiên quyết                 |
+| `student.chi@ielts.example`    | Learner    | Bài đang được chấm; học Listening Starter; người gửi báo cáo                                     |
+| `student.dung@ielts.example`   | Learner    | Có điểm bài Transfer và một phúc khảo đang chờ                                                   |
+| `student.em@ielts.example`     | Learner    | Học viên mới, chỉ học Listening Starter                                                          |
+| `applicant.minh@ielts.example` | Learner    | Có đơn xin làm giảng viên đang chờ duyệt                                                         |
+| `suspended@ielts.example`      | Learner    | Tài khoản bị khóa, không đăng nhập được                                                          |
+
+Khóa học: Reading Foundations, Writing Clinic, **IELTS Reading Intermediate** (yêu cầu Foundations; có chương và bài bị ẩn; 2 quiz, một quiz hết hạn trong 24 giờ sau khi seed), **IELTS Listening Starter** (của Lan) và **IELTS Speaking Lab (draft)**.
 
 ## Bật AI thật
 

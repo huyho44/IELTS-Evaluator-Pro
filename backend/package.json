@@ -8,6 +8,8 @@
   "type": "module",
   "scripts": {
     "db:seed": "prisma generate && prisma db seed",
+    "db:seed:test": "tsx prisma/seed-test.ts",
+    "db:reset:test": "prisma migrate reset --force && npm run db:seed && npm run db:seed:test",
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
