@@ -6,6 +6,7 @@ import AuthoringPage from "../management/AuthoringPage";
 import GradingReportPage from "../management/GradingReportPage";
 import ReviewDetailPage from "./pages/ReviewDetailPage";
 import ReviewQueuePage from "./pages/ReviewQueuePage";
+import StaffDiscussionsPage from "../discussions/StaffDiscussionsPage";
 
 export function instructorRoutes() {
   return (
@@ -14,6 +15,7 @@ export function instructorRoutes() {
         <Route index element={<Navigate to="reviews" replace />} />
         <Route path="reviews" element={<ReviewQueuePage />} />
         <Route path="reviews/:id" element={<ReviewDetailPage />} />
+        <Route path="discussions" element={<StaffDiscussionsPage />} />
         <Route path="authoring" element={<AuthoringPage />} />
         <Route
           path="courses"

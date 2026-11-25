@@ -84,6 +84,7 @@ node scripts/catalog-check.mjs
 node scripts/instructor-check.mjs
 node scripts/student-learning-check.mjs
 node scripts/course-completion-check.mjs
+node scripts/discussion-check.mjs
 ```
 
 `test:integration` tự tạo database cục bộ tên ngẫu nhiên kết thúc `_test`, áp dụng migration, seed và kiểm thử, rồi xóa đúng database tạm đó. Cần quyền tạo database; không reset database dự án. `test:smoke` đăng nhập/đăng xuất ba tài khoản demo và đọc API; hai API kỹ năng/gợi ý có thể lưu snapshot và recommendation run, không tạo bài làm hoặc dùng quota.

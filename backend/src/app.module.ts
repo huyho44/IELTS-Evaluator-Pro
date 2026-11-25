@@ -11,6 +11,7 @@ import { GradingModule } from './grading/grading.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { RecommendationsModule } from './recommendations/recommendations.module.js';
 import { ManagementModule } from './management/management.module.js';
+import { DiscussionsModule } from './discussions/discussions.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ManagementModule } from './management/management.module.js';
     ReviewsModule,
     RecommendationsModule,
     ManagementModule,
+    DiscussionsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

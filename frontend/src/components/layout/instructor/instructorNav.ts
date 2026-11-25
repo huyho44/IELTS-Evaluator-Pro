@@ -1,5 +1,8 @@
 export type InstructorSectionKey =
-  "review-queue" | "course-authoring" | "grading-reports";
+  | "review-queue"
+  | "discussions"
+  | "course-authoring"
+  | "grading-reports";
 
 export interface InstructorNavItem {
   key: InstructorSectionKey;
@@ -16,6 +19,13 @@ export const INSTRUCTOR_NAV_ITEMS: InstructorNavItem[] = [
     subtitle: "Review submitted work",
     to: "/teacher/reviews",
     matchPrefixes: ["/teacher/reviews"],
+  },
+  {
+    key: "discussions",
+    label: "Discussions",
+    subtitle: "Answer learner questions",
+    to: "/teacher/discussions",
+    matchPrefixes: ["/teacher/discussions"],
   },
   {
     key: "course-authoring",

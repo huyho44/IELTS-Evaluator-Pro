@@ -1,6 +1,7 @@
 import CompletionBadge from "./CompletionBadge";
-import { type MouseEvent, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { type MouseEvent, useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import DiscussionBoard from "../discussions/DiscussionBoard";
 import { useSession } from "../auth/session";
 import {
   getCourseDetail,
@@ -266,6 +267,29 @@ export default function CourseDetailPage({
   const lessonProgressPct =
     lessonCount > 0 ? Math.round((completedLessons / lessonCount) * 100) : 0;
 
+  // Discussion deep links: ?thread=<id>#discussion (used by notifications).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const threadId = searchParams.get("thread");
+  const selectThread = useCallback(
+    (id: string | null) =>
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (id) next.set("thread", id);
+          else next.delete("thread");
+          return next;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  );
+  const courseLoaded = Boolean(course);
+  useEffect(() => {
+    if (courseLoaded && location.hash === "#discussion")
+      document.getElementById("discussion")?.scrollIntoView();
+  }, [courseLoaded, location.hash]);
+
   return (
     <div className="student-surface-overview min-h-[calc(100vh-4rem)]">
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
@@ -516,6 +540,14 @@ export default function CourseDetailPage({
                 ← Back to courses
               </Link>
             </aside>
+          </div>
+
+          <div id="discussion" className="mt-6 scroll-mt-20">
+            <DiscussionBoard
+              courseId={course.id}
+              selectedThreadId={threadId}
+              onSelectThread={selectThread}
+            />
           </div>
         </>
       ) : null}

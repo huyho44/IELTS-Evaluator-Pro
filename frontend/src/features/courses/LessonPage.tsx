@@ -1,6 +1,7 @@
 import CompletionBadge from "./CompletionBadge";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import DiscussionBoard from "../discussions/DiscussionBoard";
 import {
     getCourseDetail,
     type CourseDetail,
@@ -417,6 +418,15 @@ function LessonContent({
                                 ))}
                             </nav>
                         </aside>
+                    </div>
+
+                    <div id="lesson-questions" className="mt-6 scroll-mt-20">
+                        <DiscussionBoard
+                            courseId={courseId}
+                            contextItemId={lessonId}
+                            heading="Questions about this lesson"
+                            description="Ask your instructor or classmates about this lesson. All course threads are on the course page."
+                        />
                     </div>
                 </>
             ) : null}
