@@ -14,7 +14,17 @@ import {
   sha256,
   verifyPassword,
 } from '../common/crypto.js';
+import { MailerService } from './mailer.service.js';
 import { band, object, text, uuid } from './validation.js';
+
+const escapeHtml = (value: string) =>
+  value.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        c
+      ]!,
+  );
 
 export type Actor = {
   id: string;
@@ -35,11 +45,24 @@ const publicSelect = {
   userRoles: { select: { role: { select: { code: true } } } },
 } as const;
 const TTL = 7 * 86400000;
+// Password reset links expire after 30 minutes. At most RESET_LIMIT links are
+// issued per account within RESET_WINDOW; extra requests are silently ignored.
+export const RESET_TTL = 30 * 60000;
+export const RESET_WINDOW = 15 * 60000;
+export const RESET_LIMIT = 3;
+const RESET_REQUESTED = {
+  message:
+    'If an active account uses this email, a password reset link has been sent.',
+};
+const INVALID_RESET = 'This reset link is invalid or has expired';
 
 @Injectable()
 export class AuthService {
   // Inject required services.
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailer: MailerService = new MailerService(),
+  ) {}
   // Get the JWT signing secret.
   private secret() {
     const secret = process.env.AUTH_TOKEN_SECRET;
@@ -96,9 +119,7 @@ export class AuthService {
   // Validate email and password.
   private credentials(input: unknown, registering = false) {
     const dto = object(input);
-    const email = text(dto.email, 'email', 320).toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw new BadRequestException('Invalid email');
+    const email = this.email(dto.email);
     if (
       typeof dto.password !== 'string' ||
       dto.password.length < (registering ? 8 : 1) ||
@@ -106,6 +127,176 @@ export class AuthService {
     )
       throw new BadRequestException('Invalid password length');
     return { dto, email, password: dto.password };
+  }
+  private email(value: unknown) {
+    const email = text(value, 'email', 320).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new BadRequestException('Invalid email');
+    return email;
+  }
+  // New passwords follow the registration rule: 8 to 256 characters.
+  private newPassword(value: unknown, field = 'password') {
+    if (typeof value !== 'string' || value.length < 8 || value.length > 256)
+      throw new BadRequestException(
+        `${field} must be between 8 and 256 characters`,
+      );
+    return value;
+  }
+  private resetLink(token: string) {
+    const base = (process.env.APP_BASE_URL || 'http://localhost:5173').replace(
+      /\/+$/,
+      '',
+    );
+    return `${base}/reset-password?token=${token}`;
+  }
+  // Issue a single-use reset link. The response never reveals whether the
+  // email belongs to an account, is inactive or is rate limited.
+  async forgotPassword(input: unknown) {
+    const email = this.email(object(input).email);
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, status: true, displayName: true },
+    });
+    if (!user || user.status !== 'ACTIVE') return RESET_REQUESTED;
+    const recent = await this.prisma.passwordResetToken.count({
+      where: {
+        userId: user.id,
+        createdAt: { gt: new Date(Date.now() - RESET_WINDOW) },
+      },
+    });
+    if (recent >= RESET_LIMIT) return RESET_REQUESTED;
+    const token = newRefreshToken();
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: sha256(token),
+          expiresAt: new Date(Date.now() + RESET_TTL),
+        },
+      });
+      await tx.auditEvent.create({
+        data: {
+          actorId: user.id,
+          action: 'PASSWORD_RESET_REQUESTED',
+          entityType: 'User',
+          entityKey: user.id,
+          afterJson: { resetTokenId: row.id, expiresAt: row.expiresAt },
+        },
+      });
+    });
+    const link = this.resetLink(token);
+    const minutes = RESET_TTL / 60000;
+    await this.mailer.send({
+      to: email,
+      subject: 'Reset your IELTS Evaluator Pro password',
+      text: `Hello ${user.displayName},\n\nOpen this link to choose a new password. It expires in ${minutes} minutes and can be used once:\n${link}\n\nIf you did not request this, you can ignore this email.`,
+      html: `<p>Hello ${escapeHtml(user.displayName)},</p><p><a href="${link}">Choose a new password</a>. The link expires in ${minutes} minutes and can be used once.</p><p>If you did not request this, you can ignore this email.</p>`,
+    });
+    return RESET_REQUESTED;
+  }
+  // Consume a reset token, set the new password and sign out every session.
+  async resetPassword(input: unknown) {
+    const dto = object(input);
+    const token = text(dto.token, 'token', 128);
+    const passwordHash = hashPassword(this.newPassword(dto.password));
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.passwordResetToken.findUnique({
+        where: { tokenHash: sha256(token) },
+        include: { user: { select: { status: true } } },
+      });
+      if (
+        !row ||
+        row.usedAt ||
+        row.expiresAt <= now ||
+        row.user.status !== 'ACTIVE'
+      )
+        throw new BadRequestException(INVALID_RESET);
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: { id: row.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) throw new BadRequestException(INVALID_RESET);
+      await tx.user.update({
+        where: { id: row.userId },
+        data: { passwordHash },
+      });
+      // Other outstanding links for this account stop working as well.
+      await tx.passwordResetToken.updateMany({
+        where: { userId: row.userId, usedAt: null },
+        data: { usedAt: now },
+      });
+      const revoked = await tx.authSession.updateMany({
+        where: { userId: row.userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      await tx.auditEvent.create({
+        data: {
+          actorId: row.userId,
+          action: 'PASSWORD_RESET',
+          entityType: 'User',
+          entityKey: row.userId,
+          afterJson: { resetTokenId: row.id, revokedSessions: revoked.count },
+        },
+      });
+    });
+    return { message: 'Your password has been reset. Please sign in again.' };
+  }
+  // Change the password of the signed-in user. Other sessions are signed out;
+  // the current session stays active. A wrong current password returns 400,
+  // not 401, so clients do not treat it as an expired session.
+  async changePassword(header: string | undefined, input: unknown) {
+    const actor = await this.authenticate(header);
+    const { sid } = this.decode(header!.slice(7));
+    const dto = object(input);
+    if (
+      typeof dto.currentPassword !== 'string' ||
+      !dto.currentPassword ||
+      dto.currentPassword.length > 256
+    )
+      throw new BadRequestException('currentPassword is required');
+    const next = this.newPassword(dto.newPassword, 'newPassword');
+    const user = await this.prisma.user.findUnique({
+      where: { id: actor.id },
+      select: { passwordHash: true },
+    });
+    if (!user || !verifyPassword(dto.currentPassword, user.passwordHash))
+      throw new BadRequestException('Current password is incorrect');
+    if (verifyPassword(next, user.passwordHash))
+      throw new BadRequestException(
+        'New password must differ from the current password',
+      );
+    const passwordHash = hashPassword(next);
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      // Compare-and-set on the old hash rejects a concurrent password change.
+      const changed = await tx.user.updateMany({
+        where: { id: actor.id, passwordHash: user.passwordHash },
+        data: { passwordHash },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException(
+          'Your password was changed elsewhere. Please sign in again.',
+        );
+      const revoked = await tx.authSession.updateMany({
+        where: { userId: actor.id, revokedAt: null, id: { not: sid } },
+        data: { revokedAt: now },
+      });
+      await tx.passwordResetToken.updateMany({
+        where: { userId: actor.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      await tx.auditEvent.create({
+        data: {
+          actorId: actor.id,
+          action: 'PASSWORD_CHANGED',
+          entityType: 'User',
+          entityKey: actor.id,
+          afterJson: { revokedOtherSessions: revoked.count },
+        },
+      });
+    });
+    return { message: 'Password changed. Other sessions were signed out.' };
   }
   // Register a learner account.
   async register(input: unknown) {

@@ -62,7 +62,7 @@ Kế hoạch này đối chiếu đề bài CO3103 (`proposal_EN (1).pdf`, mục
   - Gửi mail bằng `nodemailer` qua Gmail App Password của tài khoản nhóm. Cấu hình `SMTP_*` và `APP_BASE_URL` trong `.env`, cập nhật `.env.example` và `.env.mvp.example`.
   - `POST auth/forgot-password`: luôn trả 202 để không lộ email có tồn tại hay không; có rate limit.
   - `POST auth/reset-password`: token dùng một lần, hết hạn sau 30 phút, chỉ lưu hash. Đặt lại xong thì thu hồi mọi `AuthSession`.
-  - `POST me/password`: đổi mật khẩu khi đã đăng nhập.
+  - `POST auth/change-password`: đổi mật khẩu khi đã đăng nhập (sai mật khẩu hiện tại trả 400, không phải 401).
   - Ghi `AuditEvent` cho các thao tác này.
   - Dùng lại hàm scrypt trong `backend/src/auth/auth.service.ts`.
 - Frontend: thêm `ForgotPasswordPage` và `ResetPasswordPage`, link "Forgot password?" trên `LoginPage`, form đổi mật khẩu trong `ProfilePage`.

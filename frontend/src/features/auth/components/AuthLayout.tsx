@@ -28,17 +28,24 @@ export default function AuthLayout({
   description,
   children,
   register = false,
+  footer,
+  allowSignedIn = false,
 }: {
   title: string;
   description: string;
   children: ReactNode;
   register?: boolean;
+  // Replaces the default "Sign in / Sign up" switch below the form.
+  footer?: ReactNode;
+  // Keep the page open for a signed-in user (for example a reset link).
+  allowSignedIn?: boolean;
 }) {
   const { session } = useSession();
   const location = useLocation();
   const from = safeReturn(location.state?.from, "/");
   const backTo = courseBackDestination(from);
-  if (session) return <Navigate to={signedInDestination(from, session.user.roles)} replace />;
+  if (session && !allowSignedIn)
+    return <Navigate to={signedInDestination(from, session.user.roles)} replace />;
   return (
     <main
       data-workspace="student"
@@ -104,14 +111,18 @@ export default function AuthLayout({
             <p className="mb-8 mt-2 text-[15px] text-slate-600">{description}</p>
             {children}
             <p className="mt-8 text-center text-sm text-slate-600">
-              {register ? "Already have an account? " : "Don't have an account? "}
-              <Link
-                className="font-semibold text-brand-700 underline-offset-4 hover:underline"
-                to={register ? "/login" : "/register"}
-                state={{ from }}
-              >
-                {register ? "Sign in" : "Sign up"}
-              </Link>
+              {footer ?? (
+                <>
+                  {register ? "Already have an account? " : "Don't have an account? "}
+                  <Link
+                    className="font-semibold text-brand-700 underline-offset-4 hover:underline"
+                    to={register ? "/login" : "/register"}
+                    state={{ from }}
+                  >
+                    {register ? "Sign in" : "Sign up"}
+                  </Link>
+                </>
+              )}
             </p>
           </section>
         </div>

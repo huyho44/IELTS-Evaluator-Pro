@@ -11,6 +11,12 @@ x-backend: &backend
     OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
     GRADING_PROVIDER_URL: ${GRADING_PROVIDER_URL:-}
     GRADING_PROVIDER_KEY: ${GRADING_PROVIDER_KEY:-}
+    APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+    SMTP_HOST: ${SMTP_HOST:-}
+    SMTP_PORT: ${SMTP_PORT:-465}
+    SMTP_USER: ${SMTP_USER:-}
+    SMTP_PASS: ${SMTP_PASS:-}
+    MAIL_FROM: ${MAIL_FROM:-}
   depends_on:
     migrate:
       condition: service_completed_successfully

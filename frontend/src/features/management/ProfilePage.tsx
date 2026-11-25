@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocation } from "react-router-dom";
 import { refreshSession, useSession } from "../auth/session";
+import ChangePasswordForm from "../auth/components/ChangePasswordForm";
 import {
   managementRequest as request,
   managementError,
@@ -313,6 +314,8 @@ function Content({ student }: { student: boolean }) {
               </div>
             </fieldset>
           </form>
+
+          <ChangePasswordForm buttonClassName={theme.primaryButton} />
 
           {student && (canApplyAsInstructor || applications.length > 0) && (
             <section className={`${panel} shadow-sm`}>

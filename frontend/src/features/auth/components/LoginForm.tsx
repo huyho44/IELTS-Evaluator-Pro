@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { signIn } from '../session';
 import Spinner from '../../../components/ui/Spinner';
 import FormAlert from './FormAlert';
@@ -36,6 +36,11 @@ export default function LoginForm() {
       {location.state?.registered && (
         <FormAlert tone="success">Account created. Please sign in.</FormAlert>
       )}
+      {location.state?.passwordReset && (
+        <FormAlert tone="success">
+          Your password has been reset. Sign in with your new password.
+        </FormAlert>
+      )}
       {error && <FormAlert tone="error">{error}</FormAlert>}
 
       <div>
@@ -60,6 +65,14 @@ export default function LoginForm() {
         onChange={setPassword}
         autoComplete="current-password"
       />
+      <div className="-mt-2 flex justify-end">
+        <Link
+          to="/forgot-password"
+          className="rounded text-sm font-semibold text-brand-700 underline-offset-4 hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       <button type="submit" disabled={loading} className="ui-btn-primary min-h-11 w-full">
         {loading && <Spinner className="h-4 w-4" />}

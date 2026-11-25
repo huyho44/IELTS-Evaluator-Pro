@@ -15,6 +15,23 @@ export class AuthController {
   @Post('refresh') @HttpCode(200) refresh(@Body() body: unknown) {
     return this.auth.refresh(body);
   }
+  // POST /auth/forgot-password
+  @Post('forgot-password') @HttpCode(202) forgotPassword(
+    @Body() body: unknown,
+  ) {
+    return this.auth.forgotPassword(body);
+  }
+  // POST /auth/reset-password
+  @Post('reset-password') @HttpCode(200) resetPassword(@Body() body: unknown) {
+    return this.auth.resetPassword(body);
+  }
+  // POST /auth/change-password
+  @Post('change-password') @HttpCode(200) changePassword(
+    @Headers('authorization') header: string | undefined,
+    @Body() body: unknown,
+  ) {
+    return this.auth.changePassword(header, body);
+  }
   // POST /auth/logout
   @Post('logout') @HttpCode(200) logout(
     @Headers('authorization') header?: string,

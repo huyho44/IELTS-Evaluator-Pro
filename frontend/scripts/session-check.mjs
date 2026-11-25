@@ -154,6 +154,7 @@ console.log(
 
 // Registration contract is tested with a mock transport, never a live account.
 let registration;
+const authCalls = [];
 const authContext = {
   exports: {},
   require: (path) =>
@@ -162,13 +163,24 @@ const authContext = {
           __esModule: true,
           default: {
             post: async (url, payload) => {
-              registration = { url, payload };
-              return {
-                data: {
-                  message: "Register Successful",
-                  user: { id: "learner" },
-                },
-              };
+              authCalls.push({ url, payload });
+              if (url === "/auth/register") {
+                registration = { url, payload };
+                return {
+                  data: {
+                    message: "Register Successful",
+                    user: { id: "learner" },
+                  },
+                };
+              }
+              if (url === "/auth/reset-password")
+                throw {
+                  response: {
+                    status: 400,
+                    data: { message: "This reset link is invalid or has expired" },
+                  },
+                };
+              return { data: { message: `ok ${url}` } };
             },
           },
         }
@@ -203,6 +215,42 @@ assert.equal(
   "registration must not create a session",
 );
 console.log("Registration contract mock passed. No live account was created.");
+
+// Password recovery/change request shapes and server error messages.
+const assertJson = (actual, expected) =>
+  assert.equal(JSON.stringify(actual), JSON.stringify(expected));
+const { authApi: recovery, authError } = authContext.exports;
+assert.equal(
+  await recovery.forgotPassword("an@example.com"),
+  "ok /auth/forgot-password",
+);
+assertJson(authCalls.at(-1), {
+  url: "/auth/forgot-password",
+  payload: { email: "an@example.com" },
+});
+let resetFailure;
+try {
+  await recovery.resetPassword("a".repeat(64), "NewPassword1");
+} catch (cause) {
+  resetFailure = authError(cause, "fallback");
+}
+assertJson(authCalls.at(-1).payload, {
+  token: "a".repeat(64),
+  password: "NewPassword1",
+});
+assert.equal(resetFailure, "This reset link is invalid or has expired");
+assert.equal(authError(new Error("offline"), "fallback"), "fallback");
+assert.equal(
+  await recovery.changePassword("OldPassword1", "NewPassword1"),
+  "ok /auth/change-password",
+);
+assertJson(authCalls.at(-1), {
+  url: "/auth/change-password",
+  payload: { currentPassword: "OldPassword1", newPassword: "NewPassword1" },
+});
+assert.equal(api.safeReturn("/reset-password?token=x"), "/courses");
+assert.equal(api.safeReturn("/forgot-password"), "/courses");
+console.log("Password recovery contract mock passed.");
 
 responder = () => ok(session("storage-test"));
 const save = context.localStorage.setItem;

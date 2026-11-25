@@ -6,6 +6,8 @@ import { studentRoutes } from "./features/student/studentRoutes";
 import PrivateRoute from "./features/auth/components/PrivateRoute";
 import LoginPage from "./features/auth/pages/LoginPage";
 import RegisterPage from "./features/auth/pages/RegisterPage";
+import ForgotPasswordPage from "./features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "./features/auth/pages/ResetPasswordPage";
 import {
   expireSession,
   restoreSession,
@@ -64,6 +66,8 @@ export default function App() {
           <Route path="/" element={<WorkspaceHome />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/logout" element={<LogoutPage />} />
           {studentRoutes(requestToken, onSessionExpired)}
           {instructorRoutes()}
