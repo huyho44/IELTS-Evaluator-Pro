@@ -15,7 +15,7 @@
 | Theo dõi/evaluation | Báo cáo theo quyền, token/latency/error, runner offline/live, MAE/coverage/anchors, baseline fixed-path và lowest-criterion                                |
 | Đóng gói            | Docker API/worker/frontend, migration một lần, database private, HTTPS qua Caddy                                                                           |
 
-Luồng tập trung là **Writing Task 2**. UI thu âm Speaking, authoring ngân hàng câu hỏi Listening/Reading đầy đủ và RAG nằm ngoài bản MVP này. Reading demo vẫn làm và chấm theo answer key. Runtime hàng đợi dùng PostgreSQL làm nguồn công việc bền vững; Redis trong Compose phát triển cũ chưa được dùng để điều phối chấm.
+Luồng tập trung là **Writing Task 2**. UI thu âm Speaking, authoring ngân hàng câu hỏi Listening/Reading đầy đủ và RAG nằm ngoài bản MVP này. Reading demo vẫn làm và chấm theo answer key. Runtime hàng đợi dùng PostgreSQL làm nguồn công việc bền vững; không dùng Redis.
 
 ## Kịch bản demo từ đầu đến cuối
 

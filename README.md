@@ -65,6 +65,7 @@ OpenAI adapter sử dụng [Structured Outputs của Responses API](https://deve
 - [Triển khai Docker/HTTPS](docs/deployment.md): API, worker, frontend, migration, PostgreSQL riêng và Caddy.
 - [Evaluation](docs/evaluation.md): dữ liệu dev/holdout, MAE, evidence, độ trễ/token và hai baseline recommendation.
 - [Proposal](docs/New%20Proposal.md).
+- [Kế hoạch hoàn thiện 23/11–13/12/2026](docs/completion-plan.md): việc còn lại theo đề CO3103, phân công và mốc thời gian.
 
 ```powershell
 # backend

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. Cơ sở dữ liệu PostgreSQL (Tích hợp sẵn pgvector cho AI)
   postgres:
@@ -28,16 +26,5 @@ services:
       - postgres
     restart: unless-stopped
 
-  # 3. Hàng đợi Redis (Dùng cho BullMQ xử lý AI)
-  redis:
-    image: redis:7-alpine
-    container_name: ielts_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-    restart: unless-stopped
-
 volumes:
   pgdata:
-  redisdata:

@@ -16,3 +16,7 @@ build/
 
 # temporary review renders and scratch files
 /tmp/
+
+# Python bytecode from local skill scripts
+__pycache__/
+*.pyc
