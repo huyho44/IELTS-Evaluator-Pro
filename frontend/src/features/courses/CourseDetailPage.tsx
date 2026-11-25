@@ -2,6 +2,7 @@ import CompletionBadge from "./CompletionBadge";
 import { type MouseEvent, useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import DiscussionBoard from "../discussions/DiscussionBoard";
+import ReportButton from "../moderation/ReportButton";
 import { useSession } from "../auth/session";
 import {
   getCourseDetail,
@@ -370,8 +371,19 @@ export default function CourseDetailPage({
             </span>
 
             <span className="text-sm text-slate-600">
-              By {course.creator.displayName}
+              {course.instructors?.length
+                ? `${course.instructors.length === 1 ? "Instructor" : "Instructors"}: ${course.instructors
+                    .map((instructor) => instructor.displayName)
+                    .join(", ")}`
+                : `By ${course.creator.displayName}`}
             </span>
+            {session && (
+              <ReportButton
+                targetType="COURSE"
+                targetId={course.id}
+                label="Report course"
+              />
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
@@ -451,6 +463,42 @@ export default function CourseDetailPage({
                   </div>
                 ))}
               </dl>
+
+              {course.prerequisites && course.prerequisites.length > 0 && (
+                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Prerequisites
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Complete these courses before enrolling.
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {course.prerequisites.map((prerequisite) => (
+                      <li
+                        key={prerequisite.id}
+                        className="flex flex-wrap items-center gap-2 text-sm"
+                      >
+                        <Link
+                          to={`/courses/${prerequisite.id}`}
+                          className="font-medium text-brand-700 hover:underline"
+                        >
+                          {prerequisite.title}
+                        </Link>
+                        <span
+                          className={
+                            "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
+                            (prerequisite.completed
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-white text-slate-600 ring-1 ring-slate-200")
+                          }
+                        >
+                          {prerequisite.completed ? "Completed" : "Not completed"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <CourseEnrollmentPanel
                 courseId={course.id}

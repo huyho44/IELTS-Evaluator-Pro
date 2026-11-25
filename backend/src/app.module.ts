@@ -12,6 +12,9 @@ import { ReviewsModule } from './reviews/reviews.module.js';
 import { RecommendationsModule } from './recommendations/recommendations.module.js';
 import { ManagementModule } from './management/management.module.js';
 import { DiscussionsModule } from './discussions/discussions.module.js';
+import { ModerationModule } from './moderation/moderation.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { DiscussionsModule } from './discussions/discussions.module.js';
     RecommendationsModule,
     ManagementModule,
     DiscussionsModule,
+    ModerationModule,
+    AnalyticsModule,
+    NotificationsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

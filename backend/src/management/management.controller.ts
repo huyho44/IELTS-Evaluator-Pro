@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Headers,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -105,6 +106,11 @@ export class ManagementController {
     @Headers('authorization') h?: string,
   ) {
     return this.service.notifications(await this.auth.authenticate(h));
+  }
+  @Post('notifications/read-all') @HttpCode(200) async readAll(
+    @Headers('authorization') h?: string,
+  ) {
+    return this.service.readAllNotifications(await this.auth.authenticate(h));
   }
   @Post('notifications/:id/read') async read(
     @Param('id', ParseUUIDPipe) id: string,

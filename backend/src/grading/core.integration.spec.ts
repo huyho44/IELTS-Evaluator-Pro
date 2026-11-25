@@ -4,6 +4,7 @@ import { AuthService, type Actor } from '../auth/auth.service.js';
 import { AccessService } from '../auth/access.service.js';
 import { CoursesService } from '../courses/courses.service.js';
 import { CourseAuthoringService } from '../courses/course-authoring.service.js';
+import { QuizAuthoringService } from '../courses/quiz-authoring.service.js';
 import { SubmissionsService } from '../submissions/submissions.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 import { RecommendationsService } from '../recommendations/recommendations.service.js';
@@ -506,6 +507,113 @@ describe.skipIf(!testUrl)('core modules against isolated PostgreSQL', () => {
         where: { revisionId: receipt.revisionId },
       }),
     ).toBe(1);
+  });
+
+  it('grades an instructor-authored quiz from its own answer key and notifies learners', async () => {
+    const readingSkill = await db.skill.create({
+      data: {
+        code: 'READ_' + suffix,
+        name: 'Scanning for detail',
+        skillArea: 'READING',
+        observableDefinition: 'Finds specific information',
+        status: 'PUBLISHED',
+      },
+    });
+    const quizzes = new QuizAuthoringService(db, access);
+    const quiz = await quizzes.create(
+      courseId,
+      {
+        title: 'Authored reading quiz',
+        position: 40,
+        skillArea: 'READING',
+        promptText: 'The museum opens at 10 a.m. Tickets cost 5 pounds.',
+        instructions: 'Answer all questions.',
+        skillIds: [readingSkill.id],
+        questions: [
+          {
+            type: 'SINGLE_CHOICE',
+            prompt: 'When does the museum open?',
+            options: [
+              { text: '9 a.m.', correct: false },
+              { text: '10 a.m.', correct: true },
+            ],
+          },
+          {
+            type: 'MULTIPLE_CHOICE',
+            prompt: 'Which facts are stated?',
+            marks: 2,
+            options: [
+              { text: 'Opening time', correct: true },
+              { text: 'Ticket price', correct: true },
+              { text: 'Closing time', correct: false },
+            ],
+          },
+          {
+            type: 'SHORT_ANSWER',
+            prompt: 'How much is a ticket (in pounds)?',
+            acceptedAnswers: ['5', 'five'],
+            maxWords: 1,
+          },
+        ],
+      },
+      teacher,
+    );
+    expect(quiz).toMatchObject({ questionCount: 3, maxScore: 4 });
+    expect(
+      await db.notification.count({
+        where: {
+          recipientId: learner.id,
+          dedupeKey: `NEW_CONTENT:${quiz.id}:${learner.id}`,
+        },
+      }),
+    ).toBe(1);
+    const version = await author.assignment(
+      courseId,
+      {
+        title: 'Authored reading quiz',
+        activityVersionId: quiz.activityVersionId,
+        mode: 'GRADED',
+        maxAttempts: 2,
+        releasePolicyJson: { releaseMode: 'IMMEDIATE' },
+      },
+      teacher,
+    );
+    const attempt = await submissions.start(version.assignmentId, learner);
+    const items = await db.assessmentItem.findMany({
+      where: { activityVersionId: quiz.activityVersionId },
+      include: {
+        questionVersion: {
+          include: { questionOptions: { orderBy: { position: 'asc' } } },
+        },
+      },
+      orderBy: { position: 'asc' },
+    });
+    const option = (index: number, code: string) =>
+      items[index].questionVersion.questionOptions.find(
+        (o) => o.optionCode === code,
+      )!.id;
+    const receipt = await submissions.submitAssignment(
+      version.assignmentId,
+      {
+        attemptId: attempt.id,
+        itemResponses: [
+          { assessmentItemId: items[0].id, optionIds: [option(0, 'B')] },
+          // Only one of the two correct options: no partial credit.
+          { assessmentItemId: items[1].id, optionIds: [option(1, 'A')] },
+          { assessmentItemId: items[2].id, textAnswer: ' FIVE ' },
+        ],
+      },
+      learner,
+    );
+    await worker.tick();
+    const result = await grading.getAssessmentSubmission(
+      receipt.revisionId,
+      learner,
+    );
+    expect(result.assessments[0].overallScore?.toNumber()).toBe(2);
+    expect(result.assessments[0].answerKeyResult?.questionMarks).toHaveLength(
+      3,
+    );
   });
 
   it('rejects cross-question option IDs without creating a revision', async () => {

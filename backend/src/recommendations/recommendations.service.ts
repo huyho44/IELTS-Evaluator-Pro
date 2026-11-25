@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma.service.js';
 import type { Actor } from '../auth/auth.service.js';
 import { AccessService } from '../auth/access.service.js';
 import { serializable } from '../submissions/transaction.js';
+import { visibleItemWhere } from '../courses/visibility.js';
 import { projectSkills } from './profile.js';
 
 const PROJECTION = 'core-evidence-v1';
@@ -170,7 +171,7 @@ export class RecommendationsService {
       const now = new Date();
       const items = await tx.learningItem.findMany({
         where: {
-          status: 'PUBLISHED',
+          ...visibleItemWhere,
           course: {
             status: { in: ['PUBLISHED', 'HIDDEN'] },
             enrollments: { some: { learnerId: actor.id, status: 'ACTIVE' } },

@@ -8,7 +8,12 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service.js';
 import { AccessService } from '../auth/access.service.js';
 import type { Actor } from '../auth/auth.service.js';
-import { object, text } from '../auth/validation.js';
+import { object, text, uuid } from '../auth/validation.js';
+import { assertAcyclic } from '../management/management.service.js';
+import { visibleItemWhere } from './visibility.js';
+
+const itemPath = (courseId: string, id: string, kind: string) =>
+  `/courses/${courseId}/${kind === 'LESSON' ? 'lessons' : 'practices'}/${id}`;
 
 @Injectable()
 export class CoursesService {
@@ -32,7 +37,7 @@ export class CoursesService {
         creator: { select: { id: true, displayName: true } },
         _count: {
           select: {
-            learningItems: { where: { status: 'PUBLISHED' } },
+            learningItems: { where: visibleItemWhere },
             enrollments: true,
           },
         },
@@ -47,9 +52,24 @@ export class CoursesService {
       where: { id },
       include: {
         creator: { select: { id: true, displayName: true } },
-        chapters: { orderBy: { position: 'asc' } },
-        learningItems: {
+        courseInstructors: {
+          select: {
+            responsibility: true,
+            instructor: { select: { id: true, displayName: true } },
+          },
+          orderBy: [{ responsibility: 'asc' }, { instructorId: 'asc' }],
+        },
+        prerequisites: {
+          select: {
+            prerequisiteCourse: { select: { id: true, title: true } },
+          },
+        },
+        chapters: {
           where: { status: 'PUBLISHED' },
+          orderBy: { position: 'asc' },
+        },
+        learningItems: {
+          where: visibleItemWhere,
           select: {
             id: true,
             chapterId: true,
@@ -80,7 +100,20 @@ export class CoursesService {
       )
         await this.access.instructor(actor, id);
     }
-    const { chapters, learningItems, ...details } = course;
+    const {
+      chapters,
+      learningItems,
+      courseInstructors,
+      prerequisites,
+      ...details
+    } = course;
+    const completedPrerequisites =
+      actor && prerequisites.length
+        ? await this.completedCourses(
+            actor.id,
+            prerequisites.map((row) => row.prerequisiteCourse.id),
+          )
+        : new Set<string>();
     const lessonIds = learningItems
       .filter((item) => item.kind === 'LESSON')
       .map((item) => item.id);
@@ -142,6 +175,15 @@ export class CoursesService {
     );
     return {
       ...details,
+      prerequisites: prerequisites.map(({ prerequisiteCourse }) => ({
+        ...prerequisiteCourse,
+        completed: completedPrerequisites.has(prerequisiteCourse.id),
+      })),
+      // OWNER sorts before REVIEWER, so the course owner is listed first.
+      instructors: courseInstructors.map(({ instructor, responsibility }) => ({
+        ...instructor,
+        responsibility,
+      })),
       sections: chapters,
       learningItems: learningItems.map(({ chapterId, ...item }) => ({
         ...item,
@@ -167,6 +209,24 @@ export class CoursesService {
     if (!course) throw new NotFoundException('Course not found');
     if (course.status !== 'PUBLISHED' || !course.enrollmentOpen)
       throw new ConflictException('Enrollment is closed');
+    // Course prerequisites must be completed before enrolling.
+    const required = await this.prisma.coursePrerequisite.findMany({
+      where: { courseId },
+      select: { prerequisiteCourse: { select: { id: true, title: true } } },
+    });
+    if (required.length) {
+      const done = await this.completedCourses(
+        actor.id,
+        required.map((row) => row.prerequisiteCourse.id),
+      );
+      const missing = required
+        .map((row) => row.prerequisiteCourse)
+        .filter((prerequisite) => !done.has(prerequisite.id));
+      if (missing.length)
+        throw new ConflictException(
+          `Complete the prerequisite course${missing.length > 1 ? 's' : ''} first: ${missing.map((p) => p.title).join(', ')}`,
+        );
+    }
     try {
       return await this.prisma.enrollment.create({
         data: { courseId, learnerId: actor.id, status: 'ACTIVE' },
@@ -181,6 +241,82 @@ export class CoursesService {
         );
       throw error;
     }
+  }
+  private async completedCourses(learnerId: string, courseIds: string[]) {
+    const rows = await this.prisma.enrollment.findMany({
+      where: { learnerId, courseId: { in: courseIds }, status: 'COMPLETED' },
+      select: { courseId: true },
+    });
+    return new Set(rows.map((row) => row.courseId));
+  }
+  // PUT /courses/:id/prerequisites { prerequisiteCourseIds }
+  async setPrerequisites(courseId: string, input: unknown, actor: Actor) {
+    if (!actor.roles.includes('ADMIN'))
+      await this.access.instructor(actor, courseId);
+    const ids = object(input).prerequisiteCourseIds;
+    if (!Array.isArray(ids) || ids.length > 10)
+      throw new BadRequestException(
+        'prerequisiteCourseIds must be an array of at most 10 course ids',
+      );
+    const prerequisiteIds = [
+      ...new Set(ids.map((id) => uuid(id, 'prerequisiteCourseId'))),
+    ];
+    if (prerequisiteIds.includes(courseId))
+      throw new BadRequestException('A course cannot require itself');
+    return this.prisma.$transaction(async (tx) => {
+      const course = await tx.course.findUnique({
+        where: { id: courseId },
+        select: { id: true },
+      });
+      if (!course) throw new NotFoundException('Course not found');
+      const found = await tx.course.count({
+        where: {
+          id: { in: prerequisiteIds },
+          status: { in: ['PUBLISHED', 'ARCHIVED'] },
+        },
+      });
+      if (found !== prerequisiteIds.length)
+        throw new BadRequestException(
+          'Prerequisites must be published or archived courses',
+        );
+      const edges = await tx.coursePrerequisite.findMany({
+        where: { courseId: { not: courseId } },
+      });
+      assertAcyclic(
+        [
+          ...edges,
+          ...prerequisiteIds.map((prerequisiteCourseId) => ({
+            courseId,
+            prerequisiteCourseId,
+          })),
+        ].map((edge) => ({
+          skillId: edge.courseId,
+          prerequisiteSkillId: edge.prerequisiteCourseId,
+        })),
+        'Course prerequisites',
+      );
+      await tx.coursePrerequisite.deleteMany({ where: { courseId } });
+      if (prerequisiteIds.length)
+        await tx.coursePrerequisite.createMany({
+          data: prerequisiteIds.map((prerequisiteCourseId) => ({
+            courseId,
+            prerequisiteCourseId,
+          })),
+        });
+      await tx.auditEvent.create({
+        data: {
+          actorId: actor.id,
+          action: 'COURSE_PREREQUISITES_UPDATED',
+          entityType: 'Course',
+          entityKey: courseId,
+          afterJson: { prerequisiteCourseIds: prerequisiteIds },
+        },
+      });
+      return tx.coursePrerequisite.findMany({
+        where: { courseId },
+        select: { prerequisiteCourse: { select: { id: true, title: true } } },
+      });
+    });
   }
   // List my course enrollments.
   mine(actor: Actor) {
@@ -254,7 +390,7 @@ export class CoursesService {
   async lesson(courseId: string, lessonId: string, actor: Actor) {
     const enrollment = await this.access.learner(actor, courseId, true);
     const lesson = await this.prisma.lesson.findFirst({
-      where: { id: lessonId, learningItem: { courseId, status: 'PUBLISHED' } },
+      where: { id: lessonId, learningItem: { courseId, ...visibleItemWhere } },
       include: {
         lessonMaterials: { orderBy: { position: 'asc' } },
         learningItem: { select: { title: true } },
@@ -265,11 +401,240 @@ export class CoursesService {
       where: {
         enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId },
       },
-      select: { status: true, completedAt: true },
+      select: { status: true, completedAt: true, lastPositionJson: true },
     });
     return {
       ...lesson,
-      progress: progress ?? { status: 'NOT_STARTED', completedAt: null },
+      progress: progress ?? {
+        status: 'NOT_STARTED',
+        completedAt: null,
+        lastPositionJson: null,
+      },
+    };
+  }
+  // POST /courses/:id/lessons/:lessonId/progress { position?: { scrollRatio } }
+  // Records that the learner opened the lesson (and where they stopped) so the
+  // dashboard can offer "Continue learning". Reads alone never write progress.
+  async touchLesson(
+    courseId: string,
+    lessonId: string,
+    input: unknown,
+    actor: Actor,
+  ) {
+    const enrollment = await this.access.learner(actor, courseId);
+    await this.lesson(courseId, lessonId, actor);
+    const dto = input === undefined || input === null ? {} : object(input);
+    let position: { scrollRatio: number } | undefined;
+    if (dto.position !== undefined && dto.position !== null) {
+      const ratio = object(dto.position).scrollRatio;
+      if (typeof ratio !== 'number' || !(ratio >= 0 && ratio <= 1))
+        throw new BadRequestException(
+          'position.scrollRatio must be a number from 0 to 1',
+        );
+      position = { scrollRatio: Math.round(ratio * 1000) / 1000 };
+    }
+    const now = new Date();
+    return this.prisma.lessonProgress.upsert({
+      where: {
+        enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId },
+      },
+      create: {
+        enrollmentId: enrollment.id,
+        lessonId,
+        status: 'IN_PROGRESS',
+        lastAccessedAt: now,
+        ...(position ? { lastPositionJson: position } : {}),
+      },
+      update: {
+        lastAccessedAt: now,
+        ...(position ? { lastPositionJson: position } : {}),
+      },
+      select: {
+        status: true,
+        completedAt: true,
+        lastAccessedAt: true,
+        lastPositionJson: true,
+      },
+    });
+  }
+  // GET /me/learning-overview
+  async learningOverview(actor: Actor, now = new Date()) {
+    this.access.role(actor, 'LEARNER');
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { learnerId: actor.id, status: { in: ['ACTIVE', 'COMPLETED'] } },
+      select: {
+        id: true,
+        status: true,
+        enrolledAt: true,
+        completedAt: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            learningItems: {
+              where: visibleItemWhere,
+              select: { id: true, title: true, kind: true, position: true },
+              orderBy: [{ position: 'asc' }, { id: 'asc' }],
+            },
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+    const progress = enrollments.length
+      ? await this.prisma.lessonProgress.findMany({
+          where: { enrollmentId: { in: enrollments.map((e) => e.id) } },
+          select: {
+            enrollmentId: true,
+            lessonId: true,
+            status: true,
+            lastAccessedAt: true,
+          },
+        })
+      : [];
+    const courseIds = enrollments.map((e) => e.course.id);
+    const accepted = courseIds.length
+      ? await this.prisma.acceptedAssessment.findMany({
+          where: {
+            isCurrent: true,
+            publishedAt: { lte: now },
+            result: {
+              revision: {
+                attempt: {
+                  learnerId: actor.id,
+                  assignmentVersion: {
+                    assignment: { courseId: { in: courseIds } },
+                  },
+                },
+              },
+            },
+          },
+          select: {
+            result: {
+              select: {
+                revision: {
+                  select: {
+                    attempt: {
+                      select: {
+                        assignmentVersion: { select: { activityId: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      : [];
+    const donePractices = new Set(
+      accepted.map(
+        (row) => row.result.revision.attempt.assignmentVersion.activityId,
+      ),
+    );
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        learnerId: actor.id,
+        status: 'IN_PROGRESS',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: {
+        id: true,
+        attemptNo: true,
+        startedAt: true,
+        expiresAt: true,
+        assignmentVersion: {
+          select: {
+            assignment: {
+              select: {
+                title: true,
+                courseId: true,
+                course: { select: { title: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: 20,
+    });
+
+    const courses = enrollments.map((enrollment) => {
+      const { course } = enrollment;
+      const rows = progress.filter((p) => p.enrollmentId === enrollment.id);
+      const doneLessons = new Set(
+        rows.filter((p) => p.status === 'COMPLETED').map((p) => p.lessonId),
+      );
+      const done = (item: { id: string; kind: string }) =>
+        item.kind === 'LESSON'
+          ? doneLessons.has(item.id)
+          : donePractices.has(item.id);
+      const items = course.learningItems;
+      const completedItems = items.filter(done).length;
+      const visible = new Map(items.map((item) => [item.id, item]));
+      const last = rows
+        .filter((p) => visible.has(p.lessonId))
+        .sort((a, b) => +b.lastAccessedAt - +a.lastAccessedAt)[0];
+      const next = items.find((item) => !done(item));
+      // Resume the last opened lesson if unfinished, else the next item.
+      const resume =
+        last && last.status !== 'COMPLETED' ? visible.get(last.lessonId) : next;
+      const lessons = items.filter((item) => item.kind === 'LESSON');
+      return {
+        courseId: course.id,
+        title: course.title,
+        status: enrollment.status,
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: enrollment.completedAt,
+        lastAccessedAt: last?.lastAccessedAt ?? null,
+        progress: {
+          completedItems,
+          totalItems: items.length,
+          completedLessons: lessons.filter((item) => doneLessons.has(item.id))
+            .length,
+          totalLessons: lessons.length,
+          percent: items.length
+            ? Math.round((completedItems / items.length) * 100)
+            : 0,
+        },
+        nextItem: resume
+          ? {
+              id: resume.id,
+              title: resume.title,
+              kind: resume.kind,
+              path: itemPath(course.id, resume.id, resume.kind),
+            }
+          : null,
+      };
+    });
+    const inProgress = courses.filter((c) => c.status === 'ACTIVE');
+    const recent = [...inProgress]
+      .filter((c) => c.nextItem)
+      .sort(
+        (a, b) =>
+          +(b.lastAccessedAt ?? b.enrolledAt) -
+          +(a.lastAccessedAt ?? a.enrolledAt),
+      )[0];
+    return {
+      continueLearning: recent
+        ? {
+            courseId: recent.courseId,
+            courseTitle: recent.title,
+            ...recent.nextItem!,
+            lastAccessedAt: recent.lastAccessedAt,
+          }
+        : null,
+      inProgress,
+      completed: courses.filter((c) => c.status === 'COMPLETED'),
+      resumeAttempts: attempts.map((attempt) => ({
+        id: attempt.id,
+        attemptNo: attempt.attemptNo,
+        startedAt: attempt.startedAt,
+        expiresAt: attempt.expiresAt,
+        title: attempt.assignmentVersion.assignment.title,
+        courseId: attempt.assignmentVersion.assignment.courseId,
+        courseTitle: attempt.assignmentVersion.assignment.course.title,
+        path: `/attempts/${attempt.id}`,
+      })),
     };
   }
   // Mark a lesson as completed.

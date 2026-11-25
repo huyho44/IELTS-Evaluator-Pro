@@ -24,10 +24,31 @@ export function getNotificationActionLabel(
   ) {
     return "View assessment";
   }
-  if (notification.navigationPath?.startsWith("/courses/")) {
-    return "Open course";
-  }
+  const path = notification.navigationPath ?? "";
+  if (/\/lessons\//.test(path)) return "Open lesson";
+  if (/\/practices\//.test(path)) return "Open practice";
+  if (/[?&]thread=/.test(path)) return "Open discussion";
+  if (/\/moderation$/.test(path)) return "Review reports";
+  if (path.startsWith("/courses/")) return "Open course";
   return "View details";
+}
+
+// Short label and tone for each notification type shown in the inbox.
+export const NOTIFICATION_TYPES: Record<
+  string,
+  { label: string; tone: string }
+> = {
+  ASSESSMENT_PUBLISHED: { label: "Result", tone: "bg-emerald-50 text-emerald-700" },
+  NEW_CONTENT: { label: "New content", tone: "bg-sky-50 text-sky-700" },
+  DEADLINE_SOON: { label: "Due soon", tone: "bg-amber-50 text-amber-800" },
+  DISCUSSION_THREAD: { label: "New question", tone: "bg-violet-50 text-violet-700" },
+  DISCUSSION_REPLY: { label: "Reply", tone: "bg-violet-50 text-violet-700" },
+  MODERATION_REPORT: { label: "Report", tone: "bg-rose-50 text-rose-700" },
+  MODERATION_UPDATE: { label: "Report update", tone: "bg-slate-100 text-slate-700" },
+};
+
+export function notificationType(type: string | undefined) {
+  return type ? NOTIFICATION_TYPES[type] : undefined;
 }
 
 export function formatNotificationContext(
@@ -218,6 +239,38 @@ export async function markNotificationRead(id: string): Promise<boolean> {
     return false;
   } finally {
     inFlightMarks.delete(markKey);
+  }
+}
+
+let markingAll = false;
+// Marks every unread notification as read in one request.
+export async function markAllNotificationsRead(): Promise<boolean> {
+  const expectedUserId = state.userId;
+  if (!expectedUserId || markingAll) return false;
+  const expectedEpoch = sessionEpoch;
+  markingAll = true;
+  emit({ ...state, error: "" });
+  try {
+    await managementRequest<{ count: number }>(
+      "POST",
+      "/notifications/read-all",
+    );
+    if (state.userId !== expectedUserId || sessionEpoch !== expectedEpoch)
+      return false;
+    const readAt = new Date().toISOString();
+    emit({
+      ...state,
+      items: state.items.map((item) =>
+        item.readAt ? item : { ...item, readAt },
+      ),
+    });
+    return true;
+  } catch (cause) {
+    if (state.userId === expectedUserId && sessionEpoch === expectedEpoch)
+      emit({ ...state, error: managementError(cause) });
+    return false;
+  } finally {
+    markingAll = false;
   }
 }
 

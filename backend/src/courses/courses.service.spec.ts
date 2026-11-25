@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Actor } from '../auth/auth.service.js';
 import { AccessService } from '../auth/access.service.js';
 import type { PrismaService } from '../prisma.service.js';
@@ -47,6 +51,13 @@ function fixture() {
     title: 'Writing course',
     status: 'PUBLISHED',
     creator: { id: teacher.id, displayName: teacher.displayName },
+    prerequisites: [],
+    courseInstructors: [
+      {
+        responsibility: 'OWNER',
+        instructor: { id: teacher.id, displayName: teacher.displayName },
+      },
+    ],
     chapters: [{ id: 'section', title: 'Section one', position: 1 }],
     learningItems: [
       ...[lessonId, secondLessonId].map((id, index) => ({
@@ -182,13 +193,16 @@ function fixture() {
       ),
     },
     acceptedAssessment: {
-      findMany: vi.fn(async () => [] as Array<{
-        result: {
-          revision: {
-            attempt: { assignmentVersion: { activityId: string } };
-          };
-        };
-      }>),
+      findMany: vi.fn(
+        async () =>
+          [] as Array<{
+            result: {
+              revision: {
+                attempt: { assignmentVersion: { activityId: string } };
+              };
+            };
+          }>,
+      ),
     },
   };
   const db = prisma as unknown as PrismaService;
@@ -238,7 +252,7 @@ describe('course lesson progress', () => {
   it('isolates progress between learners on both read endpoints', async () => {
     await f.service.completeLesson(courseId, lessonId, an);
     expect((await f.service.lesson(courseId, lessonId, binh)).progress).toEqual(
-      { status: 'NOT_STARTED', completedAt: null },
+      { status: 'NOT_STARTED', completedAt: null, lastPositionJson: null },
     );
     expect(
       (await f.service.findOne(courseId, binh)).learningItems.find(
@@ -286,6 +300,33 @@ describe('course lesson progress', () => {
     expect(f.prisma.lessonProgress.findMany).not.toHaveBeenCalled();
     expect(f.prisma.acceptedAssessment.findMany).not.toHaveBeenCalled();
     expect(course.sections).toHaveLength(1);
+  });
+
+  it('records lesson visits and reading position without downgrading completion', async () => {
+    const opened = await f.service.touchLesson(
+      courseId,
+      lessonId,
+      { position: { scrollRatio: 0.41234 } },
+      an,
+    );
+    expect(opened).toMatchObject({
+      status: 'IN_PROGRESS',
+      lastPositionJson: { scrollRatio: 0.412 },
+    });
+    await f.service.completeLesson(courseId, lessonId, an);
+    const again = await f.service.touchLesson(courseId, lessonId, {}, an);
+    expect(again.status).toBe('COMPLETED');
+    await expect(
+      f.service.touchLesson(
+        courseId,
+        lessonId,
+        { position: { scrollRatio: 2 } },
+        an,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      f.service.touchLesson(courseId, lessonId, {}, teacher),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('batches outline progress reads and leaves practice items without lesson progress', async () => {
@@ -341,6 +382,13 @@ describe('course lesson progress', () => {
       ForbiddenException,
     );
     expect((await f.service.findOne(courseId, teacher)).id).toBe(courseId);
+    expect((await f.service.findOne(courseId, teacher)).instructors).toEqual([
+      {
+        id: teacher.id,
+        displayName: teacher.displayName,
+        responsibility: 'OWNER',
+      },
+    ]);
   });
 
   it('allows completed learners to read lessons while keeping progress writes closed', async () => {

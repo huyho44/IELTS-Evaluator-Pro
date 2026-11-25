@@ -11,6 +11,7 @@ import { AccessService } from '../auth/access.service.js';
 import type { Actor } from '../auth/auth.service.js';
 import { band, object, text, uuid } from '../auth/validation.js';
 import { serializable } from '../submissions/transaction.js';
+import { visibleItemWhere } from '../courses/visibility.js';
 
 const userSelect = {
   id: true,
@@ -23,6 +24,7 @@ const userSelect = {
 
 export function assertAcyclic(
   edges: { skillId: string; prerequisiteSkillId: string }[],
+  label = 'Skill prerequisites',
 ) {
   const next = new Map<string, string[]>();
   for (const edge of edges)
@@ -34,9 +36,7 @@ export function assertAcyclic(
     done = new Set<string>();
   const visit = (id: string) => {
     if (visiting.has(id))
-      throw new BadRequestException(
-        'Skill prerequisites must not form a cycle',
-      );
+      throw new BadRequestException(`${label} must not form a cycle`);
     if (done.has(id)) return;
     visiting.add(id);
     for (const target of next.get(id) ?? []) visit(target);
@@ -271,17 +271,19 @@ export class ManagementService {
     )
       throw new BadRequestException('Invalid instructor responsibility');
     return serializable(this.prisma, async (tx) => {
-      const [course, instructor] = await Promise.all([
-        tx.course.findUnique({ where: { id: courseId }, select: { id: true } }),
-        tx.user.findFirst({
-          where: {
-            id: instructorId,
-            status: 'ACTIVE',
-            userRoles: { some: { role: { code: 'INSTRUCTOR' } } },
-          },
-          select: { id: true },
-        }),
-      ]);
+      // Queries on one transaction client must run sequentially.
+      const course = await tx.course.findUnique({
+        where: { id: courseId },
+        select: { id: true },
+      });
+      const instructor = await tx.user.findFirst({
+        where: {
+          id: instructorId,
+          status: 'ACTIVE',
+          userRoles: { some: { role: { code: 'INSTRUCTOR' } } },
+        },
+        select: { id: true },
+      });
       if (!course || !instructor)
         throw new NotFoundException('Course or active instructor not found');
       const assigned = await tx.courseInstructor.upsert({
@@ -425,6 +427,7 @@ export class ManagementService {
               instructor: { select: { id: true, displayName: true } },
             },
           },
+          prerequisites: { select: { prerequisiteCourseId: true } },
           chapters: { orderBy: { position: 'asc' } },
           learningItems: {
             include: {
@@ -528,6 +531,13 @@ export class ManagementService {
       };
     });
   }
+  async readAllNotifications(actor: Actor) {
+    const { count } = await this.prisma.notification.updateMany({
+      where: { recipientId: actor.id, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return { count };
+  }
   async readNotification(id: string, actor: Actor) {
     const row = await this.prisma.notification.findFirst({
       where: { id, recipientId: actor.id },
@@ -591,7 +601,7 @@ export class ManagementService {
       if (!['ALL_REQUIRED_ITEMS', 'ALL_LESSONS'].includes(String(policy.mode)))
         throw new ConflictException('Unsupported course completion policy');
       const items = await tx.learningItem.findMany({
-        where: { courseId, status: 'PUBLISHED' },
+        where: { courseId, ...visibleItemWhere },
         select: { id: true, kind: true },
       });
       const required = items.filter(

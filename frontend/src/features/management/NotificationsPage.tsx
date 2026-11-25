@@ -6,9 +6,12 @@ import {
   getNotificationActionLabel,
   isInternalNavigationPath,
   loadNotifications,
+  markAllNotificationsRead,
   markNotificationRead,
+  notificationType,
   useNotifications,
 } from "./notificationsStore";
+import { useState } from "react";
 import { getWorkspaceTheme, type WorkspaceTheme } from "./workspaceTheme";
 
 function NotificationTypeIcon({
@@ -67,7 +70,8 @@ export default function NotificationsPage({ student = true }: { student?: boolea
     session?.user.id,
   );
   const unread = formatUnreadBadge(items);
-  const isMarkingAny = Object.keys(markingIds).length > 0;
+  const [markingAll, setMarkingAll] = useState(false);
+  const isMarkingAny = Object.keys(markingIds).length > 0 || markingAll;
 
   return (
     <div className={student ? "student-surface-overview min-h-[calc(100vh-4rem)]" : undefined}>
@@ -98,14 +102,31 @@ export default function NotificationsPage({ student = true }: { student?: boolea
               )}
             </div>
           </div>
-          <button
-            type="button"
-            disabled={loading || isMarkingAny}
-            onClick={() => void loadNotifications()}
-            className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold shadow-2xs transition-colors disabled:opacity-50 ${theme.outlineButton}`}
-          >
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {unread.count > 0 && (
+              <button
+                type="button"
+                disabled={loading || isMarkingAny}
+                onClick={() => {
+                  setMarkingAll(true);
+                  void markAllNotificationsRead().finally(() =>
+                    setMarkingAll(false),
+                  );
+                }}
+                className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold shadow-2xs transition-colors disabled:opacity-50 ${theme.outlineButton}`}
+              >
+                {markingAll ? "Marking..." : "Mark all as read"}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={loading || isMarkingAny}
+              onClick={() => void loadNotifications()}
+              className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold shadow-2xs transition-colors disabled:opacity-50 ${theme.outlineButton}`}
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -156,6 +177,7 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                 notification.notificationType === "ASSESSMENT_PUBLISHED" ||
                 Boolean(notification.navigationPath?.startsWith("/submissions/"));
               const contextLabel = formatNotificationContext(notification);
+              const typeInfo = notificationType(notification.notificationType);
               const actionLabel = getNotificationActionLabel(notification);
 
               return (
@@ -181,6 +203,13 @@ export default function NotificationsPage({ student = true }: { student?: boolea
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${theme.avatarBadge}`}
                             >
                               New
+                            </span>
+                          )}
+                          {typeInfo && (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${typeInfo.tone}`}
+                            >
+                              {typeInfo.label}
                             </span>
                           )}
                           <h2

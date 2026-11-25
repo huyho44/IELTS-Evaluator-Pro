@@ -1,6 +1,8 @@
 export type InstructorSectionKey =
   | "review-queue"
   | "discussions"
+  | "moderation"
+  | "analytics"
   | "course-authoring"
   | "grading-reports";
 
@@ -26,6 +28,20 @@ export const INSTRUCTOR_NAV_ITEMS: InstructorNavItem[] = [
     subtitle: "Answer learner questions",
     to: "/teacher/discussions",
     matchPrefixes: ["/teacher/discussions"],
+  },
+  {
+    key: "moderation",
+    label: "Moderation",
+    subtitle: "Reported content",
+    to: "/teacher/moderation",
+    matchPrefixes: ["/teacher/moderation"],
+  },
+  {
+    key: "analytics",
+    label: "Analytics",
+    subtitle: "Enrollment and results",
+    to: "/teacher/analytics",
+    matchPrefixes: ["/teacher/analytics"],
   },
   {
     key: "course-authoring",

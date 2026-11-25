@@ -6,6 +6,8 @@ import { INSTRUCTOR_NAV_ITEMS } from "./instructorNav";
 const ICONS = {
   "review-queue": "checkSquare",
   discussions: "messageSquare",
+  moderation: "shield",
+  analytics: "gauge",
   "course-authoring": "book",
   "grading-reports": "barChart",
 } as const;

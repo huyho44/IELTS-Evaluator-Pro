@@ -12,6 +12,7 @@ import {
   type RecommendationRun,
   type SkillProfile,
 } from "./learningApi";
+import LearningOverviewPanel from "./LearningOverviewPanel";
 
 const REASON_BADGES: Record<string, { label: string; className: string }> = {
   DIAGNOSTIC: {
@@ -191,6 +192,8 @@ function LearningContent({
           )}
         </button>
       </header>
+
+      <LearningOverviewPanel accessToken={accessToken} reloadKey={reloadKey} />
 
       <nav
         aria-label="Quick student links"

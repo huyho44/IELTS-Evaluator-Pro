@@ -39,7 +39,8 @@ const snippet = (value: string, max: number) =>
 export class DiscussionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async access(actor: Actor, courseId: string): Promise<Access> {
+  // Course-level access shared with moderation (A3).
+  async access(actor: Actor, courseId: string): Promise<Access> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       select: { id: true },

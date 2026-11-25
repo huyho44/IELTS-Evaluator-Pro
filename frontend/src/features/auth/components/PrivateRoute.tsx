@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useSession } from "../session";
 import WorkspaceMessage from "./WorkspaceMessage";
+import { LoadingScreen } from "../../../components/ui/Spinner";
 
 export default function PrivateRoute({
   allowedRoles,
@@ -12,7 +13,7 @@ export default function PrivateRoute({
   const { session, restoring } = useSession();
   const { pathname, search, hash } = useLocation();
 
-  if (restoring) return <p role="status">Restoring session...</p>;
+  if (restoring) return <LoadingScreen label="Restoring session..." />;
   if (!session) {
     return allowGuests ? (
       <Outlet />

@@ -12,6 +12,9 @@ const GROUPS: ShellNavGroup[] = [
       { to: "/admin/instructor-approvals", label: "Instructor approvals", subtitle: "Review applications", icon: "checkSquare" },
       { to: "/admin/course-assignments", label: "Course assignments", subtitle: "Owners & reviewers", icon: "book" },
       { to: "/admin/discussions", label: "Discussions", subtitle: "Course Q&A threads", icon: "messageSquare" },
+      { to: "/admin/moderation", label: "Moderation", subtitle: "Reported content", icon: "shield" },
+      { to: "/admin/analytics", label: "Analytics", subtitle: "Enrollment and results", icon: "gauge" },
+      { to: "/admin/audit", label: "Audit log", subtitle: "Who changed what", icon: "history" },
     ],
   },
   {

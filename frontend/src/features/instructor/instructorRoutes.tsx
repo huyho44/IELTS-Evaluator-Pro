@@ -7,6 +7,8 @@ import GradingReportPage from "../management/GradingReportPage";
 import ReviewDetailPage from "./pages/ReviewDetailPage";
 import ReviewQueuePage from "./pages/ReviewQueuePage";
 import StaffDiscussionsPage from "../discussions/StaffDiscussionsPage";
+import ModerationPage from "../moderation/ModerationPage";
+import AnalyticsPage from "../analytics/AnalyticsPage";
 
 export function instructorRoutes() {
   return (
@@ -16,6 +18,8 @@ export function instructorRoutes() {
         <Route path="reviews" element={<ReviewQueuePage />} />
         <Route path="reviews/:id" element={<ReviewDetailPage />} />
         <Route path="discussions" element={<StaffDiscussionsPage />} />
+        <Route path="moderation" element={<ModerationPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="authoring" element={<AuthoringPage />} />
         <Route
           path="courses"

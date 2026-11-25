@@ -1,4 +1,8 @@
-export type LessonProgress = { status: string; completedAt: string | null };
+export type LessonProgress = {
+  status: string;
+  completedAt: string | null;
+  lastPositionJson?: unknown;
+};
 export function isLessonProgress(value: unknown): value is LessonProgress {
  if (typeof value !== 'object' || value === null) return false;
  const p = value as LessonProgress;

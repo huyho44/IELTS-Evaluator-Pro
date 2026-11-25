@@ -10,6 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { useSession } from "../auth/session";
 import Spinner from "../../components/ui/Spinner";
+import ReportButton from "../moderation/ReportButton";
 import {
   BODY_MAX,
   TITLE_MAX,
@@ -628,6 +629,11 @@ function PostCard({
               Delete
             </button>
           )}
+        </div>
+      )}
+      {!post.mine && post.status === "VISIBLE" && (
+        <div className="mt-2">
+          <ReportButton targetType="POST" targetId={post.id} />
         </div>
       )}
       {children}

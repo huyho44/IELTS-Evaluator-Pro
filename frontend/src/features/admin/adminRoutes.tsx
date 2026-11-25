@@ -9,6 +9,9 @@ import InstructorApprovalsPage from "./InstructorApprovalsPage";
 import CourseAssignmentsPage from "./CourseAssignmentsPage";
 import SkillCatalogPage from "./SkillCatalogPage";
 import StaffDiscussionsPage from "../discussions/StaffDiscussionsPage";
+import ModerationPage from "../moderation/ModerationPage";
+import AnalyticsPage from "../analytics/AnalyticsPage";
+import AuditLogPage from "../analytics/AuditLogPage";
 
 export function adminRoutes() {
   return (
@@ -21,6 +24,9 @@ export function adminRoutes() {
         />
         <Route path="course-assignments" element={<CourseAssignmentsPage />} />
         <Route path="discussions" element={<StaffDiscussionsPage />} />
+        <Route path="moderation" element={<ModerationPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="audit" element={<AuditLogPage />} />
         <Route path="skills" element={<SkillCatalogPage />} />
         <Route path="authoring" element={<AuthoringPage mode="admin" />} />
         <Route path="reports" element={<GradingReportPage />} />

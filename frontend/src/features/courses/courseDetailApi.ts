@@ -23,6 +23,12 @@ export type CourseLearningItem = {
     } | null;
 };
 
+export type CourseInstructor = {
+    id: string;
+    displayName: string;
+    responsibility: string;
+};
+
 export type CourseDetail = {
     id: string;
     title: string;
@@ -32,6 +38,8 @@ export type CourseDetail = {
         id: string;
         displayName: string;
     };
+    instructors?: CourseInstructor[];
+    prerequisites?: { id: string; title: string; completed: boolean }[];
     sections: CourseSection[];
     learningItems: CourseLearningItem[];
 };

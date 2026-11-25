@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSession } from "../auth/session";
 import ActionForm from "./ActionForm";
+import ContentEditor from "./authoring/ContentEditor";
+import PrerequisitesEditor from "./authoring/PrerequisitesEditor";
+import QuizBuilder from "./authoring/QuizBuilder";
 import {
   managementRequest as request,
   managementError,
@@ -24,7 +27,14 @@ const COURSE_STATUS_BADGES: Record<string, string> = {
 };
 
 type WorkspaceTab = "curriculum" | "assignments" | "rubrics";
-type CurriculumSubTab = "settings" | "section" | "lesson" | "activity";
+type CurriculumSubTab =
+  | "settings"
+  | "content"
+  | "prerequisites"
+  | "section"
+  | "lesson"
+  | "activity"
+  | "quiz";
 
 export default function AuthoringPage({
   mode = "instructor",
@@ -88,7 +98,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
   }, [refresh]);
 
   async function run<T = unknown>(
-    method: "POST" | "PATCH",
+    method: "POST" | "PATCH" | "PUT",
     path: string,
     body: unknown,
     onSuccess?: (result: T) => void,
@@ -459,12 +469,13 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
           course.courseInstructors.some(
             (item) => item.instructorId === session?.user.id,
           );
-        const writingActivities = course.learningItems
-          .filter((i) => i.practiceActivity?.skillArea === "WRITING")
+        // Writing/Speaking activities need a rubric; quizzes use their answer key.
+        const practiceActivities = course.learningItems
+          .filter((i) => i.practiceActivity)
           .flatMap((i) =>
             i.practiceActivity!.activityVersions.map((v) => ({
               id: v.id,
-              label: `${i.title} v${v.versionNo}`,
+              label: `${i.title} v${v.versionNo} (${i.practiceActivity!.skillArea.toLowerCase()})`,
             })),
           );
 
@@ -538,9 +549,12 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                         {(
                           [
                             { id: "settings", label: "Course settings" },
+                            { id: "content", label: "Edit & hide content" },
+                            { id: "prerequisites", label: "Prerequisites" },
                             { id: "section", label: "+ Section" },
                             { id: "lesson", label: "+ Text lesson" },
                             { id: "activity", label: "+ Writing activity" },
+                            { id: "quiz", label: "+ Auto-graded quiz" },
                           ] as const
                         ).map((sub) => (
                           <button
@@ -834,6 +848,28 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                           </div>
                         </ActionForm>
                       </div>
+
+                      {curriculumSubTab === "content" && (
+                        <ContentEditor course={course} busy={busy} run={run} />
+                      )}
+                      {curriculumSubTab === "prerequisites" && (
+                        <PrerequisitesEditor
+                          key={(course.prerequisites ?? [])
+                            .map((row) => row.prerequisiteCourseId)
+                            .join()}
+                          course={course}
+                          busy={busy}
+                          run={run}
+                        />
+                      )}
+                      {curriculumSubTab === "quiz" && (
+                        <QuizBuilder
+                          course={course}
+                          busy={busy}
+                          run={run}
+                          skills={catalog?.skills ?? []}
+                        />
+                      )}
                     </>
                   ) : (
                     <section className={`${panel} shadow-2xs`}>
@@ -875,6 +911,7 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                             className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
                           >
                             {chapter.position}. {chapter.title}
+                            {chapter.status !== "PUBLISHED" && " (hidden)"}
                           </span>
                         ))}
                       </div>
@@ -894,6 +931,11 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                           >
                             <span className="min-w-0 font-medium text-slate-800">
                               {i.position}. {i.title}
+                              {i.status !== "PUBLISHED" && (
+                                <span className="ml-1.5 text-[11px] font-semibold text-slate-500">
+                                  ({i.status.toLowerCase()})
+                                </span>
+                              )}
                             </span>
                             <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                               {i.kind}
@@ -983,7 +1025,9 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                           {
                             title: data.get("title"),
                             activityVersionId: data.get("activityVersionId"),
-                            rubricVersionId: data.get("rubricId"),
+                            ...(data.get("rubricId")
+                              ? { rubricVersionId: data.get("rubricId") }
+                              : {}),
                             mode: data.get("mode"),
                             maxAttempts: Number(data.get("attempts")),
                             maxRevisions: Number(data.get("revisions")),
@@ -1029,8 +1073,8 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                           name="activityVersionId"
                           className={`${field} mt-1`}
                         >
-                          <option value="">Choose Writing activity</option>
-                          {writingActivities.map((v) => (
+                          <option value="">Choose activity</option>
+                          {practiceActivities.map((v) => (
                             <option key={v.id} value={v.id}>
                               {v.label}
                             </option>
@@ -1038,9 +1082,8 @@ function Content({ mode }: { mode: "admin" | "instructor" }) {
                         </select>
                       </label>
                       <label className="block text-sm font-medium text-slate-800">
-                        Rubric
+                        Rubric (Writing only; leave empty for quizzes)
                         <select
-                          required
                           name="rubricId"
                           className={`${field} mt-1`}
                         >

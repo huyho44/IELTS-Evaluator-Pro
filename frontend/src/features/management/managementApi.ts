@@ -37,17 +37,30 @@ export type CourseRow = {
   description: string;
   status: string;
   enrollmentOpen: boolean;
-  chapters: { id: string; title: string; position: number }[];
+  chapters: { id: string; title: string; position: number; status: string }[];
   learningItems: {
     id: string;
     title: string;
     kind: string;
     position: number;
+    status: string;
+    chapterId: string | null;
+    lesson: {
+      summary: string | null;
+      lessonMaterials: {
+        id: string;
+        kind: string;
+        position: number;
+        contentText: string | null;
+      }[];
+    } | null;
     practiceActivity: {
       skillArea: string;
+      responseMode?: string;
       activityVersions: { id: string; versionNo: number }[];
     } | null;
   }[];
+  prerequisites?: { prerequisiteCourseId: string }[];
   assignments: {
     id: string;
     title: string;

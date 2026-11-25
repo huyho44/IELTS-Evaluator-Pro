@@ -7,5 +7,6 @@ import { DiscussionsService } from './discussions.service.js';
   imports: [AuthModule],
   controllers: [DiscussionsController],
   providers: [DiscussionsService],
+  exports: [DiscussionsService],
 })
 export class DiscussionsModule {}

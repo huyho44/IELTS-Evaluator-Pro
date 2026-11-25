@@ -82,7 +82,9 @@ export class SubmissionsService {
           assignment: {
             include: {
               course: true,
-              activity: { include: { learningItem: true } },
+              activity: {
+                include: { learningItem: { include: { chapter: true } } },
+              },
             },
           },
         },
@@ -90,7 +92,10 @@ export class SubmissionsService {
       if (
         !version ||
         !['PUBLISHED', 'HIDDEN'].includes(version.assignment.course.status) ||
-        version.assignment.activity.learningItem.status !== 'PUBLISHED'
+        version.assignment.activity.learningItem.status !== 'PUBLISHED' ||
+        (version.assignment.activity.learningItem.chapter &&
+          version.assignment.activity.learningItem.chapter.status !==
+            'PUBLISHED')
       )
         throw new NotFoundException('Published assignment not found');
       await this.activeEnrollment(tx, actor.id, version.assignment.courseId);
